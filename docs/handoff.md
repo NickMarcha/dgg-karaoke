@@ -58,8 +58,9 @@ own browsers are not downloaded):
 
 ## Waiting on a person
 
-1. **The open questions at the end of the plan**: the licence, song lyrics,
-   which destiny.gg OAuth application, and whether online mode is wanted.
+1. **The destiny.gg OAuth application.** Decided as a new one from a separate
+   account; it needs the site address for its redirect URI, so it waits for
+   the Netlify site in layer 1.
 2. **A look at the three fixes in a real browser**, especially captions.
 
 ## True but not visible in the code

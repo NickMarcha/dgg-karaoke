@@ -80,11 +80,25 @@ deployed until it is replaced.
 | `a.allkaraoke.party` | PostHog proxy | Our own PostHog project, its own keys |
 | Worker + Durable Object + KV (`worker/leaderboard*.ts`) | Global and per-song leaderboards | Postgres tables on our API, keyed by the destiny.gg user |
 | KV + PostHog events + GitHub Actions (`functions/unverified-songs*.ts`, `docs/unverified-songs-flow.md`) | Songs players share, promoted by a scheduled job | Song submissions stored directly by our API, reviewed in an admin page |
-| Durable Object + Cloudflare Realtime SFU (`worker/online-*.ts`) | Online mode, singing together from different places | Off at first. Decided later whether it is wanted |
+| Durable Object + Cloudflare Realtime SFU (`worker/online-*.ts`) | Online mode, singing together from different places | The same WebSocket service as the remote-mic relay, on our API |
 | `public/songs/*.txt` | The 6,457 built-in songs | Stay static files on Netlify |
 
 Remote microphones are a party's main input method, so the relay is not
 optional; it comes before the first deploy.
+
+**Why upstream uses Cloudflare Realtime, and why we do not.** Online mode
+carries no audio or video: every player loads the YouTube video and detects
+their own pitch. What moves is room state, scores, pings and volume levels,
+a few megabytes a session (`docs/online-mode.md`). The room's authority already
+runs in the host's browser, so the network only has to fan the host's messages
+out and carry replies back. Upstream is serverless, and a Durable Object in the
+middle was billed on every second a room was open; the SFU is billed on egress
+instead, fans out for the host, and avoids peer-to-peer NAT traversal. An
+always-on server of our own has none of that cost, so a WebSocket relay on the
+API does the same job. `OnlineRoomLogic` takes its environment from
+`OnlineRoomDeps`, so the change is a transport, not a rewrite: the room logic,
+host takeover and leaderboard stay as upstream wrote them, which keeps merges
+from upstream cheap.
 
 ## Layers
 
@@ -114,13 +128,19 @@ and the three game fixes:
   startup, `/health`.
 - The WebSocket relay for remote microphones, and the import proxy.
 - The frontend's `.env` pointing at our API; PeerJS and PartyKit removed;
-  online mode hidden; `worker/`, `functions/`, `wrangler.jsonc` and the
+  online mode hidden until layer 1b; `worker/`, `functions/`, `wrangler.jsonc` and the
   Cloudflare Vite plugin removed once nothing uses them. The leaderboard is
   hidden until layer 3 rather than kept on the Worker.
 - `netlify.toml` with the SPA fallback. Upstream prerenders pages with
   Playwright at build time; whether that runs on Netlify's builders is checked,
   and dropped if it does not.
 - Netlify site, tunnel hostname, webhook. A `beta` badge in the header.
+
+### 1b. Online mode on our relay
+
+Replace `SfuClientTransport` and the host's SFU publishing with the WebSocket
+relay, and the `OnlineDirectory` Durable Object (who is in which room, who
+hosts) with state on the API. Then show online mode again.
 
 ### 2. destiny.gg sign-in and the look
 
@@ -207,14 +227,13 @@ What DGG Radio learned building its watcher overlay, all of it in
 - Open the overlay in a browser before fixing it. Three rounds of CSS fixes
   were spent there on a layout nobody had looked at.
 
-## Questions for a person
+## Decided
 
-- **Licence.** `package.json` says MIT and the repository has no LICENSE file.
-  Asking upstream to add one, or for their blessing, would settle it.
-- **Song lyrics.** The built-in songs carry lyrics, as upstream's do. Worth
-  knowing that a community upload feature makes us the host of what people
-  upload.
-- **destiny.gg OAuth application.** A new one for this site, or DGG Radio's?
-  Its redirect URI is the frontend's `/auth/callback`, so it needs the final
-  site address.
-- **Online mode.** Upstream's costs money (Cloudflare Realtime). Wanted at all?
+- **Licence**: not a concern for the operator. Upstream's attribution stays.
+- **destiny.gg OAuth**: a new application, registered from a separate
+  destiny.gg account the operator has ready. Its redirect URI is the frontend's
+  `/auth/callback`, so it is registered once the site address is known.
+- **Online mode**: kept, self-hosted on our relay rather than Cloudflare
+  Realtime (layer 1b).
+- **Lyrics**: songs carry lyrics as upstream's do, in the open UltraStar format,
+  and community uploads are accepted knowing that makes this site their host.
