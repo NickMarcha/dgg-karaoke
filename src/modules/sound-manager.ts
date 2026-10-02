@@ -13,7 +13,7 @@ import menuBackSound from '~/assets/menu_back.mp3';
 import menuEnterSound from '~/assets/menu_enter.mp3';
 import menuNavigateSound from '~/assets/menu_navigate.mp3';
 import { backgroundTheme } from '~/modules/elements/layout-with-background';
-import { BackgroundThemeSetting } from '~/routes/settings/settings-state';
+import { BackgroundThemeSetting, MasterVolumeSetting } from '~/routes/settings/settings-state';
 
 class Sound {
   private sound: HTMLAudioElement | null = null;
@@ -28,15 +28,23 @@ class Sound {
     if (global.Audio) {
       this.sound = new Audio(options.src);
       this.sound.preload = options.preload ? 'auto' : 'none';
-      this.sound.volume = options.volume ?? 1;
       this.sound.loop = options.loop ?? false;
+      this.applyVolume(MasterVolumeSetting.get());
+      // Background music runs for minutes, so it follows the master volume while playing.
+      MasterVolumeSetting.addListener(this.applyVolume);
     }
   }
+
+  private applyVolume = (masterVolume: number) => {
+    if (this.sound) this.sound.volume = (this.options.volume ?? 1) * masterVolume;
+  };
 
   public play = async (parallel = true) => {
     try {
       if (parallel && this.playing()) {
         const clonedNode = this.sound?.cloneNode(true) as HTMLAudioElement;
+        // `volume` is a property, not an attribute, so a clone would otherwise play at full volume.
+        clonedNode.volume = this.sound!.volume;
         await clonedNode.play();
         clonedNode.remove();
       } else {

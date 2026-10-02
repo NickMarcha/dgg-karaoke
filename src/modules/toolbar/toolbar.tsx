@@ -6,6 +6,7 @@ import { Tooltip } from '~/modules/elements/tooltip';
 import { useRemoteMicsAvailable } from '~/modules/remote-mic/no-remote-mics';
 import FullscreenButton from '~/modules/toolbar/fullscreen';
 import QRCodeModal from '~/modules/toolbar/qr-code-modal';
+import VolumeControl from '~/modules/toolbar/volume-control';
 import { KeyboardHelpContext } from '~/routes/keyboard-help/keyboard-help-context';
 import { KeyboardHelpVisibilitySetting, useSettingValue } from '~/routes/settings/settings-state';
 
@@ -45,6 +46,7 @@ function Toolbar({ children }: PropsWithChildren) {
             />
           </Tooltip>
         )}
+        <VolumeControl size={{ xs: 'mini', sm: 'small' }} />
         <FullscreenButton size={{ xs: 'mini', sm: 'small' }} />
         {remoteMicsAvailable && (
           <Tooltip title="Connect phone" place="bottom-end">

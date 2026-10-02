@@ -9,6 +9,7 @@ import VideoPlayer, { VideoPlayerRef, VideoState } from '~/modules/elements/vide
 import useDebounce from '~/modules/hooks/use-debounce';
 import { isEurovisionSong } from '~/modules/songs/utils/special-songs-theme-checks';
 import { FeatureFlags } from '~/modules/utils/feature-flags';
+import { SongPreviewSetting, useSettingValue } from '~/routes/settings/settings-state';
 import { SongCard } from '~/routes/sing-a-song/song-selection/components/song-card';
 import SongSettings from '~/routes/sing-a-song/song-selection/components/song-settings/index';
 import { useSpecialTheme } from '~/routes/sing-a-song/song-selection/hooks/use-special-theme';
@@ -73,11 +74,13 @@ export default function SongPreviewComponent({
   const start = songPreview.previewStart ?? (songPreview.videoGap ?? 0) + 60;
   const end = songPreview.previewEnd ?? start + PREVIEW_LENGTH;
   const songPreviewVolume = songPreview.manualVolume;
+  const [previewMode] = useSettingValue(SongPreviewSetting);
+  const previewEnabled = previewMode === 'browsing' || (previewMode === 'opened' && expanded);
   const undebounced = useMemo(
-    () => [songPreview.video, start, end, songPreviewVolume] as const,
-    [songPreview.video, start, end, songPreviewVolume],
+    () => [songPreview.video, start, end, songPreviewVolume, previewEnabled] as const,
+    [songPreview.video, start, end, songPreviewVolume, previewEnabled],
   );
-  const [videoId, previewStart, previewEnd, volume] = useDebounce(undebounced, 350);
+  const [videoId, previewStart, previewEnd, volume, playPreview] = useDebounce(undebounced, 350);
 
   // Hide immediately whenever the selected song changes; the PLAYING event in
   // onVideoStateChange will reveal the video once the new one has actually loaded.
@@ -86,6 +89,11 @@ export default function SongPreviewComponent({
   }, [songPreview.video]);
 
   useEffect(() => {
+    if (!playPreview) {
+      player.current?.pauseVideo();
+      setShowVideo(false);
+      return;
+    }
     // Re-apply size here because the YouTube IFrame API may not have been ready
     // when setSize was first called via ResizeObserver (getInternalPlayer() returns
     // null until the player script finishes loading). This effect fires after the
@@ -99,7 +107,7 @@ export default function SongPreviewComponent({
       endSeconds: previewEnd,
     });
     player.current?.playVideo();
-  }, [videoId, player, previewStart, previewEnd]);
+  }, [videoId, player, previewStart, previewEnd, playPreview]);
 
   const onVideoStateChange = useCallback(
     (state: VideoState) => {

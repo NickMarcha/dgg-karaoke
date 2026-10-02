@@ -11,13 +11,24 @@ import useKeyboardNav, { KeyboardNavContext } from '~/modules/hooks/use-keyboard
 import useSmoothNavigate from '~/modules/hooks/use-smooth-navigate';
 import { nextValue } from '~/modules/utils/indexes';
 import {
+  formatVolume,
   FpsCount,
   FPSCountSetting,
   GraphicSetting,
   GraphicsLevel,
+  MasterVolumeSetting,
+  MasterVolumeSteps,
   MobilePhoneModeSetting,
+  SongPreviewModes,
+  SongPreviewSetting,
   useSettingValue,
 } from '~/routes/settings/settings-state';
+
+const songPreviewLabels = {
+  opened: 'When opened',
+  browsing: 'While browsing',
+  off: 'Off',
+} satisfies Record<(typeof SongPreviewModes)[number], string>;
 
 function Settings() {
   useBackgroundMusic(false);
@@ -29,6 +40,8 @@ function Settings() {
   const [graphicLevel, setGraphicLevel] = useSettingValue(GraphicSetting);
   const [fpsCount, setFpsCount] = useSettingValue(FPSCountSetting);
   const [mobilePhoneMode, setMobilePhoneMode] = useSettingValue(MobilePhoneModeSetting);
+  const [masterVolume, setMasterVolume] = useSettingValue(MasterVolumeSetting);
+  const [songPreview, setSongPreview] = useSettingValue(SongPreviewSetting);
 
   const [camera, setCamera] = useState<null | boolean>(CameraManager.getPermissionStatus());
   useEffect(() => {
@@ -75,6 +88,21 @@ function Settings() {
           value={fpsCount}
           onClick={() => setFpsCount(nextValue(FpsCount, fpsCount))}
         />
+        <NavSwitcher
+          name="master-volume"
+          label="Volume"
+          value={formatVolume(masterVolume)}
+          info="Applies to songs, previews, music and sound effects."
+          onClick={() => setMasterVolume(nextValue(MasterVolumeSteps, masterVolume))}
+        />
+        <NavSwitcher
+          name="song-preview"
+          label="Song previews"
+          value={songPreviewLabels[songPreview]}
+          info="When the song list starts playing a song: once you open it, as soon as you move onto it, or never."
+          onClick={() => setSongPreview(nextValue(SongPreviewModes, songPreview))}
+        />
+        <hr />
         <NavButton
           name="calibration-settings"
           size="small"

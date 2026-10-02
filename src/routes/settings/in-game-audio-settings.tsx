@@ -2,8 +2,10 @@ import { ComponentRef, useRef } from 'react';
 
 import { Switcher } from '~/modules/elements/switcher';
 import { useRegister } from '~/modules/hooks/use-keyboard-nav';
+import { nextValue } from '~/modules/utils/indexes';
 import useMicSwitcher from '~/routes/select-input/hooks/use-mic-switcher';
 import InputLag from '~/routes/settings/input-lag';
+import { formatVolume, MasterVolumeSetting, MasterVolumeSteps } from '~/routes/settings/settings-state';
 
 /**
  * The audio settings a pause menu lets you change without leaving the song, as navigable menu rows.
@@ -56,6 +58,24 @@ export function InGameInputLag({ value }: InputLagProps) {
       {...register('input-lag', () => inputLagRef.current?.element?.focus(), 'Input lag', false, {
         control: value === undefined ? undefined : { type: 'input-lag', label: 'Input lag', value },
       })}
+    />
+  );
+}
+
+interface VolumeProps {
+  /** Read by the screen that owns `useKeyboardNav`, for the same reason as `InGameInputLag`'s `value`. */
+  value: number;
+}
+
+/** The master volume, stepped. The toolbar has the continuous slider; this is the one a remote can press. */
+export function InGameVolume({ value }: VolumeProps) {
+  const register = useRegister();
+
+  return (
+    <Switcher
+      {...register('master-volume', () => MasterVolumeSetting.set(nextValue(MasterVolumeSteps, value)))}
+      label="Volume"
+      value={formatVolume(value)}
     />
   );
 }

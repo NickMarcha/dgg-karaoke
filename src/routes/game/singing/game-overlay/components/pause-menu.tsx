@@ -9,8 +9,8 @@ import useSmoothNavigate from '~/modules/hooks/use-smooth-navigate';
 import SongsService from '~/modules/songs/songs-service';
 import RateSong from '~/routes/game/singing/game-overlay/components/rate-song';
 import SelectInputModal from '~/routes/select-input/select-input-modal';
-import { InGameInputLag } from '~/routes/settings/in-game-audio-settings';
-import { InputLagSetting, useSettingValue } from '~/routes/settings/settings-state';
+import { InGameInputLag, InGameVolume } from '~/routes/settings/in-game-audio-settings';
+import { InputLagSetting, MasterVolumeSetting, useSettingValue } from '~/routes/settings/settings-state';
 
 interface Props {
   onResume: () => void;
@@ -29,6 +29,7 @@ const PauseMenuContent = ({ onResume, onExit, onRestart }: Omit<Props, 'open'>) 
 
   const [isInputModalOpen, setIsInputModalOpen] = useState(false);
   const [inputLag] = useSettingValue(InputLagSetting);
+  const [masterVolume] = useSettingValue(MasterVolumeSetting);
 
   const [rateSongOpen, setRateSongOpen] = useState(false);
 
@@ -81,6 +82,7 @@ const PauseMenuContent = ({ onResume, onExit, onRestart }: Omit<Props, 'open'>) 
             </NavButton>
             <hr />
             {}
+            <InGameVolume value={masterVolume} />
             <InGameInputLag value={inputLag} />
             {/* Hidden from the phone: it opens the full song editor, which is a desktop/TV-only
                 surface the remote can't drive. */}

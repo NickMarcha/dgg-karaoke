@@ -11,7 +11,8 @@ import { formatScore } from '~/modules/online/format-score';
 import { OnlineParticipant, OnlinePauseState } from '~/modules/online/protocol/types';
 import ParticipantSlot from '~/routes/online/components/participant-slot';
 import CountdownOverlay from '~/routes/online/singing/countdown-overlay';
-import { InGameInputLag, InGameMicSwitcher } from '~/routes/settings/in-game-audio-settings';
+import { InGameInputLag, InGameMicSwitcher, InGameVolume } from '~/routes/settings/in-game-audio-settings';
+import { MasterVolumeSetting, useSettingValue } from '~/routes/settings/settings-state';
 
 interface Props {
   pause: OnlinePauseState;
@@ -50,6 +51,7 @@ function PauseOverlay({ pause, resumeCountdownEndsAt, onResume, isHost, hostId, 
   // Disabled while the resume countdown is up: the menu below isn't rendered then, so Enter/Escape/
   // arrows must not act on its (unmounted) registrations.
   const { register } = useKeyboardNav({ enabled: resumeCountdownEndsAt === null });
+  const [masterVolume] = useSettingValue(MasterVolumeSetting);
 
   if (resumeCountdownEndsAt !== null) {
     return <CountdownOverlay endsAtServerTime={resumeCountdownEndsAt} label="Resuming in" />;
@@ -88,8 +90,9 @@ function PauseOverlay({ pause, resumeCountdownEndsAt, onResume, isHost, hostId, 
             ))}
           </div>
           <Menu.Divider />
-          {/* Mic selection + input lag, adjustable mid-game like in the local pause menu */}
+          {/* Mic selection, volume and input lag, adjustable mid-game like in the local pause menu */}
           <InGameMicSwitcher />
+          <InGameVolume value={masterVolume} />
           <InGameInputLag />
           <Menu.Divider />
           <PauseButton name="online-resume-button" onClick={onResume} isDefault>

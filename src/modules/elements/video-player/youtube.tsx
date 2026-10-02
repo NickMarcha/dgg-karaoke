@@ -107,6 +107,9 @@ export default function YoutubeVideoPlayer({
           end: 0,
           disablekb: disablekb ? 1 : 0,
           modestbranding: 1,
+          // Captions and annotations sit where the lyrics are read.
+          cc_load_policy: 0,
+          iv_load_policy: 3,
         },
       }}
       onReady={() => onReady?.()}
@@ -114,6 +117,11 @@ export default function YoutubeVideoPlayer({
         console.log('onPlaybackRateChange', e.data);
       }}
       onStateChange={(e) => {
+        // A viewer's own "always show captions" preference overrides cc_load_policy, and the captions
+        // module only loads once playback starts, so it is switched off again on every play.
+        if (e.data === YouTube.PlayerState.PLAYING) {
+          void player.current?.getInternalPlayer()?.setOption('captions', 'track', {});
+        }
         setCurrentStatus(e.data);
         onStateChange?.(stateMap[e.data]);
       }}

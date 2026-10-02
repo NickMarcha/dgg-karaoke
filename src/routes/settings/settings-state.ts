@@ -63,6 +63,16 @@ export const ExcludedLanguagesSetting = new Setting<string[] | null>('EXCLUDED_L
 export const MobilePhoneModeSetting = new Setting<boolean | null>('MOBILE_PHONE_MODE_KEY', null);
 export const KeyboardHelpVisibilitySetting = new Setting<boolean>('keyboard-help-visibility', true);
 
+/** Scales every sound the game makes, from 0 to 1. A song's own `volume` still sets its level relative to others. */
+export const MasterVolumeSetting = new Setting<number>('master-volume', 1);
+/** What a menu row steps through. Rising, so wrapping around goes to silence rather than to full volume. */
+export const MasterVolumeSteps: readonly number[] = [0, 0.25, 0.5, 0.75, 1];
+export const formatVolume = (volume: number) => `${Math.round(volume * 100)}%`;
+
+/** When the song list starts a preview: once a song is opened, as soon as a tile is focused, or never. */
+export const SongPreviewModes = ['opened', 'browsing', 'off'] as const;
+export const SongPreviewSetting = new Setting<ValuesType<typeof SongPreviewModes>>('song-preview', 'opened');
+
 const initialInputLag = posthog.getFeatureFlagPayload?.(FeatureFlags.InitialInputLag);
 export const InputLagSetting = new Setting<milliseconds>(
   'INPUT_LAG_V2',
