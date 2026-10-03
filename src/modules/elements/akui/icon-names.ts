@@ -42,6 +42,7 @@ export const ICON_NAMES = [
   'ic:baseline-laptop',
   'ic:baseline-list',
   'ic:baseline-lock-open',
+  'ic:baseline-admin-panel-settings',
   'ic:baseline-logout',
   'ic:baseline-pause',
   'ic:baseline-people-alt',

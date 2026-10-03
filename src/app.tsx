@@ -31,6 +31,7 @@ const LazySongList = lazy(() =>
   import('~/routes/manage-songs/song-management').then((modules) => ({ default: modules.SongList })),
 );
 const LazyOnline = lazy(() => import('~/routes/online/online'));
+const LazyAdminPanel = lazy(() => import('~/routes/admin-panel/admin-panel'));
 const LazyHistory = lazy(() => import('~/routes/history/history-page'));
 const LazySetlist = lazy(() => import('~/routes/edit/setlists').then((modules) => ({ default: modules.default })));
 // import.meta.env.DEV is statically replaced at build time, so this whole branch (and the dev-screenshots
@@ -93,6 +94,11 @@ function App() {
                 <Route path={`${routePaths.ONLINE}/:section?`}>
                   <Suspense fallback={<PageLoader />}>
                     <LazyOnline />
+                  </Suspense>
+                </Route>
+                <Route path={routePaths.ADMIN}>
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyAdminPanel />
                   </Suspense>
                 </Route>
                 <Route path={routePaths.SELECT_INPUT} component={SelectInput} />

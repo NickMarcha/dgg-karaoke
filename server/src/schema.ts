@@ -12,7 +12,8 @@ export const onlineRooms = pgTable('online_rooms', {
   lastActivityAt: timestamp('last_activity_at', { withTimezone: true }).notNull(),
 });
 
-export const userRole = pgEnum('user_role', ['singer', 'admin']);
+/** A moderator looks after the songs; an admin also appoints moderators. */
+export const userRole = pgEnum('user_role', ['singer', 'moderator', 'admin']);
 export type UserRole = (typeof userRole.enumValues)[number];
 
 /** A destiny.gg account that has signed in at least once. */

@@ -8,7 +8,7 @@ import useSWR, { mutate } from 'swr';
 export interface Account {
   id: string;
   username: string;
-  role: 'singer' | 'admin';
+  role: 'singer' | 'moderator' | 'admin';
   /** The destiny.gg flair the name is coloured by, a class in `flairs.css`. */
   flair: string | null;
 }

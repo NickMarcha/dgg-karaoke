@@ -177,6 +177,9 @@ removes the name and country prompt and the rename problem.
 
 ### 4. Community songs
 
+Moderators do the reviewing. Admins appoint them on the admin page (`/admin/`), which this layer
+extends with the song queue and the song editor's moderator actions.
+
 Anyone signed in submits a song from the existing editor. It lands as
 unverified, visible in the song list under its own heading as upstream does
 today. Mods review, edit and publish it, or reject it with a reason. This

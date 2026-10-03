@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { Hono } from 'hono';
+import { type Context, Hono } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
@@ -10,10 +10,12 @@ import type { Database } from './db.js';
 import { type OnlineDirectory, ROOM_CODE_PATTERN } from './online/directory.js';
 import { fetchThroughProxy, ProxyRefused, proxyTarget } from './proxy.js';
 import type { SocketTickets } from './socket-tickets.js';
+import { RoleChangeRefused, Users } from './users.js';
 
 const SESSION_COOKIE = 'dgg_karaoke_session';
 
 const callbackSchema = z.object({ code: z.string().min(1), state: z.string().min(1) });
+const roleSchema = z.object({ role: z.enum(['singer', 'moderator']) });
 
 interface AppDeps {
   appOrigins: string[];
@@ -39,6 +41,12 @@ export function createApp({
   fetchImpl = fetch,
 }: AppDeps) {
   const app = new Hono();
+  const people = new Users(database);
+
+  const signedInUser = (context: Context) => {
+    const token = getCookie(context, SESSION_COOKIE);
+    return token ? auth.userForToken(token) : Promise.resolve(null);
+  };
 
   app.use('*', secureHeaders());
   app.use('*', cors({ origin: appOrigins, allowMethods: ['GET', 'OPTIONS'] }));
@@ -79,17 +87,41 @@ export function createApp({
     return context.json({ ok: true });
   });
 
-  app.get('/api/me', async (context) => {
-    const token = getCookie(context, SESSION_COOKIE);
-    return context.json({ user: token ? await auth.userForToken(token) : null, signInRequired });
-  });
+  app.get('/api/me', async (context) => context.json({ user: await signedInUser(context), signInRequired }));
 
   app.post('/api/socket-ticket', async (context) => {
-    const token = getCookie(context, SESSION_COOKIE);
-    const user = token ? await auth.userForToken(token) : null;
+    const user = await signedInUser(context);
     if (!user && !signInRequired) return context.json({ ticket: null });
     if (!user) return context.json({ error: 'Sign in with destiny.gg first.' }, 401);
     return context.json({ ticket: tickets.issue(user) });
+  });
+
+  // The admin page: appointing moderators. Admins themselves come from ADMIN_DGG_USERNAMES.
+  app.use('/api/admin/*', async (context, next) => {
+    const user = await signedInUser(context);
+    if (!user) return context.json({ error: 'Sign in with destiny.gg first.' }, 401);
+    if (user.role !== 'admin') return context.json({ error: 'This is for admins.' }, 403);
+    await next();
+  });
+
+  app.get('/api/admin/users', async (context) => {
+    const query = context.req.query('query')?.trim();
+    return context.json({ users: query ? await people.search(query) : await people.staff() });
+  });
+
+  app.post('/api/admin/users/:id/role', async (context) => {
+    const body = roleSchema.safeParse(await context.req.json().catch(() => null));
+    if (!body.success) return context.json({ error: 'The role must be singer or moderator.' }, 400);
+    const id = z.uuid().safeParse(context.req.param('id'));
+    if (!id.success) return context.json({ error: 'Nobody by that id has signed in.' }, 404);
+    try {
+      const user = await people.setRole(id.data, body.data.role);
+      if (!user) return context.json({ error: 'Nobody by that id has signed in.' }, 404);
+      return context.json({ user });
+    } catch (error) {
+      if (error instanceof RoleChangeRefused) return context.json({ error: error.message }, 409);
+      throw error;
+    }
   });
 
   app.get('/health', async (context) => {

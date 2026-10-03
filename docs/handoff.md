@@ -171,9 +171,10 @@ Layer 2 is pushed and live except for its visual baselines.
 - **Sign-in** (`3f78372f`): the tables above, `/api/auth/login`,
   `/api/auth/callback`, `/api/auth/logout`, `/api/me`, the `/auth/callback`
   page, and a toolbar button that becomes the flair-coloured name and a
-  sign-out button. Roles are `singer` and `admin`; reviewers come with layer
-  4. Sign-in is not yet required for anything; layers 3 and 4 make scores and
-  song submissions need it.
+  sign-out button. Roles are `singer`, `moderator` (appointed on `/admin/`)
+  and `admin`; what moderators may do comes with layer 4. Sign-in is required
+  for online rooms and phones (below); layers 3 and 4 make scores and song
+  submissions need it too.
 - **The look** (`f6b7d5eb`): destiny.gg's near-black canvas, `#0090ff` in place
   of orange, `#18191b` dialogs edged in `#43484e`, Inter and Poppins bundled,
   sentence case instead of all-caps, a "DGG Karaoke" wordmark beside
@@ -214,10 +215,13 @@ client could send another, though only from a signed-in account.
 
 Next:
 
-1. **An admin page for moderators**, asked for by the user: admins appoint
-   moderators, who manage songs (create, edit, review). Roles today are
-   `singer` and `admin`. The role management can be built now; managing
-   songs needs layer 4, which moves community songs into Postgres.
+1. **What moderators can do.** The admin page (`/admin/`, `src/routes/admin-panel`) appoints them:
+   an admin searches signed-in accounts and makes them moderators or singers again. Admins still
+   come only from `ADMIN_DGG_USERNAMES`, and the page refuses to change one; somebody must sign in
+   once before they can be found. The role is read on every request, so a change applies at once.
+   Moderators can do nothing yet: managing songs (create, edit, review) is layer 4, which moves
+   community songs into Postgres and should add its tabs to this page. Upstream's password admin page
+   (`src/routes/admin`) is still unrouted and goes when layer 4 replaces it.
 2. On the live site: sign in and out (Safari too), sing without an account,
    a phone microphone, and joining an online room from a phone with "Join with
    code".
