@@ -41,7 +41,13 @@ class InputSourceListManager {
         if (this.subscribed.has(source.inputName)) return;
         this.subscribed.add(source.inputName);
         source.subscribeToListChange(async () => {
-          this.inputList[source.inputName].list = await source.getInputs();
+          const previous = this.inputList[source.inputName].list;
+          const list = await source.getInputs();
+          this.inputList[source.inputName].list = list;
+          // Unchanged, it is not news: every listener reopens the microphone, which can prompt again
+          if (list.map(({ id, label }) => id + label).join() === previous.map(({ id, label }) => id + label).join()) {
+            return;
+          }
           events.inputListChanged.dispatch(false);
         });
       });

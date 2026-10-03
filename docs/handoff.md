@@ -187,23 +187,21 @@ Layer 2 is pushed and live except for its visual baselines.
 - **Room codes** (`cfa1582b`): `RoomCode` draws digits in the accent and
   letters in the default colour. The code input itself cannot.
 
-**Firefox microphone loop, reported at the end of the session.** In a Firefox
-private window, signed in, creating a solo online room and choosing "This
-computer's microphone" asked for the microphone over and over, and allowing
-did not end it. Not reproduced: Playwright cannot click Firefox's own prompt.
-The likely cause, fixed in the last commit but **not verified in Firefox**:
-`MicrophoneInputSource.getInputs` asks once for the microphone and then once
-per audio device (an exact `deviceId`, to read its channel count), and nothing
-stopped it from running several rounds at once. `loadMics` starts a round
-whenever the list is still empty, and every finished round added another
-`devicechange` listener, each of which starts a round of its own. Firefox
-fires `devicechange` once permission is granted, and a private window cannot
-remember a per-device grant, so each round prompts again. Overlapping callers
-now share one round, and each source subscribes to device changes once.
-The probe streams are still never stopped, as upstream left them; stopping
-them might make Firefox ask again when the game opens the microphone, so test
-that before changing it. If the loop persists, count the prompts and note
-which device each one names.
+**Firefox microphone loop.** In a Firefox private window, choosing "This
+computer's microphone" asked for the microphone over and over. The first fix
+(`a1d78402`, overlapping rounds share one) went live and did not end it. The
+cycle: every round of reading the list asked for each device again, a grant
+makes Firefox fire `devicechange`, which started another round, and every new
+list restarted the monitoring pipeline, which asked again. In Playwright's
+Firefox, with a `devicechange` dispatched after each grant to stand in for
+Firefox's, the live site made 3412 requests in 8 seconds; with the second fix,
+6. Now the bare permission request runs once per page, each device's channel
+count is read once (keyed by id and label), and an unchanged list is not
+announced. **Not yet confirmed by the user in Firefox.** The probe streams are
+still never stopped, as upstream left them; stopping them might make Firefox
+ask again when the game opens the microphone. `MicInput` asks with
+`{ deviceId, exact: true }`, which is not a valid constraint, so it only
+prefers the device; left alone for now.
 
 Next:
 

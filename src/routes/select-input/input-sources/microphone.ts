@@ -50,6 +50,9 @@ export class MicrophoneInputSource {
     null;
 
   private static pending: Promise<InputSource[]> | null = null;
+  private static granted = false;
+  /** Channel counts already read, by device and label: reading one opens the device, which can prompt. */
+  private static channelCounts = new Map<string, number>();
 
   /**
    * Overlapping callers share one round of requests: Firefox in a private window asks again for
@@ -67,7 +70,12 @@ export class MicrophoneInputSource {
     let devices: MediaDeviceInfo[] = [];
 
     try {
-      await userMediaService.getUserMedia({ audio: true, video: false });
+      // Once per page: a grant makes Firefox fire `devicechange`, and asking again on every one of
+      // those prompts again in a private window, forever.
+      if (!MicrophoneInputSource.granted) {
+        await userMediaService.getUserMedia({ audio: true, video: false });
+        MicrophoneInputSource.granted = true;
+      }
 
       devices = await userMediaService.enumerateDevices();
     } catch (e) {
@@ -79,21 +87,7 @@ export class MicrophoneInputSource {
       devices
         .filter((device) => device.kind === 'audioinput')
         .map(async (device) => {
-          // device.getCapabilities() stopped returning channelCount, so instead we have to get
-          // the stream and check the track's settings to get the channel count
-          let channels = 1;
-          try {
-            const stream = await userMediaService.getUserMedia({
-              audio: {
-                deviceId: { exact: device.deviceId },
-                echoCancellation: { exact: false },
-              },
-              video: false,
-            });
-            channels = stream.getAudioTracks()[0].getSettings().channelCount ?? 1;
-          } catch (e) {
-            console.warn(e);
-          }
+          const channels = await MicrophoneInputSource.readChannelCount(device);
 
           return range(0, channels).map((channel) => ({
             label: mapInputName(device.label, channel, channels),
@@ -108,6 +102,32 @@ export class MicrophoneInputSource {
     MicrophoneInputSource.inputList = inputList.flat();
 
     return MicrophoneInputSource.inputList;
+  };
+
+  private static readChannelCount = async (device: MediaDeviceInfo) => {
+    // The label is part of the key because Chrome's `default` keeps its id when it moves to another device
+    const key = `${device.deviceId};${device.label}`;
+    const known = MicrophoneInputSource.channelCounts.get(key);
+    if (known !== undefined) return known;
+
+    // device.getCapabilities() stopped returning channelCount, so instead we have to get
+    // the stream and check the track's settings to get the channel count
+    let channels = 1;
+    try {
+      const stream = await userMediaService.getUserMedia({
+        audio: {
+          deviceId: { exact: device.deviceId },
+          echoCancellation: { exact: false },
+        },
+        video: false,
+      });
+      channels = stream.getAudioTracks()[0].getSettings().channelCount ?? 1;
+    } catch (e) {
+      console.warn(e);
+    }
+    MicrophoneInputSource.channelCounts.set(key, channels);
+
+    return channels;
   };
 
   public static subscribeToListChange = (callback: () => void) =>
