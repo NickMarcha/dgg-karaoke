@@ -40,7 +40,9 @@ export default class Renderer {
       console.error(`Failed to prerender route: ${route}`, error);
     }
 
-    const html = await page.content();
+    // Vite adds modulepreload links at runtime with absolute URLs, which here point at this
+    // temporary server; saved as-is, visitors' browsers would try to fetch from their own localhost.
+    const html = (await page.content()).replaceAll(`http://localhost:${port}/`, '/');
 
     return { route, html };
   }
