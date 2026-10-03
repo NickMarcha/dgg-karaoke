@@ -60,6 +60,19 @@ pre-commit hook runs both when `server/` changes.
    API stack's environment for layer 2. Redirect URI
    `https://dgg-karaoke.netlify.app/auth/callback`.
 
+## Noted for later
+
+- **The calibration screen's purpose is unclear.** Settings → Calibration
+  ("Sync video with sound") lines the picture up with the sound from the TV or
+  speakers and applies that to every singer. It measures no microphone, but
+  users read it as a mic test (the user did). Its wording should say what it
+  syncs, and that microphones are handled separately.
+- **Phones are compensated by formula, not measured.** A phone gets 180 ms for
+  pitch detection, 25 ms for batching and half its measured round trip
+  (`remote-mic-input.ts`). A real measurement would have the game play clicks
+  over the speakers and each phone report when it heard them. Worth building if
+  singers still find phones off after the formula.
+
 ## True but not visible in the code
 
 - **The server never sees this repository.** Komodo has no shallow clone and
