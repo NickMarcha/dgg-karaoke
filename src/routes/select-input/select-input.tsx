@@ -10,7 +10,7 @@ function SelectInput() {
   return (
     <MenuWithLogo>
       <Helmet>
-        <title>Select Input | AllKaraoke.Party - Free Online Karaoke Party Game</title>
+        <title>Select Input | DGG Karaoke</title>
       </Helmet>
       <SelectInputView onFinish={() => navigate('menu/')} closeButtonText={'Go to main menu'} />
     </MenuWithLogo>

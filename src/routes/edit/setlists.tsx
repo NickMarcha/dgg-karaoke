@@ -46,7 +46,7 @@ export default function Setlists() {
   return (
     <>
       <Helmet>
-        <title>Song List | AllKaraoke.Party - Free Online Karaoke Party Game</title>
+        <title>Song List | DGG Karaoke</title>
       </Helmet>
       <NoPrerender>
         <Container>

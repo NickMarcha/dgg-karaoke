@@ -114,22 +114,22 @@ export const Colours: StoryFn = () => (
       description={
         <>
           Four roles, and every way the app reports state uses them: a validation error, a dropped mic, the remote
-          mic&rsquo;s connection dot, a browser advisory. <code>warning</code> is amber rather than orange because{' '}
-          <code>active</code> is orange and means <em>focused</em> — the orange these used to be was close enough that
-          an unstable-mic icon read as a focused control.
+          mic&rsquo;s connection dot, a browser advisory. None of them may look like <code>active</code>, which is
+          destiny.gg&rsquo;s blue and means <em>focused</em>: across a room an unstable-mic icon must not read as a
+          focused control. That is why <code>info</code> is violet rather than blue.
         </>
       }>
       <Row name="text-danger" meta="broken, or about to destroy something">
-        <ContrastReadout className="text-danger" on="bg-slate-800" />
+        <ContrastReadout className="text-danger" on="bg-surface" />
       </Row>
       <Row name="text-warning" meta="degraded but still working">
-        <ContrastReadout className="text-warning" on="bg-slate-800" />
+        <ContrastReadout className="text-warning" on="bg-surface" />
       </Row>
       <Row name="text-success" meta="confirmed good">
-        <ContrastReadout className="text-success" on="bg-slate-800" />
+        <ContrastReadout className="text-success" on="bg-surface" />
       </Row>
       <Row name="text-info" meta="in progress, neither yet">
-        <ContrastReadout className="text-info" on="bg-slate-800" />
+        <ContrastReadout className="text-info" on="bg-surface" />
       </Row>
       <Row name="statusSurface[role]" meta="fill + border, no text colour">
         <div className="flex flex-wrap gap-2">

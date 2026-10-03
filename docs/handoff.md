@@ -152,30 +152,41 @@ for layer 2. Keep secret values out of documentation and diagnostic output.
 
 ## Next
 
-Layer 2 is under way, uncommitted. **Sign-in is built**: the API's `users`,
-`sessions` and `oauth_login_transactions` tables (migration `0001_sign_in`),
+Layer 2 is built and committed, not yet pushed.
+
+**Sign-in** (`3f78372f`): the API's `users`, `sessions` and
+`oauth_login_transactions` tables (migration `0001_sign_in`),
 `/api/auth/login`, `/api/auth/callback`, `/api/auth/logout` and `/api/me`, the
 `/auth/callback` page, and a sign-in button in the toolbar that becomes the
 flair-coloured username and a sign-out button. Roles are `singer` and `admin`;
-reviewers come with layer 4. It was checked locally in headless Chromium against
-the stand-in: sign-in, the flair colour, a reload, sign-out and a used state.
+reviewers come with layer 4. Checked locally in headless Chromium against the
+stand-in. The site proxies `/api/*` to the API (Netlify in production, Vite
+locally) so the session cookie is first-party and Safari keeps it;
+`docs/deployment.md` explains it. The user has set the `DGG_*` values in
+Komodo.
 
-One departure from DGG Radio: the site proxies `/api/*` to the API (Netlify in
-production, Vite locally), so the session cookie is first-party and Safari keeps
-it. `docs/deployment.md` explains it.
+**The look**: destiny.gg's near-black canvas with its blue let in from one
+corner, `#0090ff` as the accent in place of orange, `#18191b` dialogs edged in
+`#43484e`, Inter and Poppins bundled through `@fontsource`, sentence case
+instead of all-caps buttons and headings, and a "DGG Karaoke" wordmark beside
+upstream's microphones. `info` became violet so no status reads as focus. Page
+titles and the PWA manifest say DGG Karaoke; the landing page credits
+AllKaraoke. `using-tailwind` and the Foundations stories describe the new
+tokens.
 
-Before deploying it:
+Next:
 
-1. Add `DGG_REDIRECT_URI=https://dgg-karaoke.netlify.app/auth/callback` to
-   the Komodo stack's environment, and confirm `DGG_CLIENT_ID`,
-   `DGG_CLIENT_SECRET` and `ADMIN_DGG_USERNAMES` are there. Without them the
-   API will not start.
-2. After the deploy, sign in on the live site, in Safari too.
-
-Still to do in layer 2: the retheme (step 4 of the old list: read
-`using-tailwind`, tokens and canvas colours first, then the logo and menu
-backgrounds, keep the Beta badge), then refresh the visual baselines. The logo
-still says AllKaraoke.
+1. Push, then on the live site: sign in (Safari too), sign out, sing without an
+   account, a phone microphone and an online room.
+2. **Refresh the visual baselines.** All 291 (`tests/visual-regression`,
+   `tests/storybook`) are Linux renders of the old look, and upstream's CI
+   that produced them is gone. Regenerating on Windows only adds `-win32`
+   copies, so it needs a Linux Playwright container (or `sage-dev`) with the
+   API stack reachable.
+3. Left as they were: the toolbar covers the right end of the song list's
+   filter row on wide screens (it did before; the account button adds a
+   little), the Beta badge sits under the toolbar on a phone, and the menu
+   footer's "Get in touch" links and the GitHub ribbon are still upstream's.
 
 `pnpm lint` fails on `.agents/skills/d3-viz/assets/interactive-template.jsx`,
 a skill asset that arrived with `9b9d6c64`, not on app code. Excluding

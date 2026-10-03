@@ -6,8 +6,11 @@ module.exports = {
   theme: {
     // Replaces Tailwind's stacks rather than extending them, so `font-sans` means the game's font
     // instead of the framework's default — index.css applies these rather than repeating them.
+    // destiny.gg's pair: Inter for everything read, Poppins for headings and the logo. Both are
+    // bundled (main.tsx), so nothing is fetched from a font service.
     fontFamily: {
-      sans: ['Seravek', 'Gill Sans Nova', 'Ubuntu', 'Calibri', 'DejaVu Sans', 'source-sans-pro', 'sans-serif'],
+      sans: ['Inter Variable', 'system-ui', 'sans-serif'],
+      display: ['Poppins', 'Inter Variable', 'system-ui', 'sans-serif'],
       mono: ['source-code-pro', 'Menlo', 'Monaco', 'Consolas', 'Courier New', 'monospace'],
     },
     fontSize: {
@@ -62,9 +65,16 @@ module.exports = {
         toast: '100', // connection status — must outrank even a modal
       },
       boxShadow: {
-        focusable: 'inset 0 0 0 1px rgba(255,165,0,.25), inset 0px 0px 40px 2px rgba(0,0,0,0.2)',
+        focusable: 'inset 0 0 0 1px rgba(0,144,255,.3), inset 0px 0px 40px 2px rgba(0,0,0,0.2)',
       },
       colors: {
+        /**
+         * destiny.gg's neutrals: the near-black page, the opaque surface a dialog is built from, and
+         * the edge drawn around it. In-game surfaces stay translucent black over the video instead.
+         */
+        canvas: '#111113',
+        surface: '#18191b',
+        line: '#43484e',
         default: styles.colors.text.default,
         inactive: styles.colors.text.inactive,
         text: {
@@ -77,9 +87,9 @@ module.exports = {
          * Status. Four roles, each one value used as text, icon fill, border and background — so
          * they are colours rather than a composed class string.
          *
-         * `warning` is amber, not orange, on purpose: `active` is orange and means *focused*, and
-         * the orange these used to be (`#f89400`) was close enough to it that an unstable-mic icon
-         * read as a focused control. Amber is far enough away to tell apart across a room.
+         * None of them may look like `active`, which means *focused*: across a room, an unstable-mic
+         * icon must not read as a focused control. `active` is destiny.gg's blue, so `info` is violet
+         * rather than the blue it was upstream.
          *
          * These are the `-400` steps of Tailwind's own ramps, which is where the contrast sits on
          * both grounds the app uses — the dialog slate and the near-black in-game card. The `error`
@@ -88,7 +98,7 @@ module.exports = {
         danger: 'oklch(70.4% 0.191 22.216)', // red-400
         warning: 'oklch(82.8% 0.189 84.429)', // amber-400
         success: 'oklch(79.2% 0.209 151.711)', // green-400
-        info: 'oklch(70.7% 0.165 254.624)', // blue-400
+        info: 'oklch(70.2% 0.183 293.541)', // violet-400
         active: styles.colors.text.active,
       },
       keyframes: {

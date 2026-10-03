@@ -30,7 +30,7 @@ export const ButtonBase = twx(Box)((props) => {
   const disabled = props['disabled'] || props['data-disabled'];
 
   return [
-    `typography ${interactiveSurface} pointer-events-auto relative cursor-pointer flex-row! justify-center gap-2 border-0 px-3 font-bold uppercase duration-300`,
+    `typography ${interactiveSurface} pointer-events-auto relative cursor-pointer flex-row! justify-center gap-2 border-0 px-3 font-semibold duration-300`,
     !isE2E() && props['data-focused'] && !props['data-subtle-focus']
       ? 'bg-active! text-shadow-legible scale-[1.025]'
       : '',

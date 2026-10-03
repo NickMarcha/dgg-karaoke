@@ -1,11 +1,11 @@
 {
   "lang": "en-us",
-  "name": "AllKaraoke.Party",
-  "short_name": "AllKaraoke",
-  "description": "Free online Karaoke. Use your phone as a microphone (or SingStar mics). An open source game, similar to UltraStar, with over 400 songs built-in and counting",
+  "name": "DGG Karaoke",
+  "short_name": "DGG Karaoke",
+  "description": "Karaoke for the destiny.gg community, built on AllKaraoke. Use your phone as a microphone, or SingStar mics.",
   "start_url": "/",
-  "background_color": "rgb(0, 153, 255)",
-  "theme_color": "#ffa500",
+  "background_color": "#111113",
+  "theme_color": "#111113",
   "orientation": "landscape",
   "display": "fullscreen",
   "icons": [

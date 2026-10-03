@@ -17,7 +17,8 @@ export default function Box<T extends ElementType = 'div'>({ as, className, chil
   return (
     <Component
       className={cn(
-        `box-border flex flex-col items-center justify-center rounded-xl bg-black/40 shadow-[inset_0px_0px_40px_2px_rgba(0,0,0,0.2)]`,
+        // The inset hairline is the card's edge: on the near-black canvas the fill alone barely shows.
+        `box-border flex flex-col items-center justify-center rounded-xl bg-black/40 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08),inset_0px_0px_40px_2px_rgba(0,0,0,0.2)]`,
         className,
       )}
       {...props}>

@@ -31,10 +31,10 @@ function MenuTile({ label, hint, displayLabel, variant = 'secondary', className,
       size={primary ? 'large' : 'regular'}
       // `h-full` beats the fixed height that comes with the akui size, `justify-start` undoes its
       // centring — the tile's label sits in its top-left corner, not in the middle of the box. The
-      // `[data-focused]` rule re-colours the hint: focus turns the whole tile orange, and a dimmed
-      // white line on that is unreadable.
+      // `[data-focused]` rule re-colours the hint: focus fills the whole tile with the accent, and
+      // the dimmed white line it rests in is unreadable on that.
       className={cn(
-        "h-full min-h-20 items-start! justify-start! px-4 py-3 text-left max-lg:min-h-16 sm:px-6 sm:py-6 [&[data-focused='true']_[data-hint]]:text-black/60",
+        "h-full min-h-20 items-start! justify-start! px-4 py-3 text-left max-lg:min-h-16 sm:px-6 sm:py-6 [&[data-focused='true']_[data-hint]]:text-white/85",
         className,
       )}>
       <span className="flex w-full min-w-0 flex-col items-start gap-1 sm:gap-2">
@@ -43,10 +43,7 @@ function MenuTile({ label, hint, displayLabel, variant = 'secondary', className,
         </span>
         <span
           data-hint
-          className={cn(
-            'w-full truncate font-normal tracking-widest normal-case max-lg:hidden',
-            primary ? 'text-md' : 'text-sm',
-          )}>
+          className={cn('w-full truncate font-normal normal-case max-lg:hidden', primary ? 'text-md' : 'text-sm')}>
           {hint}
         </span>
       </span>

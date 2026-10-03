@@ -94,7 +94,7 @@ function Welcome() {
   return (
     <LayoutGame>
       <Helmet>
-        <title>Main Menu | AllKaraoke.Party - Free Online Karaoke Party Game</title>
+        <title>Main Menu | DGG Karaoke</title>
         <link rel="preload" href="/songs/index.json" as="fetch" type="application/json" crossOrigin="anonymous" />
         <link
           rel="preload"

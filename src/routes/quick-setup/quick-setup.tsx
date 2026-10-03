@@ -44,7 +44,7 @@ function QuickSetup() {
   return (
     <>
       <Helmet>
-        <title>Select Input | AllKaraoke.Party - Free Online Karaoke Party Game</title>
+        <title>Select Input | DGG Karaoke</title>
       </Helmet>
       {needsMobileModeDecision ? (
         // `enabled` renders nothing for the tick it takes the effect above to flip the setting, and

@@ -43,7 +43,7 @@
 }
 
 @utility subtle-focus {
-  box-shadow: inset 0px 0px 0px 2px orange;
+  box-shadow: inset 0px 0px 0px 2px theme('colors.active');
 }
 
 @utility animate-skeleton {
@@ -196,6 +196,8 @@ input {
 }
 
 html {
+  background: theme('colors.canvas');
+  color-scheme: dark;
   font-size: 16px;
   @media (min-width: 3840px) {
     font-size: 32px;
@@ -341,11 +343,11 @@ code {
 }
 
 .menu-neighbour-glow [data-focused]::before {
-  background-image: linear-gradient(to bottom, rgb(255 165 0 / 16%), transparent 55%);
+  background-image: linear-gradient(to bottom, rgb(0 144 255 / 16%), transparent 55%);
 }
 
 .menu-neighbour-glow [data-focused]::after {
-  background-image: linear-gradient(to top, rgb(255 165 0 / 16%), transparent 55%);
+  background-image: linear-gradient(to top, rgb(0 144 255 / 16%), transparent 55%);
 }
 
 .menu-neighbour-glow [data-next-focusable='true']::before {

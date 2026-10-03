@@ -17,6 +17,10 @@ import { v4 } from 'uuid';
 
 import App from '~/app';
 
+import '@fontsource-variable/inter';
+
+import '@fontsource/poppins/600.css';
+import '@fontsource/poppins/700.css';
 import '~/index.css';
 import NoPrerender from '~/modules/elements/no-prerender';
 import { normalizeSting } from '~/modules/songs/utils/get-song-id';

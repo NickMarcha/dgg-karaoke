@@ -115,11 +115,11 @@ const styles = {
       },
     },
     text: {
-      active: 'rgb(255, 165, 0)',
-      // Tailwind's `slate-100`. Slightly off pure white: it's the colour the `typography` utility
-      // has always rendered, and now the single source both that utility and `text-default` read
-      // from, so "default text colour" has exactly one value across canvas and DOM.
-      default: 'oklch(96.8% 0.007 247.896)',
+      // destiny.gg's one accent (docs/plans/dgg-karaoke.md, "The look"): focus, headings, emphasis.
+      active: 'rgb(0, 144, 255)',
+      // destiny.gg's main text, slightly off white. The single source both the `typography` utility
+      // and `text-default` read from, so the default text colour has one value across canvas and DOM.
+      default: '#edeef0',
       // Plain white at 70%, rather than a fixed grey: de-emphasised text sits on top of whatever the
       // screen is showing — the app's blue, a dark card, the song's own video — and letting the
       // backdrop tint it keeps it in key with each. Still a clear step below `default`, which is

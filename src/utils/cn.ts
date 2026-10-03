@@ -45,10 +45,14 @@ export const TEXT_COLOR_UTILITIES = ['typography'] as const;
  */
 export const TEXT_STROKE_UTILITIES = ['stroke-text'] as const;
 
+/** `font-display` (tailwind.config.js) is a family, so `font-display font-sans` keeps only one. */
+export const FONT_FAMILIES = ['display'] as const;
+
 const twMerge = extendTailwindMerge<'text-stroke'>({
   extend: {
     classGroups: {
       animate: [{ animate: [...CUSTOM_ANIMATIONS] }],
+      'font-family': [{ font: [...FONT_FAMILIES] }],
       shadow: [...CUSTOM_BOX_SHADOWS],
       'text-color': [...TEXT_COLOR_UTILITIES],
       'text-stroke': [...TEXT_STROKE_UTILITIES],

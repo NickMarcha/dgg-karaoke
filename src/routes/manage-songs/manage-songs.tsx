@@ -17,7 +17,7 @@ function ManageSongs() {
   return (
     <MenuWithLogo>
       <Helmet>
-        <title>Manage Songs | AllKaraoke.Party - Free Online Karaoke Party Game</title>
+        <title>Manage Songs | DGG Karaoke</title>
       </Helmet>
       <Menu.Header>Manage Songs</Menu.Header>
       <KeyboardNavContext value={register}>

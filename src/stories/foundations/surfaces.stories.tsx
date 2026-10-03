@@ -20,9 +20,10 @@ export const Surfaces: StoryFn = () => (
     description={
       <>
         Two separate languages, and the split is the thing to understand. In-game surfaces are translucent black: they
-        sit <em>in</em> the scene and let the song video through. Dialog surfaces are opaque slate: they sit{' '}
-        <em>on top of</em> the scene and have to stay readable over whatever is behind them. Everything below is shown
-        over a deliberately busy ground, because judging a translucent fill against flat grey tells you nothing.
+        sit <em>in</em> the scene and let the song video through. Dialog surfaces are destiny.gg&rsquo;s opaque surface:
+        they sit <em>on top of</em> the scene and have to stay readable over whatever is behind them. Everything below
+        is shown over a deliberately busy ground, because judging a translucent fill against flat grey tells you
+        nothing.
       </>
     }>
     <StorySection
@@ -56,7 +57,7 @@ export const Surfaces: StoryFn = () => (
       description={
         <>
           <code>interactiveSurface</code> — the resting state of anything the player can act on. The fill is a step
-          above the card underneath, and the 1px orange hairline is the actual tell: on a TV across the room it is what
+          above the card underneath, and the 1px blue hairline is the actual tell: on a TV across the room it is what
           separates &ldquo;you can press this&rdquo; from &ldquo;this is just a panel&rdquo;. Anything interactive
           should carry it, and anything carrying it should be interactive.
         </>
@@ -75,7 +76,7 @@ export const Surfaces: StoryFn = () => (
       title="Interactive states"
       description={
         <>
-          Four states on top of the resting one. <code>interactiveFocus</code> is the quiet highlight — an inset orange
+          Four states on top of the resting one. <code>interactiveFocus</code> is the quiet highlight — an inset blue
           ring for hover, and for keyboard focus on a control too big or too colourful to fill. Full keyboard focus
           instead floods the control with <code>bg-active</code>, which is what the TV needs from across a room.{' '}
           <code>inactiveSurface</code> is switched off but still operable; <code>disabled</code> is greyed out and
@@ -109,9 +110,10 @@ export const Surfaces: StoryFn = () => (
       title="Dialog surface"
       description={
         <>
-          <code>dialogSurface</code> — opaque slate plus a hairline border. Used by the modal <code>Menu</code>, the{' '}
-          <code>Select</code> popup, the bottom sheet, the lobby card and the expanded song preview. The border is what
-          reads as the edge once the fill stops contrasting with the scrim behind it.
+          <code>dialogSurface</code> — destiny.gg&rsquo;s opaque <code>bg-surface</code> with its{' '}
+          <code>border-line</code> edge. Used by the modal <code>Menu</code>, the <code>Select</code> popup, the bottom
+          sheet, the lobby card and the expanded song preview. The border is what reads as the edge once the fill stops
+          contrasting with the scrim behind it.
         </>
       }>
       <BusyGround>

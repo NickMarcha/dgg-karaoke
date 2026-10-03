@@ -69,7 +69,7 @@ function Online() {
   return (
     <>
       <Helmet>
-        <title>Sing Online | AllKaraoke.Party - Free Online Karaoke Party Game</title>
+        <title>Sing Online | DGG Karaoke</title>
       </Helmet>
       {/* Every online singer brings their own device, so there's nothing for a phone to connect to */}
       <NoRemoteMics>

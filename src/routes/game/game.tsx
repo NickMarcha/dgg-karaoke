@@ -42,7 +42,7 @@ function Game() {
   return (
     <>
       <Helmet>
-        <title>Game | AllKaraoke.Party - Free Online Karaoke Party Game</title>
+        <title>Game | DGG Karaoke</title>
       </Helmet>
       <NoPrerender>
         {singSetup ? (

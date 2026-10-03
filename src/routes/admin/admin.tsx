@@ -53,7 +53,7 @@ export default function Admin() {
   return (
     <>
       <Helmet>
-        <title>Admin | AllKaraoke.Party</title>
+        <title>Admin | DGG Karaoke</title>
       </Helmet>
       <NoPrerender>
         <main className="min-h-screen py-4 md:py-8">

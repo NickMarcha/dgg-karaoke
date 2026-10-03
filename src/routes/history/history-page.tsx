@@ -17,7 +17,7 @@ function HistoryPage() {
   return (
     <>
       <Helmet>
-        <title>History | AllKaraoke.Party</title>
+        <title>History | DGG Karaoke</title>
       </Helmet>
       <HistoryPageView
         groups={groups}

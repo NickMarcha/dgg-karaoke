@@ -37,11 +37,12 @@ export const Typography: StoryFn = () => (
     title="Typography"
     description={
       <>
-        One family: Seravek, then Gill Sans Nova, Ubuntu, Calibri. It is a token — <code>theme.fontFamily.sans</code> —
-        and <code>index.css</code> applies it to <code>body</code> rather than restating the stack, so{' '}
-        <code>font-sans</code> means the game&rsquo;s font and not Tailwind&rsquo;s default. <code>font-mono</code> is
-        the same arrangement for code. The root is 16px, doubling to 32px above 3840px so the game stays readable across
-        the room on a 4K TV.
+        destiny.gg&rsquo;s pair, bundled rather than fetched: Inter for everything read, Poppins (
+        <code>font-display</code>) for menu headings and the logo. Both are tokens in <code>theme.fontFamily</code>, and{' '}
+        <code>index.css</code> applies <code>font-sans</code> to <code>body</code> rather than restating the stack.{' '}
+        <code>font-mono</code> is the same arrangement for code. Headings and buttons are sentence case; weight and size
+        carry the emphasis. The root is 16px, doubling to 32px above 3840px so the game stays readable across the room
+        on a 4K TV.
       </>
     }>
     <StorySection

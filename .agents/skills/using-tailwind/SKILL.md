@@ -46,12 +46,16 @@ Semantic tokens only — never a raw Tailwind palette shade for these jobs.
 | token | meaning |
 | --- | --- |
 | `text-default` | body text. What `typography` applies |
-| `text-active` | **focus**, headings, emphasis. Orange |
+| `text-active` | **focus**, headings, emphasis. destiny.gg's blue, `#0090ff` |
 | `text-inactive` | present but not current — the lyric line not being sung |
 | `danger` / `warning` / `success` / `info` | the four status roles |
 
-`warning` is amber, not orange, because orange already means *focused*. Don't reintroduce an orange
-warning.
+No status role may look like `active`, which means *focused*. `info` is violet rather than blue for
+that reason, now that `active` is blue. Don't reintroduce a blue status colour.
+
+The neutrals are destiny.gg's: `bg-canvas` is the page, `bg-surface` the opaque dialog fill and
+`border-line` its edge. The look follows `styles.md` in DGG Radio: a near-black canvas, one blue
+accent, a glow only on the one featured thing.
 
 Status appears as `text-*`, `bg-*`, `border-*` and `fill-*`. For a panel, use `statusSurface[role]`
 from `akui/surfaces` — fill and border, deliberately no text colour, so body copy inside stays
@@ -69,15 +73,16 @@ Headings have no bare-element sizes; an `<h2>` is body-sized until you give it a
 Use `Menu.Header` for a real menu heading. Pick the element for document structure and the size with
 a class.
 
-`font-sans` and `font-mono` are the project's stacks — safe to use, unlike before when `font-sans`
-emitted Tailwind's default.
+`font-sans` is Inter and `font-display` is Poppins, both bundled through `@fontsource` in
+`main.tsx`. `Menu.Header` and the logo use `font-display`; everything else is Inter. Headings and
+buttons are sentence case, never `uppercase`: weight and size carry the emphasis.
 
 ## Surfaces
 
-Translucent black for in-game surfaces (they sit *in* the scene, over the song video); opaque slate
-for dialogs (they sit *on top of* it and must stay readable).
+Translucent black for in-game surfaces (they sit *in* the scene, over the song video); opaque
+`surface` for dialogs (they sit *on top of* it and must stay readable).
 
-- `Box` → `bg-black/40`, the default card
+- `Box` → `bg-black/40` with a faint white inset hairline, the default card
 - `bg-black/55` → one step up: interactive things, tooltips, a picked-out row
 - `bg-black/75` → bars and toolbars
 - `dialogSurface` → modal `Menu`, `Select` popup, bottom sheet, lobby card
@@ -90,7 +95,7 @@ that same edge on hover — a pair, not two weights.
 
 From `akui/surfaces`, and `ButtonBase` is the reference implementation:
 
-- `interactiveSurface` — resting. Fill plus the 1px orange hairline that says a thing can be
+- `interactiveSurface` — resting. Fill plus the 1px blue hairline that says a thing can be
   pressed. **Anything interactive should carry it, and anything carrying it should be interactive.**
 - `interactiveFocus` — the quiet inset ring, for hover and for focus on a control too big to flood
 - `bg-active` — full keyboard focus, which is what a TV needs from across a room

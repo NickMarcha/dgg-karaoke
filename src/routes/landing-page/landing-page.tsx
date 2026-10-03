@@ -74,7 +74,7 @@ function LandingPage() {
   return (
     <>
       <Helmet>
-        <title>AllKaraoke.Party - Free Online Karaoke Party Game</title>
+        <title>DGG Karaoke - karaoke for the destiny.gg community</title>
       </Helmet>
       {/* `min-h-dvh` and not `h-dvh`: unlike the menu, this screen has a paragraph and a card of
           copy in it, so pinning it to the viewport would squeeze those rather than the gaps. It
@@ -95,11 +95,11 @@ function LandingPage() {
             <Box
               className={`${MenuViewTransition.SING_A_SONG} flex-1 items-stretch justify-start gap-4 p-4 lg:flex-row lg:gap-6 lg:p-6`}>
               <div className="flex min-w-0 flex-1 flex-col gap-6">
-                <Menu.Header>Free karaoke party game</Menu.Header>
+                <Menu.Header>Karaoke for the destiny.gg community</Menu.Header>
                 <Typography className="text-md text-justify">
-                  <strong>AllKaraoke</strong> is a free online karaoke game inspired by PlayStation`s{' '}
-                  <strong>SingStar</strong>. Sing along to your favorite songs and compete with your friends, all
-                  through the browser!
+                  <strong>DGG Karaoke</strong> is built on <strong>AllKaraoke</strong>, the free online karaoke game
+                  inspired by PlayStation`s <strong>SingStar</strong>. Sing along to your favorite songs and compete
+                  with your friends, all through the browser!
                 </Typography>
 
                 <ul className="text-md flex flex-col gap-1.5">
@@ -165,7 +165,7 @@ function LandingPage() {
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <div className="flex items-center gap-3">
                   <Chip variant="orange">Preview</Chip>
-                  <Typography className="text-md font-bold uppercase">Sing Online</Typography>
+                  <Typography className="text-md font-semibold">Sing online</Typography>
                 </div>
                 <Typography className="text-sm">
                   Friends not in the room? Host a game they join from their own browser — same songs, same scoring.
@@ -214,7 +214,7 @@ function LandingPage() {
 
 const Screenshot = twx.img`shadow-5 aspect-video w-full rounded-md border-1 border-black object-cover`;
 
-// Orange rather than the app's usual dark button: this is the only screen with a single thing it
+// The accent rather than the app's usual dark button: this is the only screen with a single thing it
 // wants the visitor to do, and every other surface here is already a dark card.
 const PrimaryCta = twx(ButtonLink)`bg-active! text-shadow-legible w-full`;
 const SecondaryCta = twx(ButtonLink)`subtle-focus w-full`;

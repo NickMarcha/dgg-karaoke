@@ -72,7 +72,7 @@ function Settings() {
   return (
     <MenuWithLogo>
       <Helmet>
-        <title>Settings | AllKaraoke.Party - Free Online Karaoke Party Game</title>
+        <title>Settings | DGG Karaoke</title>
       </Helmet>
       <Menu.Header>Settings</Menu.Header>
       <KeyboardNavContext value={register}>

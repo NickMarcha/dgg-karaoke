@@ -17,21 +17,9 @@ export default function Logo(props: ComponentProps<'div'>) {
   }
   return (
     <div className="relative h-[1.1em] [view-transition-name:logo]" {...props}>
-      <LetterBase>
-        <span className="-rotate-2">A</span>
-        <span className="rotate-10">l</span>
-        <span className="-rotate-4">l</span>
-        <span className="text-text-player-0 rotate-4">K</span>
-        <span className="-rotate-0">a</span>
-        <span className="-rotate-6">r</span>
-        <span className="rotate-10">a</span>
-        <span className="text-active rotate-2">o</span>
-        <span className="rotate-4">k</span>
-        <span className="-rotate-16">e</span>
-        <DotParty>
-          .par<span className="text-text-player-1">t</span>y
-        </DotParty>
-      </LetterBase>
+      <Wordmark>
+        <span className="text-active">DGG</span> Karaoke
+      </Wordmark>
       {/* Stored data is disposable while this is here; removing it is the promise that it no longer is (AGENTS.md) */}
       <Chip variant="orange" className="absolute top-0 left-full ml-[1em]" data-test="beta-badge">
         Beta
@@ -40,6 +28,6 @@ export default function Logo(props: ComponentProps<'div'>) {
   );
 }
 
-const LetterBase = twx.span`typography relative top-[-0.15em] left-[-0.1em] text-[1em] leading-0.5 font-bold -tracking-[0.15em] [-webkit-text-stroke:0.02em_black] [font-variant:small-caps] [&_span]:inline-block`;
-
-const DotParty = twx.span`absolute right-[-0.3em] bottom-[0.8em] text-[0.4em] -tracking-[0.1em]`;
+// Callers size the logo by font size, for upstream's lettering. This keeps to the width and the
+// 1.1em box that lettering took, so no caller has to change.
+const Wordmark = twx.span`font-display text-default text-shadow-legible block text-[0.6em] leading-[1.83] font-bold tracking-tight whitespace-nowrap`;

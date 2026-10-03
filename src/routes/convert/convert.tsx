@@ -13,7 +13,7 @@ export const LazyConvert = lazy(() =>
 const Convert = (props: ComponentProps<typeof LazyConvert>) => (
   <Suspense fallback={<PageLoader />}>
     <Helmet>
-      <title>Convert Song | AllKaraoke.Party - Free Online Karaoke Party Game</title>
+      <title>Convert Song | DGG Karaoke</title>
     </Helmet>
     <Paper elevation={2} sx={{ minHeight: '100vh', maxWidth: '1260px', margin: '0 auto' }} className="md:pt-8">
       <LazyConvert {...props} />

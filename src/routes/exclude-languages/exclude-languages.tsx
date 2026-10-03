@@ -12,7 +12,7 @@ function ExcludeLanguages() {
   return (
     <>
       <Helmet>
-        <title>Select Languages | AllKaraoke.Party - Free Online Karaoke Party Game</title>
+        <title>Select Languages | DGG Karaoke</title>
       </Helmet>
       <NoPrerender>
         <ExcludeLanguagesView onClose={goBack} closeText="Return to Main Menu" />

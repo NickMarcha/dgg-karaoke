@@ -73,7 +73,7 @@ export default function Edit() {
   return (
     <Paper elevation={2} sx={{ minHeight: '100vh', maxWidth: '1260px', margin: '0 auto' }} className="pt-4 md:pt-8">
       <Helmet>
-        <title>Edit Song | AllKaraoke.Party - Free Online Karaoke Party Game</title>
+        <title>Edit Song | DGG Karaoke</title>
       </Helmet>
       {adminUnverifiedSongId && <BackgroundSavesIndicator />}
       <div className="flex items-center justify-between gap-1 px-2 text-[14px]">

@@ -13,18 +13,20 @@ import eurovisionBg from './eurovisionbg.svg';
 
 export type backgroundTheme = 'regular' | 'christmas' | 'eurovision' | 'halloween';
 
-// During E2E/screenshot runs the animated gradient is non-deterministic and, being a viewport-sized
-// `fixed` element, doesn't cover the area below the fold in `fullPage` captures. Painting a flat
-// blue-ish colour on <body> instead keeps screenshots stable and fully covered.
-const SCREENSHOT_BACKGROUND = '#1a5dab';
+// During E2E/screenshot runs the background, being a viewport-sized `fixed` element, doesn't cover
+// the area below the fold in `fullPage` captures. Painting the canvas colour on <body> instead keeps
+// screenshots stable and fully covered.
+const SCREENSHOT_BACKGROUND = '#111113';
 
-/** The app's regular blue, as a still gradient — the animated background runs over a 400% sized copy of it. */
-export const regularBackgroundGradient = 'linear-gradient(to bottom right, #2575cf, #1a5dab, #144a8a, #2575cf)';
+/**
+ * destiny.gg's near-black canvas, with its blue let in from one corner the way its homepage lets in
+ * the hero artwork. Kept faint: the cards and the focused control are what should stand out.
+ */
+export const regularBackgroundGradient = 'radial-gradient(120% 90% at 100% 0%, #0d2847 0%, #111113 60%)';
 
 const themeStyles: Partial<Record<backgroundTheme, CSSProperties>> & { default: CSSProperties } = {
   default: {
     backgroundImage: regularBackgroundGradient,
-    backgroundSize: '400% 400%',
   },
   christmas: {
     backgroundImage: `linear-gradient(-45deg, ${colorSets.christmasGreen.text}, ${colorSets.christmasGreen.stroke}, #05144a, #05144a)`,

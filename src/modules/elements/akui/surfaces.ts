@@ -4,21 +4,21 @@
  * The surface a dialog-like element is built from: the modal `Menu`, the `Select` popup, the
  * bottom sheet, the lobby card, the expanded song preview.
  *
- * Opaque slate rather than the translucent black the in-game surfaces use. Those sit *in* the scene
- * and let the video through on purpose; a dialog sits on top of it and has to stay readable over
- * whatever happens to be behind it — over a dark backdrop, translucent black simply disappears. The
- * border is what actually reads as the edge once the fill stops contrasting with the scrim.
+ * destiny.gg's opaque surface rather than the translucent black the in-game surfaces use. Those
+ * sit *in* the scene and let the video through on purpose; a dialog sits on top of it and has to
+ * stay readable over whatever happens to be behind it — over a dark backdrop, translucent black
+ * simply disappears. The border is what reads as the edge once the fill stops contrasting.
  *
  * Applied through `cn`/`twx`, so a caller can still override either half.
  */
-export const dialogSurface = 'border border-white/10 bg-slate-800';
+export const dialogSurface = 'border border-line bg-surface';
 
 /**
  * The resting state of anything the player can act on — a button, a switcher, a stepper, a row that
  * responds to a press.
  *
  * Two parts, and both carry meaning. The fill is a step above the card surface underneath, because
- * a control has to read as sitting on top of the thing it belongs to. The 1px orange hairline
+ * a control has to read as sitting on top of the thing it belongs to. The 1px blue hairline
  * (`shadow-focusable`, from the Tailwind config) is the actual tell: on a TV across the room, at a
  * glance, it is what separates "you can press this" from "this is just a panel". Anything
  * interactive should carry it, and anything carrying it should be interactive.
@@ -29,8 +29,8 @@ export const dialogSurface = 'border border-white/10 bg-slate-800';
 export const interactiveSurface = 'shadow-focusable bg-black/55!';
 
 /**
- * The soft highlight: an inset orange ring, for pointer hover and for keyboard focus that should
- * stay quiet. Distinct from full keyboard focus, which fills the whole control with `bg-active` —
+ * The soft highlight: an inset ring in the accent, for pointer hover and for keyboard focus that
+ * should stay quiet. Distinct from full keyboard focus, which fills the whole control with `bg-active` —
  * this one marks the control without taking over the screen, and is what a big or already-coloured
  * control uses instead.
  */
