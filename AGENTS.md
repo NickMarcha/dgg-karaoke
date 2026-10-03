@@ -20,7 +20,7 @@ Source: https://x.com/MarcosHernanz/status/2083954734487212511
 
 ## Project stage
 
-Nothing is deployed yet, and once it is, the site header carries a `beta` badge.
+The site is live, and the header carries a `beta` badge.
 While that badge is there, the stored data is disposable: migrations may drop or
 rewrite tables, and a change that loses rows is acceptable if it keeps the schema
 simple. Do not build backfills, dual-write paths, or compatibility shims for data

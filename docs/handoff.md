@@ -7,6 +7,19 @@ visible in the code.
 
 Last updated 2026-10-03.
 
+## Continue from this repository
+
+Planning and implementation now live in `NickMarcha/dgg-karaoke`. Open this
+repository for the next session and update this file when stopping.
+
+- On `sage`, the checkout is `C:\Users\Nicol\Desktop\dgg\dgg-karaoke`.
+- On `sage-dev`, it is `/home/sage/Projects/dgg-karaoke`, a shallow clone
+  without `node_modules`. Run `pnpm install` there before anything else.
+- Read [AGENTS.md](../AGENTS.md), then [the plan](plans/dgg-karaoke.md) and
+  [deployment](deployment.md). [Online mode](online-mode.md) covers the relay.
+- `deck-assistant` issue 092 is the old infrastructure log. Its deployment
+  checklist is out of date; `docs/deployment.md` replaces it.
+
 ## Where things stand
 
 Layers 0, 1 and 1b of `docs/plans/dgg-karaoke.md` are done. The site is live at
@@ -56,9 +69,17 @@ pre-commit hook runs both when `server/` changes.
 
 1. **The phone's microphone prompt** (one per game now) on Firefox and iOS
    Safari, which the user will test.
-2. **The destiny.gg OAuth application** is registered; its values are in the
-   API stack's environment for layer 2. Redirect URI
-   `https://dgg-karaoke.netlify.app/auth/callback`.
+2. **Phone lag with a real song.** Listen for whether the automatic
+   compensation feels right before deciding to build click-based measurement.
+3. **HomeServer SSH, if needed.** The last Tailscale SSH attempt required an
+   extra login check. Tell the user if SSH is needed; public endpoint checks
+   did not require it.
+
+The destiny.gg OAuth application is already registered. Its client ID and
+secret, admin usernames and PostHog token were recorded as present in the
+Komodo stack environment. The registered redirect is
+`https://dgg-karaoke.netlify.app/auth/callback`. Registration is not a blocker
+for layer 2. Keep secret values out of documentation and diagnostic output.
 
 ## Noted for later
 
@@ -130,5 +151,34 @@ pre-commit hook runs both when `server/` changes.
 
 ## Next
 
-Layer 2: destiny.gg sign-in and the look. The OAuth values are already in the
-API stack's environment.
+Layer 2, destiny.gg sign-in and the look, is next and not started. The scope and later layers remain in
+[the plan](plans/dgg-karaoke.md#2-destinygg-sign-in-and-the-look).
+
+1. Read the auth and theme references in `../dggradio` on `sage`, especially
+   `src/server/auth.ts`, `src/server/env.ts`, `src/server/flair.ts` and
+   `styles.md`. There is no `dggradio` checkout on `sage-dev`; clone it first
+   if you work from there.
+2. Follow `tdd` and `writing-unit-tests` for the API. Use the real local
+   Postgres via `npm run stack:test` and `npm run test:db` in `server/`.
+   Carry over the login transaction, session handling, sign-out and admin
+   roles, with the frontend callback and `GET /api/me` described in the plan.
+3. Connect sign-in to the frontend. Singing remains available without an
+   account; later song and score submissions require one.
+4. Read `using-tailwind` before retheming. Start with the shared tokens and
+   canvas colours, then the logo and menu backgrounds. Keep the Beta badge.
+5. Run the frontend checks listed above and the server tests and type-check.
+   Check sign-in, sign-out, anonymous singing, phone microphones and online
+   rooms. Refresh affected visual baselines after reviewing the new look.
+6. Follow `docs/deployment.md` when ready to release. `main` is production.
+   If Compose changes, update the copy in Komodo too. Record verified results
+   and remaining manual checks here.
+
+For ad hoc browser checks, this app uses `data-test`, not Playwright's default
+`data-testid`. Do not run `pnpm format` across the repository. On Windows,
+use `C:/Users/Nicol/AppData/Local/Temp` when Git Bash and Windows Python need
+to share a temporary file.
+
+When inspecting the server, avoid full process arguments, environment dumps
+and unrestricted container inspection, which can expose credentials. The
+previous session leaked a GitHub token through process arguments; it was
+rotated. Use `ps -eo pid,etime,comm` and narrowly selected non-secret fields.
