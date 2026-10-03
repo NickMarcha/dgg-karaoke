@@ -4,6 +4,7 @@ import { Button } from '~/modules/elements/akui/button';
 import { Icon } from '~/modules/elements/akui/icon';
 import { Tooltip } from '~/modules/elements/tooltip';
 import { useRemoteMicsAvailable } from '~/modules/remote-mic/no-remote-mics';
+import AccountControl from '~/modules/toolbar/account-control';
 import FullscreenButton from '~/modules/toolbar/fullscreen';
 import QRCodeModal from '~/modules/toolbar/qr-code-modal';
 import VolumeControl from '~/modules/toolbar/volume-control';
@@ -60,6 +61,7 @@ function Toolbar({ children }: PropsWithChildren) {
             />
           </Tooltip>
         )}
+        <AccountControl size={{ xs: 'mini', sm: 'small' }} />
       </div>
     </>
   );

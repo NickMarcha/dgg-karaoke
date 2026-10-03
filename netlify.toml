@@ -8,6 +8,14 @@ publish = "build"
 # Read at build time. Changing it needs a rebuild, not just a redeploy.
 VITE_APP_API_URL = "https://karaoke-api.nickmarcha.com"
 
+# Sign-in and the account go through the site's own origin, so the session cookie is first-party:
+# browsers that block third-party cookies would drop it if it were set by the API's own host.
+[[redirects]]
+from = "/api/*"
+to = "https://karaoke-api.nickmarcha.com/api/:splat"
+status = 200
+force = true
+
 # Prerendered routes are real files and win over this. Anything else is the single-page app.
 [[redirects]]
 from = "/*"

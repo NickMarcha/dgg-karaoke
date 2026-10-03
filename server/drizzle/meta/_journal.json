@@ -8,6 +8,13 @@
       "when": 1791014675760,
       "tag": "0000_online_rooms",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791030521146,
+      "tag": "0001_sign_in",
+      "breakpoints": true
     }
   ]
 }

@@ -35,7 +35,13 @@ To tell which build is running, read the container's `org.opencontainers.image.r
 
 The compose file is defined in Komodo itself (the stack's file contents), as a copy of `server/compose.yaml`. **If you change `server/compose.yaml`, paste the new version into the stack in Komodo**; nothing syncs it. Image changes need no Komodo edit.
 
-Komodo writes `.env` from the stack's environment: `POSTGRES_PASSWORD`, `APP_ORIGIN` (the site's origin, comma-separated if there is more than one), `CLOUDFLARE_TUNNEL_TOKEN`, and the destiny.gg and PostHog values that sign-in and analytics will read.
+Komodo writes `.env` from the stack's environment: `POSTGRES_PASSWORD`, `APP_ORIGIN` (the site's origin, comma-separated if there is more than one), `CLOUDFLARE_TUNNEL_TOKEN`, and for sign-in `DGG_CLIENT_ID`, `DGG_CLIENT_SECRET`, `DGG_REDIRECT_URI` (`https://dgg-karaoke.netlify.app/auth/callback`, exactly as registered with destiny.gg) and `ADMIN_DGG_USERNAMES`. The API refuses to start without the first three. Leave `DGG_ORIGIN` and `DGG_AUTHORIZE_ORIGIN` unset: they default to destiny.gg, and the API refuses anything else once `APP_ORIGIN` is https. The PostHog values are for analytics, which the API does not read yet.
+
+## Sign-in goes through the site
+
+The browser reaches `/api/*` on the site's own origin, and Netlify proxies it to the API (`netlify.toml`); the Vite dev and preview servers do the same locally. That makes the session cookie first-party, so browsers that block third-party cookies (Safari) keep it. The remote-mic and online sockets and the song importer's `/proxy` still go to the API's own address, because Netlify cannot proxy a WebSocket and they need no cookie.
+
+Locally, `compose.test.yaml` points sign-in at `server/dev/dgg-oauth`, a stand-in on `localhost:8789` that signs anyone in as anyone, so the registered redirect never has to move off production. Its redirect is the dev server's `http://localhost:3000/auth/callback`.
 
 The image is public, so Komodo needs no registry login. If the package is ever made private, Komodo needs a registry account with `read:packages`.
 
@@ -46,6 +52,6 @@ The image is public, so Komodo needs no registry login. If the package is ever m
 ## Changing the API's address
 
 1. The tunnel's public hostname route in Cloudflare.
-2. `VITE_APP_API_URL` in `netlify.toml`, then let the site rebuild.
+2. `VITE_APP_API_URL` and the `/api/*` proxy target in `netlify.toml`, then let the site rebuild.
 
-`APP_ORIGIN` is the site's origin, not the API's. It only changes if the site moves, and when it does the relay refuses every socket from the new origin until it is updated.
+`APP_ORIGIN` is the site's origin, not the API's. It only changes if the site moves, and when it does the relay refuses every socket and every sign-in from the new origin until it is updated. A move also needs the destiny.gg application's redirect and `DGG_REDIRECT_URI` changed to the new `/auth/callback`.

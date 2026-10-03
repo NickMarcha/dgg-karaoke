@@ -15,8 +15,31 @@ services:
     # them byte for byte.
     environment:
       APP_ORIGIN: http://localhost:3000,http://localhost:3010,http://localhost:3020
+      # Sign-in goes to the stand-in below rather than destiny.gg: the API calls it over the compose
+      # network, the browser is sent to its published port. The real client secret is never used here.
+      DGG_ORIGIN: http://dgg-oauth:8789
+      DGG_AUTHORIZE_ORIGIN: http://localhost:8789
+      DGG_CLIENT_ID: dev-client
+      DGG_CLIENT_SECRET: dev-secret
+      DGG_REDIRECT_URI: http://localhost:3000/auth/callback
+    depends_on:
+      dgg-oauth:
+        condition: service_started
     ports:
       - '8788:8787'
 
   tunnel:
     profiles: [tunnel]
+
+  # dev/dgg-oauth/server.mjs: signs anyone in as anyone, for local development only.
+  dgg-oauth:
+    image: node:24-alpine
+    command: node /srv/server.mjs
+    environment:
+      PORT: 8789
+      DGG_CLIENT_ID: dev-client
+      DGG_CLIENT_SECRET: dev-secret
+    volumes:
+      - ./dev/dgg-oauth/server.mjs:/srv/server.mjs:ro
+    ports:
+      - '8789:8789'

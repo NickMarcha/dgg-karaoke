@@ -5,8 +5,9 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { WebSocket, WebSocketServer } from 'ws';
 
 import { createApp } from './app.js';
+import { Auth } from './auth.js';
 import { getDatabase } from './db.js';
-import { getEnv } from './env.js';
+import { getEnv, isDeployed } from './env.js';
 import { OnlineDirectory } from './online/directory.js';
 import { type OnlinePeer, OnlineRelay } from './online/relay.js';
 import { PostgresRoomStore } from './online/room-store.js';
@@ -20,7 +21,13 @@ const database = getDatabase();
 await migrate(database, { migrationsFolder: 'drizzle' });
 
 const directory = new OnlineDirectory(new PostgresRoomStore(database));
-const app = createApp({ appOrigins: env.APP_ORIGIN, database, directory });
+const app = createApp({
+  appOrigins: env.APP_ORIGIN,
+  auth: new Auth({ database, env }),
+  secureCookies: isDeployed(env),
+  database,
+  directory,
+});
 const server = serve({ fetch: app.fetch, port: env.PORT }, ({ port }) =>
   console.log(`DGG Karaoke API listening on http://localhost:${port}`),
 );

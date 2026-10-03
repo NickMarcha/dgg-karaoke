@@ -6,6 +6,7 @@ import { AroundNavHandler, Route, Router, Switch } from 'wouter';
 import { ErrorFallback } from '~/modules/elements/error-fallback';
 import LayoutWithBackgroundProvider from '~/modules/elements/layout-with-background';
 import PageLoader from '~/modules/elements/page-loader';
+import AuthCallback from '~/routes/auth-callback/auth-callback';
 import GetSongsBPMs from '~/routes/edit/get-songs-bp-ms';
 import ExcludeLanguages from '~/routes/exclude-languages/exclude-languages';
 import Game from '~/routes/game/game';
@@ -101,6 +102,8 @@ function App() {
                 <Route path={routePaths.REMOTE_MIC} component={RemoteMic} />
                 <Route path={routePaths.MANAGE_SONGS} component={ManageSongs} />
                 <Route path="social-media-elements" component={SocialMediaElements} />
+                {/* Not in `routePaths`: a prerendered copy would be a page with no code to finish */}
+                <Route path="auth/callback" component={AuthCallback} />
                 {LazyDevScreenshots && (
                   <Route
                     path="dev/screenshots"

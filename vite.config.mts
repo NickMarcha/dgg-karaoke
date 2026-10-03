@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import * as process from 'process';
 import { visualizer } from 'rollup-plugin-visualizer';
+import { loadEnv } from 'vite';
 import { configDefaults, defineConfig } from 'vitest/config';
 import { bundledIcons } from './scripts/vite-plugin-bundled-icons';
 import routePaths from './src/routes/route-paths';
@@ -33,6 +34,12 @@ if (useHttps && !customCert) {
 // - the dev server, when `.dev.vars` holds no Realtime credentials: the fake is started alongside it.
 // The signaling rate limiter goes in both: every page of the suite, or every tab a developer opens to
 // play against themselves, shares one local IP, far past the budget sized for one real browser.
+// `/api` goes through the site's own origin so the session cookie is first-party, as Netlify does
+// in production (netlify.toml). Sockets and the song proxy still go to the API directly.
+const apiProxy = {
+  '/api': { target: loadEnv('', process.cwd(), 'VITE_APP_').VITE_APP_API_URL, changeOrigin: true },
+};
+
 // https://vitejs.dev/config/
 export default defineConfig({
   // experimental: {
@@ -96,6 +103,7 @@ export default defineConfig({
   server: {
     port: 3000,
     open: false,
+    proxy: apiProxy,
     // HTTPS mode exists to reach the dev server from another device, so expose it on the LAN as well
     host: useHttps,
     ...(useHttps
@@ -110,6 +118,7 @@ export default defineConfig({
   },
   preview: {
     open: false,
+    proxy: apiProxy,
   },
 
   test: {

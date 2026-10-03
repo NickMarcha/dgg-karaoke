@@ -1,0 +1,116 @@
+/*
+ * Username colours, ported from https://cdn.destiny.gg/flairs/flairs.css by way of DGG Radio, so a
+ * name reads here the way it reads in destiny.gg chat. There every rule is `.user.<flair>` at one
+ * specificity and source order picks the winner; that order lives in server/src/flair.ts, which
+ * picks one flair per person, so these rules never compete. A colour added here needs its place in
+ * that list. Each selector names its class twice to outrank whatever colour the surrounding
+ * component sets, without `!important`.
+ */
+
+:root {
+  --flair-rainbow-saturation: 100%;
+  --flair-rainbow-lightness: 65%;
+}
+
+.flair-moderator {
+  --flair-color: #db4c1c;
+}
+.flair-flair125 {
+  --flair-color: #ffd88c;
+}
+.flair-flair11 {
+  --flair-color: #929292;
+}
+.flair-bot {
+  --flair-color: #0088cc;
+}
+.flair-subscriber,
+.flair-flair9,
+.flair-flair13,
+.flair-flair32 {
+  --flair-color: #59aeea;
+}
+.flair-flair1,
+.flair-flair22 {
+  --flair-color: #2addc8;
+}
+.flair-flair3,
+.flair-flair24 {
+  --flair-color: #4db524;
+}
+.flair-flair8,
+.flair-flair26 {
+  --flair-color: #dd29d2;
+}
+.flair-flair12 {
+  --flair-color: #e79015;
+}
+.flair-flair7 {
+  --flair-color: #fc4c02;
+}
+.flair-flair18 {
+  --flair-color: #f082bb;
+}
+.flair-admin {
+  --flair-color: #ee1f1f;
+}
+.flair-flair17 {
+  --flair-color: #fce205;
+}
+
+.flair-moderator.flair-moderator,
+.flair-flair125.flair-flair125,
+.flair-flair11.flair-flair11,
+.flair-bot.flair-bot,
+.flair-subscriber.flair-subscriber,
+.flair-flair9.flair-flair9,
+.flair-flair13.flair-flair13,
+.flair-flair32.flair-flair32,
+.flair-flair1.flair-flair1,
+.flair-flair22.flair-flair22,
+.flair-flair3.flair-flair3,
+.flair-flair24.flair-flair24,
+.flair-flair8.flair-flair8,
+.flair-flair26.flair-flair26,
+.flair-flair12.flair-flair12,
+.flair-flair7.flair-flair7,
+.flair-flair18.flair-flair18,
+.flair-admin.flair-admin,
+.flair-flair17.flair-flair17 {
+  color: var(--flair-color);
+}
+
+/* Two flairs are a moving gradient rather than a colour. */
+.flair-flair42.flair-flair42,
+.flair-flair33.flair-flair33 {
+  color: transparent;
+  background-image: repeating-linear-gradient(
+    90deg,
+    hsl(0, var(--flair-rainbow-saturation), var(--flair-rainbow-lightness)),
+    hsl(45, var(--flair-rainbow-saturation), var(--flair-rainbow-lightness)),
+    hsl(90, var(--flair-rainbow-saturation), var(--flair-rainbow-lightness)),
+    hsl(135, var(--flair-rainbow-saturation), var(--flair-rainbow-lightness)),
+    hsl(180, var(--flair-rainbow-saturation), var(--flair-rainbow-lightness)),
+    hsl(225, var(--flair-rainbow-saturation), var(--flair-rainbow-lightness)),
+    hsl(270, var(--flair-rainbow-saturation), var(--flair-rainbow-lightness)),
+    hsl(315, var(--flair-rainbow-saturation), var(--flair-rainbow-lightness)),
+    hsl(360, var(--flair-rainbow-saturation), var(--flair-rainbow-lightness)) 50%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: flair-rainbow 3s linear infinite;
+}
+
+@keyframes flair-rainbow {
+  to {
+    background-position-x: -100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flair-flair42.flair-flair42,
+  .flair-flair33.flair-flair33 {
+    animation: none;
+  }
+}

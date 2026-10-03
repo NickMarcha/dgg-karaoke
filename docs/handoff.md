@@ -38,8 +38,9 @@ through the relay. `docs/deployment.md` describes how both halves deploy.
 - GitHub: `NickMarcha/dgg-karaoke`, public, a fork of `Asvarox/allkaraoke`,
   default branch `main`. Locally `upstream` points at allkaraoke.
 
-`pnpm type-check`, `pnpm lint`, `pnpm knip` and `pnpm test --watch=false` pass.
-`server/` has its own `npm test` (23 tests) and `npm run type-check`; the
+`pnpm type-check`, `pnpm knip`, `pnpm format-check` and `pnpm test --watch=false`
+pass; `pnpm lint` fails only on a skill asset (see Next). `server/` has its own
+`npm test` (82 tests with the database, `npm run test:db`) and `npm run type-check`; the
 pre-commit hook runs both when `server/` changes.
 
 ## Checked, and how
@@ -151,27 +152,34 @@ for layer 2. Keep secret values out of documentation and diagnostic output.
 
 ## Next
 
-Layer 2, destiny.gg sign-in and the look, is next and not started. The scope and later layers remain in
-[the plan](plans/dgg-karaoke.md#2-destinygg-sign-in-and-the-look).
+Layer 2 is under way, uncommitted. **Sign-in is built**: the API's `users`,
+`sessions` and `oauth_login_transactions` tables (migration `0001_sign_in`),
+`/api/auth/login`, `/api/auth/callback`, `/api/auth/logout` and `/api/me`, the
+`/auth/callback` page, and a sign-in button in the toolbar that becomes the
+flair-coloured username and a sign-out button. Roles are `singer` and `admin`;
+reviewers come with layer 4. It was checked locally in headless Chromium against
+the stand-in: sign-in, the flair colour, a reload, sign-out and a used state.
 
-1. Read the auth and theme references in `../dggradio` on `sage`, especially
-   `src/server/auth.ts`, `src/server/env.ts`, `src/server/flair.ts` and
-   `styles.md`. There is no `dggradio` checkout on `sage-dev`; clone it first
-   if you work from there.
-2. Follow `tdd` and `writing-unit-tests` for the API. Use the real local
-   Postgres via `npm run stack:test` and `npm run test:db` in `server/`.
-   Carry over the login transaction, session handling, sign-out and admin
-   roles, with the frontend callback and `GET /api/me` described in the plan.
-3. Connect sign-in to the frontend. Singing remains available without an
-   account; later song and score submissions require one.
-4. Read `using-tailwind` before retheming. Start with the shared tokens and
-   canvas colours, then the logo and menu backgrounds. Keep the Beta badge.
-5. Run the frontend checks listed above and the server tests and type-check.
-   Check sign-in, sign-out, anonymous singing, phone microphones and online
-   rooms. Refresh affected visual baselines after reviewing the new look.
-6. Follow `docs/deployment.md` when ready to release. `main` is production.
-   If Compose changes, update the copy in Komodo too. Record verified results
-   and remaining manual checks here.
+One departure from DGG Radio: the site proxies `/api/*` to the API (Netlify in
+production, Vite locally), so the session cookie is first-party and Safari keeps
+it. `docs/deployment.md` explains it.
+
+Before deploying it:
+
+1. Add `DGG_REDIRECT_URI=https://dgg-karaoke.netlify.app/auth/callback` to
+   the Komodo stack's environment, and confirm `DGG_CLIENT_ID`,
+   `DGG_CLIENT_SECRET` and `ADMIN_DGG_USERNAMES` are there. Without them the
+   API will not start.
+2. After the deploy, sign in on the live site, in Safari too.
+
+Still to do in layer 2: the retheme (step 4 of the old list: read
+`using-tailwind`, tokens and canvas colours first, then the logo and menu
+backgrounds, keep the Beta badge), then refresh the visual baselines. The logo
+still says AllKaraoke.
+
+`pnpm lint` fails on `.agents/skills/d3-viz/assets/interactive-template.jsx`,
+a skill asset that arrived with `9b9d6c64`, not on app code. Excluding
+`.agents` from oxlint is probably the fix.
 
 For ad hoc browser checks, this app uses `data-test`, not Playwright's default
 `data-testid`. Do not run `pnpm format` across the repository. On Windows,
