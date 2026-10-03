@@ -9,6 +9,8 @@ services:
       - '127.0.0.1:54330:5432'
 
   api:
+    build: .
+    pull_policy: build
     # The dev server, the e2e production preview and the e2e dev server. CORS and the relay compare
     # them byte for byte.
     environment:

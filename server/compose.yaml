@@ -18,7 +18,10 @@ services:
     restart: unless-stopped
 
   api:
-    build: .
+    # Built by .github/workflows/api-image.yml on every push to main that touches server/. The
+    # deployment platform pulls this tag and redeploys when it moves; compose.test.yaml builds from
+    # source instead.
+    image: ghcr.io/nickmarcha/dgg-karaoke-api:main
     # Written by the deployment platform. Locally it is optional: the e2e specs start this stack with
     # its values in the environment instead, and a missing value still stops the API at startup.
     env_file:
