@@ -49,7 +49,21 @@ export class MicrophoneInputSource {
     MicrophoneInputSource.inputList[0] ??
     null;
 
-  public static getInputs = async (): Promise<InputSource[]> => {
+  private static pending: Promise<InputSource[]> | null = null;
+
+  /**
+   * Overlapping callers share one round of requests: Firefox in a private window asks again for
+   * every one, and a device change arriving while the setup screen loads the list would otherwise
+   * start a second round on top of the first.
+   */
+  public static getInputs = (): Promise<InputSource[]> => {
+    MicrophoneInputSource.pending ??= MicrophoneInputSource.readInputs().finally(() => {
+      MicrophoneInputSource.pending = null;
+    });
+    return MicrophoneInputSource.pending;
+  };
+
+  private static readInputs = async (): Promise<InputSource[]> => {
     let devices: MediaDeviceInfo[] = [];
 
     try {

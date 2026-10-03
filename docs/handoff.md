@@ -187,19 +187,38 @@ Layer 2 is pushed and live except for its visual baselines.
 - **Room codes** (`cfa1582b`): `RoomCode` draws digits in the accent and
   letters in the default colour. The code input itself cannot.
 
+**Firefox microphone loop, reported at the end of the session.** In a Firefox
+private window, signed in, creating a solo online room and choosing "This
+computer's microphone" asked for the microphone over and over, and allowing
+did not end it. Not reproduced: Playwright cannot click Firefox's own prompt.
+The likely cause, fixed in the last commit but **not verified in Firefox**:
+`MicrophoneInputSource.getInputs` asks once for the microphone and then once
+per audio device (an exact `deviceId`, to read its channel count), and nothing
+stopped it from running several rounds at once. `loadMics` starts a round
+whenever the list is still empty, and every finished round added another
+`devicechange` listener, each of which starts a round of its own. Firefox
+fires `devicechange` once permission is granted, and a private window cannot
+remember a per-device grant, so each round prompts again. Overlapping callers
+now share one round, and each source subscribes to device changes once.
+The probe streams are still never stopped, as upstream left them; stopping
+them might make Firefox ask again when the game opens the microphone, so test
+that before changing it. If the loop persists, count the prompts and note
+which device each one names.
+
 Next:
 
-1. On the live site: sign in and out (Safari too), sing without an account,
+1. **Retest the Firefox private-window microphone setup** (above).
+2. On the live site: sign in and out (Safari too), sing without an account,
    a phone microphone, and joining an online room from a phone with "Join with
    code".
-2. **Refresh the visual baselines.** All 291 (`tests/visual-regression`,
+3. **Refresh the visual baselines.** All 291 (`tests/visual-regression`,
    `tests/storybook`) are Linux renders of the old look, and upstream's CI
    that produced them is gone. Regenerating on Windows only adds `-win32`
    copies, so it needs a Linux Playwright container (or `sage-dev`) with the
    API stack reachable.
-3. Then layer 3, leaderboards on our API, which is the first thing to require
+4. Then layer 3, leaderboards on our API, which is the first thing to require
    sign-in.
-4. Left as they were: the toolbar covers the right end of the song list's
+5. Left as they were: the toolbar covers the right end of the song list's
    filter row on wide screens (it did before; the account button adds a
    little), the Beta badge sits under the toolbar on a phone, the menu
    footer's "Get in touch" links and the GitHub ribbon are still upstream's,

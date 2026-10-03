@@ -15,6 +15,7 @@ const selectedPlayerInputToId = (input: SelectedPlayerInput) => `${input.deviceI
 
 class InputSourceListManager {
   private inputList: Record<InputSourceNames, InputSourceList>;
+  private subscribed = new Set<InputSourceNames>();
 
   constructor() {
     this.inputList = {
@@ -35,6 +36,10 @@ class InputSourceListManager {
         this.inputList[source.inputName].initialised = true;
         events.inputListChanged.dispatch(true);
 
+        // Once per source: `loadMics` initialises the microphone again whenever its list is empty,
+        // and every extra subscriber would ask for the microphone again on each device change.
+        if (this.subscribed.has(source.inputName)) return;
+        this.subscribed.add(source.inputName);
         source.subscribeToListChange(async () => {
           this.inputList[source.inputName].list = await source.getInputs();
           events.inputListChanged.dispatch(false);
