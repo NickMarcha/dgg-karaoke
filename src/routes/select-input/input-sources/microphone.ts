@@ -46,11 +46,14 @@ export class MicrophoneInputSource {
 
   public static getDefault = () =>
     MicrophoneInputSource.inputList.find((input) => input.id === getInputId({ deviceId: 'default', channel: 0 })) ??
+    MicrophoneInputSource.inputList.find((input) => input.deviceId === MicrophoneInputSource.grantedDeviceId) ??
     MicrophoneInputSource.inputList[0] ??
     null;
 
   private static pending: Promise<InputSource[]> | null = null;
   private static granted = false;
+  /** The device the permission request was answered with: in Firefox, the one picked in its prompt. */
+  private static grantedDeviceId: string | undefined;
   /** Channel counts already read, by device and label: reading one opens the device, which can prompt. */
   private static channelCounts = new Map<string, number>();
 
@@ -73,7 +76,8 @@ export class MicrophoneInputSource {
       // Once per page: a grant makes Firefox fire `devicechange`, and asking again on every one of
       // those prompts again in a private window, forever.
       if (!MicrophoneInputSource.granted) {
-        await userMediaService.getUserMedia({ audio: true, video: false });
+        const stream = await userMediaService.getUserMedia({ audio: true, video: false });
+        MicrophoneInputSource.grantedDeviceId = stream.getAudioTracks()[0]?.getSettings().deviceId;
         MicrophoneInputSource.granted = true;
       }
 
@@ -109,6 +113,10 @@ export class MicrophoneInputSource {
     const key = `${device.deviceId};${device.label}`;
     const known = MicrophoneInputSource.channelCounts.get(key);
     if (known !== undefined) return known;
+    // Firefox grants only the device picked in its prompt, and opening any other asks again
+    if (/firefox/i.test(navigator.userAgent ?? '') && device.deviceId !== MicrophoneInputSource.grantedDeviceId) {
+      return 1;
+    }
 
     // device.getCapabilities() stopped returning channelCount, so instead we have to get
     // the stream and check the track's settings to get the channel count

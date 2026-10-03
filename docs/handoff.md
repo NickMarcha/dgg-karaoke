@@ -197,7 +197,14 @@ Firefox, with a `devicechange` dispatched after each grant to stand in for
 Firefox's, the live site made 3412 requests in 8 seconds; with the second fix,
 6. Now the bare permission request runs once per page, each device's channel
 count is read once (keyed by id and label), and an unchanged list is not
-announced. **Not yet confirmed by the user in Firefox.** The probe streams are
+announced. The user then explained the prompts: one for every audio device,
+not the one picked in the first prompt. Firefox grants per device (and
+`permissions.query` says `granted` for a one-time grant too, so it cannot
+tell), and the list opened every device to read its channel count. In Firefox
+only the granted device is opened now, and it is the default; the others are
+listed as one channel, so a two-channel SingStar mic only shows both channels
+in Firefox if it is the one picked in the prompt. **Not yet confirmed by the
+user in Firefox.** The probe streams are
 still never stopped, as upstream left them; stopping them might make Firefox
 ask again when the game opens the microphone. `MicInput` asks with
 `{ deviceId, exact: true }`, which is not a valid constraint, so it only

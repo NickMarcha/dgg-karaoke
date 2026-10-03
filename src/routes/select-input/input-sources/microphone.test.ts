@@ -54,6 +54,39 @@ describe('MicrophoneInputSource.getInputs', () => {
     );
   });
 
+  describe('in Firefox', () => {
+    // Firefox grants one device, the one picked in its prompt; opening any other prompts again
+    beforeEach(() => {
+      vi.stubGlobal('navigator', {
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; rv:155.0) Gecko/20100101 Firefox/155.0',
+        mediaDevices: { getUserMedia, enumerateDevices: async () => devices },
+      });
+      getUserMedia.mockImplementation(async () => ({
+        getAudioTracks: () => [{ getSettings: () => ({ channelCount: 1, deviceId: 'usb' }) }],
+      }));
+    });
+
+    it('opens only the device the user granted', async () => {
+      const inputs = await MicrophoneInputSource.getInputs();
+
+      expect(getUserMedia).toHaveBeenCalledTimes(2);
+      expect(getUserMedia).toHaveBeenLastCalledWith(
+        expect.objectContaining({ audio: expect.objectContaining({ deviceId: { exact: 'usb' } }) }),
+      );
+      expect(inputs.map((input) => input.deviceId)).toEqual(['default', 'usb']);
+    });
+
+    it('defaults to the device the user granted', async () => {
+      devices = [
+        { kind: 'audioinput', deviceId: 'webcam', label: 'Webcam mic' },
+        { kind: 'audioinput', deviceId: 'usb', label: 'USB mic' },
+      ];
+      await MicrophoneInputSource.getInputs();
+
+      expect(MicrophoneInputSource.getDefault()?.deviceId).toBe('usb');
+    });
+  });
+
   it('asks for access again after it was refused', async () => {
     getUserMedia.mockRejectedValueOnce(new DOMException('', 'NotAllowedError'));
     await MicrophoneInputSource.getInputs();
