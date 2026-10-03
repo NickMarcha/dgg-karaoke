@@ -21,11 +21,15 @@ DGG Radio's stack clones its repository and builds on the server. This one can't
 
 **Site.** Netlify runs `pnpm exec playwright install chromium && pnpm build` and publishes `build/`. The Chromium download is for the prerender step, which renders each route in a headless browser. `VITE_APP_API_URL` is set in `netlify.toml` and `VITE_APP_POSTHOG_KEY` in Netlify's environment; both are baked in at build time, so changing either takes a rebuild.
 
-**API.** If the push touches `server/`, the `API image` workflow builds `server/Dockerfile` and pushes two tags: `main` and the commit SHA. Komodo checks the `main` tag for a new image every 5 minutes (`KOMODO_RESOURCE_POLL_INTERVAL`) and, with `auto_update` on, pulls it and recreates the API. Expect a change to be live 2 to 7 minutes after the push.
+**API.** If the push touches `server/`, the `API image` workflow builds `server/Dockerfile` and pushes two tags: `main` and the commit SHA. Publishing them makes GitHub send a `package` webhook to Komodo (`https://hooks.nickmarcha.com/listener/github/procedure/<id>/__ANY__`), which runs the `dgg-karaoke-deploy` procedure: `DeployStack dgg-karaoke`, which pulls `main` and recreates the API. A change is live about two minutes after the push, most of it the build. Each push fires the webhook once per published package event (three so far); the later runs find the image already current and change nothing.
+
+The procedure has its own webhook secret, shared only with this repository's webhook. `__ANY__` in the URL tells Komodo not to look for a branch, which a package event does not carry.
+
+Do not rely on the stack's own `auto_update` for this. Komodo checks images for updates in its built-in "Global Auto Update" procedure, which runs once a day at 03:00; it is a nightly safety net here, nothing more.
 
 The API runs its migrations as it starts and exits if they fail, because nobody is there at deploy time to run them by hand.
 
-To tell which build is running, compare the SHA tag that points at the same digest as `main` with `git log`. To deploy by hand, run `DeployStack` on `dgg-karaoke` in Komodo; it pulls `main` first.
+To tell which build is running, read the container's `org.opencontainers.image.revision` label; the workflow sets it to the commit SHA. To deploy by hand, run `DeployStack` on `dgg-karaoke` (or the procedure) in Komodo; it pulls `main` first. In Komodo's update log a webhook run shows the git-webhook user as operator, a manual one the account or API key that ran it.
 
 ## The Komodo stack
 
