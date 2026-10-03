@@ -1,10 +1,11 @@
 import { LayoutGroup, motion } from 'motion/react';
+import { ReactNode } from 'react';
 
 import { Icon } from '~/modules/elements/akui/icon';
 
 export interface WizardStepEntry {
   id: number;
-  label: string;
+  label: ReactNode;
 }
 
 interface Props {

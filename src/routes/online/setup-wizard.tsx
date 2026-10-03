@@ -7,6 +7,7 @@ import { Menu } from '~/modules/elements/akui/menu';
 import WizardChecklist, { WizardStepEntry } from '~/modules/elements/akui/wizard-checklist';
 import { Input } from '~/modules/elements/input';
 import MenuWithLogo from '~/modules/elements/menu-with-logo';
+import RoomCode from '~/modules/elements/room-code';
 import useKeyboardNav from '~/modules/hooks/use-keyboard-nav';
 import useMicMonitoring from '~/modules/hooks/use-mic-monitoring';
 import { checkRoomExists } from '~/modules/online/client/online-client';
@@ -105,9 +106,13 @@ function OnlineSetupWizard({ mode, joinRoomCode = null, onComplete, onBack }: Pr
 
   // The completed room-code entry shows which room is being joined, like the remote mic's game code
   const getStepLabel = (entry: Step, completed: boolean) =>
-    entry === STEP.code && completed
-      ? `Joining room: ${roomTarget.current.roomCode.toUpperCase()}`
-      : STEP_LABELS[entry];
+    entry === STEP.code && completed ? (
+      <>
+        Joining room: <RoomCode code={roomTarget.current.roomCode} className="gap-1 px-1 py-0 shadow-none" />
+      </>
+    ) : (
+      STEP_LABELS[entry]
+    );
 
   const completedSteps: WizardStepEntry[] = stepOrder
     .slice(0, stepOrder.indexOf(step))
