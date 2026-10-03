@@ -187,49 +187,28 @@ Layer 2 is pushed and live except for its visual baselines.
 - **Room codes** (`cfa1582b`): `RoomCode` draws digits in the accent and
   letters in the default colour. The code input itself cannot.
 
-**Firefox microphone loop.** In a Firefox private window, choosing "This
-computer's microphone" asked for the microphone over and over. The first fix
-(`a1d78402`, overlapping rounds share one) went live and did not end it. The
-cycle: every round of reading the list asked for each device again, a grant
-makes Firefox fire `devicechange`, which started another round, and every new
-list restarted the monitoring pipeline, which asked again. In Playwright's
-Firefox, with a `devicechange` dispatched after each grant to stand in for
-Firefox's, the live site made 3412 requests in 8 seconds; with the second fix,
-6. Now the bare permission request runs once per page, each device's channel
-count is read once (keyed by id and label), and an unchanged list is not
-announced. The user then explained the prompts: one for every audio device,
-not the one picked in the first prompt. Firefox grants per device (and
-`permissions.query` says `granted` for a one-time grant too, so it cannot
-tell), and the list opened every device to read its channel count. In Firefox
-only the granted device is opened now, and it is the default; the others are
-listed as one channel, so a two-channel SingStar mic only shows both channels
-in Firefox if it is the one picked in the prompt. The user confirmed that,
-then got one more prompt when the song started: monitoring stopped the
-microphone when the setup screen closed, and Firefox only re-shares a stopped
-device within its grace period. The computer's microphones now stay open,
-muted, between monitoring sessions, as the phone's already did;
-`InputManager.open` gives back any no player sings through. In Playwright's
-Firefox, leaving the setup screen and coming back now makes no new requests
-(before: four tracks stopped and one more request). `MicInput` also asks for
-`deviceId: { exact }` now; it passed `exact: true` beside the id, which only
-preferred the device. **The song-start prompt is not yet confirmed gone by
-the user.** The probe streams the list opens are still never stopped, as
-upstream left them.
+**The computer's microphone in Firefox** (`a1d78402`, `7b2c2866`,
+`f0e83414`, `f65bfc4d`) asks once now, confirmed by the user in a private
+window through to a song. Firefox grants only the device picked in its prompt,
+so in Firefox the list opens only that device and makes it the default; other
+devices are listed as one channel until chosen, so a two-channel SingStar mic
+shows both channels only if it was the one picked. The computer's microphones
+stay open, muted, between songs (the browser's in-use indicator stays on,
+which the user accepted); `InputManager.open` gives back any no player uses.
 
 Next:
 
-1. **Retest the Firefox private-window microphone setup** (above).
-2. On the live site: sign in and out (Safari too), sing without an account,
+1. On the live site: sign in and out (Safari too), sing without an account,
    a phone microphone, and joining an online room from a phone with "Join with
    code".
-3. **Refresh the visual baselines.** All 291 (`tests/visual-regression`,
+2. **Refresh the visual baselines.** All 291 (`tests/visual-regression`,
    `tests/storybook`) are Linux renders of the old look, and upstream's CI
    that produced them is gone. Regenerating on Windows only adds `-win32`
    copies, so it needs a Linux Playwright container (or `sage-dev`) with the
    API stack reachable.
-4. Then layer 3, leaderboards on our API, which is the first thing to require
+3. Then layer 3, leaderboards on our API, which is the first thing to require
    sign-in.
-5. Left as they were: the toolbar covers the right end of the song list's
+4. Left as they were: the toolbar covers the right end of the song list's
    filter row on wide screens (it did before; the account button adds a
    little), the Beta badge sits under the toolbar on a phone, the menu
    footer's "Get in touch" links and the GitHub ribbon are still upstream's,
