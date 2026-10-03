@@ -7,10 +7,6 @@ import useKeyboardNav, { RegisterFunc } from '~/modules/hooks/use-keyboard-nav';
 import ScoreboardPanel from '~/modules/scoreboard/scoreboard-panel';
 import ScoreboardRow, { ScoreboardPlaceholderRow } from '~/modules/scoreboard/scoreboard-row';
 import { useEditScore } from '~/modules/songs/stats/hooks';
-import LeaderboardPrompt from '~/routes/game/singing/post-game/views/leaderboard/leaderboard-prompt';
-import LeaderboardSharePanel from '~/routes/game/singing/post-game/views/leaderboard/leaderboard-share-panel';
-import SongLeaderboardPanel from '~/routes/game/singing/post-game/views/leaderboard/song-leaderboard-panel';
-import useLeaderboardPostGame from '~/routes/game/singing/post-game/views/leaderboard/use-leaderboard-post-game';
 
 import HighScoreRename from './high-score-rename';
 
@@ -52,17 +48,8 @@ interface Props {
 function HighScoresView({ onNextStep, highScores, singSetup, song }: Props) {
   const { register } = useKeyboardNav({ title: 'High scores' });
   const editScore = useEditScore(song);
-  const leaderboard = useLeaderboardPostGame({ song, singSetup });
-
-  // An armed score goes up as the player moves on, so the wait is never in their way — the button
-  // just holds them for as long as the request takes.
-  const isArmed = leaderboard.panel === 'armed';
-
-  const goToNextStep = async () => {
-    if (isArmed) await leaderboard.share();
-
-    onNextStep();
-  };
+  // The song's global board and sharing a score to it return with our own leaderboard (layer 3 of
+  // docs/plans/dgg-karaoke.md); until then only the local board is shown.
 
   return (
     <>
@@ -109,24 +96,10 @@ function HighScoresView({ onNextStep, highScores, singSetup, song }: Props) {
             <ScoreboardPlaceholderRow key={`placeholder-${index}`} position={highScores.length + index + 1} />
           ))}
         </ScoreboardPanel>
-        <SongLeaderboardPanel
-          song={song}
-          singSetup={singSetup}
-          leaderboard={leaderboard}
-          className={SCOREBOARD_CLASS}
-          listClassName={SCOREBOARD_LIST_CLASS}
-        />
       </div>
-      <LeaderboardSharePanel register={register} leaderboard={leaderboard} />
       <div className="mt-auto">
-        <SelectSongButton
-          register={register}
-          onClick={goToNextStep}
-          label={isArmed ? 'Share score and sing a song' : 'Select next song'}
-          isSubmitting={leaderboard.isSubmitting}
-        />
+        <SelectSongButton register={register} onClick={onNextStep} label="Select next song" isSubmitting={false} />
       </div>
-      <LeaderboardPrompt leaderboard={leaderboard} />
     </>
   );
 }

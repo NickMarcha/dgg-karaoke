@@ -6,9 +6,8 @@ import RemoteMicManager from '~/modules/remote-mic/remote-mic-manager';
 
 const fake = vi.hoisted(() => {
   class FakeTransport {
-    public readonly name = 'PartyKit';
-    public onClose: (() => void) | undefined;
-    public connect = vi.fn((_room: string, onConnect: () => void, onClose: () => void) => {
+    public onClose: ((reason: string) => void) | undefined;
+    public connect = vi.fn((_room: string, onConnect: () => void, onClose: (reason: string) => void) => {
       this.onClose = onClose;
       onConnect();
     });
@@ -21,8 +20,8 @@ const fake = vi.hoisted(() => {
   return { FakeTransport, instances: [] as InstanceType<typeof FakeTransport>[] };
 });
 
-vi.mock('~/modules/remote-mic/network/server/transport/party-kit-server', () => ({
-  PartyKitServerTransport: class extends fake.FakeTransport {
+vi.mock('~/modules/remote-mic/network/server/transport/web-socket-server', () => ({
+  WebSocketServerTransport: class extends fake.FakeTransport {
     public constructor() {
       super();
       fake.instances.push(this);
@@ -69,7 +68,7 @@ describe('NetworkServer.stop', () => {
     server.start();
     server.stop();
     // What a real transport does once its socket is shut
-    fake.instances[0].onClose?.();
+    fake.instances[0].onClose?.('');
     vi.advanceTimersByTime(RECONNECT_DELAY_MS * 2);
 
     expect(server.isStarted()).toBe(false);
@@ -79,7 +78,7 @@ describe('NetworkServer.stop', () => {
 
   it('cancels a reconnect that a dropped connection had queued, and still counts as having been up', () => {
     server.start();
-    fake.instances[0].onClose?.();
+    fake.instances[0].onClose?.('');
     expect(server.isStarted()).toBe(false);
 
     expect(server.stop()).toBe(true);
@@ -99,6 +98,21 @@ describe('NetworkServer.stop', () => {
 
     expect(removeRemoteMic).toHaveBeenCalledWith('phone-1', true);
     vi.restoreAllMocks();
+  });
+
+  it('moves to a new game code when another game already holds this one', () => {
+    server.start();
+    const code = server.getGameCode();
+
+    fake.instances[0].onClose?.(JSON.stringify({ error: 'room-taken' }));
+    vi.advanceTimersByTime(RECONNECT_DELAY_MS);
+
+    expect(server.getGameCode()).not.toBe(code);
+    expect(fake.instances[0].connect).toHaveBeenLastCalledWith(
+      server.getGameCode(),
+      expect.any(Function),
+      expect.any(Function),
+    );
   });
 
   it('opens a fresh server when started again', () => {

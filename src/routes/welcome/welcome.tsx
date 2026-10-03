@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Helmet } from 'react-helmet';
 
-import { Chip } from '~/modules/elements/akui/chip';
 import { useBackground } from '~/modules/elements/background-context';
 import Logo from '~/modules/elements/logo';
 import PageFrame from '~/modules/elements/page-frame';
@@ -14,16 +13,15 @@ import ExcludeLanguagesView from '~/routes/exclude-languages/exclude-languages-v
 import LayoutGame from '~/routes/layout-game';
 import SelectInputModal from '~/routes/select-input/select-input-modal';
 import { ExcludedLanguagesSetting, useSettingValue } from '~/routes/settings/settings-state';
-import LeaderboardPanel from '~/routes/welcome/leaderboard-panel';
 import MenuFooter from '~/routes/welcome/menu-footer';
 import MenuTile from '~/routes/welcome/menu-tile';
 import { MenuViewTransition } from '~/routes/welcome/menu-view-transitions';
 
 /**
- * The main menu as tiles rather than the stacked button list every other screen uses: the two ways
- * into a game get a row of their own at the top, the supporting screens share a shorter row
- * underneath, and the leaderboard takes a full-height rail on the right. Below `lg` the rail has
- * nowhere to go, so the whole thing folds into one column with the board under the tiles.
+ * The main menu as tiles rather than the stacked button list every other screen uses: the way into
+ * a game gets a row of its own at the top, and the supporting screens share a shorter row underneath.
+ * Online play and the global leaderboard are left out until our API serves them
+ * (docs/plans/dgg-karaoke.md, layers 1b and 3).
  */
 function Welcome() {
   useBackground(true);
@@ -120,7 +118,7 @@ function Welcome() {
           </div>
         </header>
 
-        <div className="grid min-h-0 flex-1 gap-4 lg:gap-6 xl:grid-cols-[minmax(0,1fr)_32rem]">
+        <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex min-h-0 flex-col gap-4 max-lg:gap-3 lg:gap-6">
             <KeyboardNavContext value={register}>
               {/* `auto-cols-fr` with column flow rather than a fixed column count: the top row is the
@@ -137,20 +135,6 @@ function Welcome() {
                   remoteIcon="play"
                   className={MenuViewTransition.SING_A_SONG}
                   onClick={goToSongList}
-                />
-                <MenuTile
-                  name="online"
-                  variant="primary"
-                  label="Sing online"
-                  displayLabel={
-                    <div className="flex items-center gap-2">
-                      <Chip variant="orange">Preview</Chip> Sing online
-                    </div>
-                  }
-                  hint="Play with friends remotely"
-                  remoteIcon="play"
-                  className={MenuViewTransition.SING_ONLINE}
-                  onClick={() => navigate('online/')}
                 />
               </div>
               <div className="grid flex-1 grid-cols-1 gap-4 max-lg:gap-3 lg:auto-cols-fr lg:grid-flow-col lg:gap-6">
@@ -176,21 +160,6 @@ function Welcome() {
                 />
               </div>
             </KeyboardNavContext>
-          </div>
-          {/* One instance, not a desktop/narrow pair: it moves from the rail to the bottom of the
-              single column purely by where the grid puts it.
-
-              As a rail (from `xl`) it fills its cell absolutely rather than sitting in it: fifty rows
-              are taller than the tiles beside them, and in flow that height becomes the row's — the
-              screen this one is pinned to the viewport for then scrolls anyway, to show a list that
-              can scroll itself. Out of flow it has no height to give, so the rail is as tall as the
-              tiles and the list takes what is left. Below `xl` it is a block under them, where its
-              own five-row height is what it should be. */}
-          <div className="relative">
-            <LeaderboardPanel
-              className={`${MenuViewTransition.LEADERBOARD} xl:absolute xl:inset-0`}
-              listClassName="xl:h-auto xl:min-h-0 xl:flex-1"
-            />
           </div>
         </div>
 

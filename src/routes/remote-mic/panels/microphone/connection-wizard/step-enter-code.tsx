@@ -9,7 +9,6 @@ import { MenuButton } from '~/modules/elements/menu';
 import Modal from '~/modules/elements/modal';
 import { transportErrorReason } from '~/modules/remote-mic/network/client/network-client';
 import { GAME_CODE_LENGTH } from '~/modules/remote-mic/network/server/network-server';
-import ConfirmWifiModal from '~/routes/remote-mic/components/confrim-wifi-modal';
 import { ConnectionStatuses } from '~/routes/remote-mic/remote-mic';
 
 interface Props {
@@ -111,7 +110,6 @@ export default function StepEnterCode({
 
   return (
     <>
-      {roomId?.startsWith('p') && <ConfirmWifiModal onClose={() => gameCodeInputRef.current?.element?.focus()} />}
       <div className="flex w-full flex-1 flex-col justify-center">
         <form className="flex w-full flex-col gap-4 md:gap-8" onSubmit={handleSubmit}>
           <Input

@@ -8,7 +8,6 @@ import { PingPongTracker } from '~/modules/network/rpc/ping-pong-tracker';
 import { createRpcProxy } from '~/modules/network/rpc/rpc-client';
 import { ExtractContract } from '~/modules/network/rpc/types';
 import { ClientTransport } from '~/modules/remote-mic/network/client/transport/interface';
-import { PartyKitClientTransport } from '~/modules/remote-mic/network/client/transport/party-kit-client';
 import { WebSocketClientTransport } from '~/modules/remote-mic/network/client/transport/web-socket-client';
 import { NetworkMessages } from '~/modules/remote-mic/network/messages';
 import { serverHandlers } from '~/modules/remote-mic/network/server/server-handlers';
@@ -137,11 +136,7 @@ export class NetworkClient extends Listener<[NetworkMessages]> {
       this.pingPong.stop();
       this.transport.close();
     }
-    this.transport = lcRoomId.startsWith('w')
-      ? new WebSocketClientTransport()
-      : lcRoomId.startsWith('k')
-        ? new PartyKitClientTransport()
-        : new PartyKitClientTransport();
+    this.transport = new WebSocketClientTransport();
 
     if (this.clientId === null) this.setClientId(v4());
     this.roomId = lcRoomId;
@@ -178,7 +173,7 @@ export class NetworkClient extends Listener<[NetworkMessages]> {
           events.karaokeConnectionStatusChange.dispatch('reconnecting');
         } else if (!this.connected) {
           events.karaokeConnectionStatusChange.dispatch('error', reason);
-          posthog.capture('remote_mic_connection_error', { reason, transport: this.roomId?.charAt(0) });
+          posthog.capture('remote_mic_connection_error', { reason });
         } else {
           events.karaokeConnectionStatusChange.dispatch('disconnected');
         }
@@ -230,7 +225,7 @@ export class NetworkClient extends Listener<[NetworkMessages]> {
     this.connected = true;
     this.reconnecting = false;
     events.karaokeConnectionStatusChange.dispatch('connected');
-    posthog.capture('remote_mic_connection_successful', { transport: this.roomId?.charAt(0) });
+    posthog.capture('remote_mic_connection_successful');
     this.transport?.sendEvent({
       t: 'register',
       name: this.currentName,

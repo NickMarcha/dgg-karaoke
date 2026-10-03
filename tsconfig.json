@@ -19,7 +19,6 @@
     "types": ["vitest/globals"]
   },
   "include": ["src", "tests", "scripts"],
-  "exclude": ["functions"],
   "ts-node": {
     "compilerOptions": {
       "module": "commonjs",

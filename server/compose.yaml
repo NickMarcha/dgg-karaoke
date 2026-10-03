@@ -1,0 +1,53 @@
+# Named so the containers read dgg-karaoke-* rather than after this folder.
+name: dgg-karaoke
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: dgg_karaoke
+      POSTGRES_USER: dgg_karaoke
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U dgg_karaoke -d dgg_karaoke']
+      interval: 2s
+      timeout: 3s
+      retries: 15
+    volumes:
+      - dgg_karaoke_postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  api:
+    build: .
+    # Written by the deployment platform. Locally it is optional: the e2e specs start this stack with
+    # its values in the environment instead, and a missing value still stops the API at startup.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://dgg_karaoke:${POSTGRES_PASSWORD}@db:5432/dgg_karaoke
+      PORT: 8787
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:8787/health || exit 1']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # Publishes the API through a Cloudflare named tunnel. The public hostname route lives in the
+  # Cloudflare dashboard and points at http://api:8787 over the compose network, so nothing here
+  # publishes a host port and the server needs no inbound firewall rule.
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:?set CLOUDFLARE_TUNNEL_TOKEN in .env}
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  dgg_karaoke_postgres:

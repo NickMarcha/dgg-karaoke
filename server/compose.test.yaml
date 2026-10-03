@@ -1,0 +1,20 @@
+# The production stack as a local test environment: same image, same startup and migrations, with
+# the tunnel parked and the API and database published on this machine instead.
+#
+#   npm run stack:test        bring it up
+#   npm run stack:test:down   stop it, keeping the database volume
+services:
+  db:
+    ports:
+      - '127.0.0.1:54330:5432'
+
+  api:
+    # The dev server, the e2e production preview and the e2e dev server. CORS and the relay compare
+    # them byte for byte.
+    environment:
+      APP_ORIGIN: http://localhost:3000,http://localhost:3010,http://localhost:3020
+    ports:
+      - '8788:8787'
+
+  tunnel:
+    profiles: [tunnel]

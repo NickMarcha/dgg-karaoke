@@ -40,7 +40,7 @@ function ConnectRemoteMic() {
             <li className="text-md text-default leading-8">
               Go to{' '}
               <a href={new URL(link).origin} target="_blank" rel="noreferrer">
-                allkaraoke.party
+                {new URL(link).host}
               </a>{' '}
               on your phone
             </li>

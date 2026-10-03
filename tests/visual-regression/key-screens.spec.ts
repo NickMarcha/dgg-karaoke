@@ -1,16 +1,12 @@
 import { expect } from '@playwright/test';
 
 import songStats from '../../src/routes/landing-page/song-stats.json';
-import { mockLeaderboard, mockSongs } from '../helpers';
+import { mockSongs } from '../helpers';
 import initialise from '../page-objects/initialise';
 import { openAndConnectRemoteMicDirectly } from '../steps/open-and-connect-remote-mic';
 import { REMOTE_MIC_VIEWPORTS, VIEWPORTS, visual } from './visual';
 
-// Captured against a full board, which is the state the rail is laid out for: it fills the height
-// the cards beside it set and scrolls the rest, and a board of five rows would never show whether
-// it still does.
-visual('Landing page', async ({ page, context, viewport, makeScreenshot }) => {
-  await mockLeaderboard({ page, context });
+visual('Landing page', async ({ page, makeScreenshot }) => {
   // The recently added songs are labelled relative to now ("added 2 days ago", "236 songs added in
   // the last 30 days"), so against the real clock the same page would read differently every day.
   // Pinned to when the stats file was generated, it only changes when the songs do.
@@ -18,25 +14,15 @@ visual('Landing page', async ({ page, context, viewport, makeScreenshot }) => {
 
   await page.goto('/?e2e-test');
   await expect(page.getByTestId('enter-the-game').and(page.locator(':visible'))).toBeVisible();
-  // The board is a desktop-only rail on this page, so there is nothing to wait for on the narrow
-  // viewports — and waiting would fail them.
-  if (viewport.width >= 1024) {
-    await expect(page.getByTestId('leaderboard-row').and(page.locator(':visible')).first()).toBeVisible();
-  }
 
   await makeScreenshot();
 });
 
-visual('Main menu', async ({ page, context, makeScreenshot }) => {
-  // The menu is captured against a full board, for the same reason the landing page is: the board
-  // is the one thing on these screens whose height is the server's to decide.
-  await mockLeaderboard({ page, context });
-
+visual('Main menu', async ({ page, makeScreenshot }) => {
   // Navigating directly (rather than clicking through the landing page) avoids the landing page's
   // viewport-dependent CTA, which on narrow viewports leads to quick-setup instead of the main menu.
   await page.goto('/menu/?e2e-test');
   await expect(page.getByTestId('sing-a-song')).toBeVisible();
-  await expect(page.getByTestId('leaderboard-row').and(page.locator(':visible')).first()).toBeVisible();
 
   await makeScreenshot();
 });

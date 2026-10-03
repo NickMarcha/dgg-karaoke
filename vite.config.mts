@@ -1,5 +1,3 @@
-import { cloudflare } from '@cloudflare/vite-plugin';
-import { cloudflareTest } from '@cloudflare/vitest-pool-workers';
 import { playwright } from '@vitest/browser-playwright';
 import babel from '@rolldown/plugin-babel';
 import basicSsl from '@vitejs/plugin-basic-ssl';
@@ -8,10 +6,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import * as process from 'process';
 import { visualizer } from 'rollup-plugin-visualizer';
-import { type ConfigEnv } from 'vite';
 import { configDefaults, defineConfig } from 'vitest/config';
 import { bundledIcons } from './scripts/vite-plugin-bundled-icons';
-import { fakeSfu, hasRealtimeCredentials } from './scripts/vite-plugin-fake-sfu';
 import routePaths from './src/routes/route-paths';
 import { htmlPrerender } from './vite-plugin-html-prerender/src/index';
 
@@ -37,45 +33,8 @@ if (useHttps && !customCert) {
 // - the dev server, when `.dev.vars` holds no Realtime credentials: the fake is started alongside it.
 // The signaling rate limiter goes in both: every page of the suite, or every tab a developer opens to
 // play against themselves, shares one local IP, far past the budget sized for one real browser.
-const e2eFakeSfuUrl = process.env.E2E_FAKE_SFU_URL;
-const DEV_FAKE_SFU_PORT = 3481;
-
-const fakeSfuUrlFor = ({ command, isPreview }: ConfigEnv): string | undefined => {
-  if (e2eFakeSfuUrl) return e2eFakeSfuUrl;
-  if (command !== 'serve' || isPreview || process.env.VITEST || process.env.VITEST_WORKER_ID) return undefined;
-  return hasRealtimeCredentials(__dirname) ? undefined : `http://127.0.0.1:${DEV_FAKE_SFU_PORT}/v1`;
-};
-
-const cloudflareOptionsFor = (fakeSfuUrl: string | undefined): Parameters<typeof cloudflare>[0] =>
-  fakeSfuUrl
-    ? {
-        config: (config) => {
-          config.vars = {
-            ...config.vars,
-            REALTIME_APP_ID: 'fake-sfu',
-            REALTIME_APP_TOKEN: 'fake-sfu',
-            REALTIME_API_URL: fakeSfuUrl,
-          };
-          // Mutated rather than returned: a returned array is concatenated onto the original.
-          config.ratelimits = config.ratelimits?.filter(({ name }) => name !== 'ONLINE_SIGNALING_RATE_LIMITER');
-        },
-        // Runs next to a regular `pnpm start`; sharing its Durable Object storage would mix rooms.
-        persistState: e2eFakeSfuUrl ? { path: '.wrangler/state-e2e' } : undefined,
-      }
-    : undefined;
-
-/** The Cloudflare plugin, plus the fake SFU's process when the dev server has to run one. */
-const cloudflarePlugins = (env: ConfigEnv) => {
-  if (process.env.VITEST || process.env.VITEST_WORKER_ID) return [];
-  const fakeSfuUrl = fakeSfuUrlFor(env);
-  return [
-    cloudflare(cloudflareOptionsFor(fakeSfuUrl)),
-    fakeSfuUrl && !e2eFakeSfuUrl ? fakeSfu({ port: DEV_FAKE_SFU_PORT }) : null,
-  ];
-};
-
 // https://vitejs.dev/config/
-export default defineConfig((env) => ({
+export default defineConfig({
   // experimental: {
   // bundledDev: true,
   // },
@@ -83,7 +42,6 @@ export default defineConfig((env) => ({
     tsconfigPaths: true, // Tells Vite to read paths from tsconfig.json
   },
   plugins: [
-    ...cloudflarePlugins(env),
     bundledIcons({ namesFile: path.resolve(__dirname, 'src/modules/elements/akui/icon-names.ts') }),
     react({
       jsxImportSource: process.env.NODE_ENV === 'development' ? '@welldone-software/why-did-you-render' : undefined,
@@ -113,8 +71,11 @@ export default defineConfig((env) => ({
 
     process.env.VITE_APP_PRERENDER
       ? htmlPrerender({
-          staticDir: path.join(__dirname, 'build/client'),
-          routes: Object.values(routePaths).map((route) => `/${route}`),
+          staticDir: path.join(__dirname, 'build'),
+          // Online play and the admin page have no screens until our API serves them (docs/plans/dgg-karaoke.md)
+          routes: Object.values(routePaths)
+            .filter((route) => !route.startsWith('online') && route !== 'admin')
+            .map((route) => `/${route}`),
           minify: {
             collapseBooleanAttributes: true,
             collapseWhitespace: true,
@@ -127,7 +88,6 @@ export default defineConfig((env) => ({
   ],
   base: '/',
   // The same for the dep cache — two dev servers optimising into one directory trample each other.
-  cacheDir: e2eFakeSfuUrl ? 'node_modules/.vite-e2e' : undefined,
   build: {
     outDir: 'build',
     sourcemap: !process.env.FAST_BUILD,
@@ -162,13 +122,7 @@ export default defineConfig((env) => ({
           name: 'app',
           setupFiles: 'src/setup-tests.ts',
           include: ['**/*.test.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-          exclude: [
-            ...configDefaults.exclude,
-            '**/*.browser.test.{ts,tsx}',
-            'functions/**/*.test.ts',
-            'worker/**/*.test.ts',
-            '.claude/**/*',
-          ],
+          exclude: [...configDefaults.exclude, '**/*.browser.test.{ts,tsx}', 'server/**/*', '.claude/**/*'],
         },
       },
       {
@@ -217,29 +171,6 @@ export default defineConfig((env) => ({
           },
         },
       },
-      {
-        plugins: [
-          cloudflareTest({
-            main: './worker/index.ts',
-            miniflare: {
-              compatibilityDate: '2026-05-27',
-              kvNamespaces: ['SHARED_SONGS_KV', 'LEADERBOARD_KV'],
-              durableObjects: {
-                LEADERBOARD_BOARD: { className: 'LeaderboardBoard', useSQLite: true },
-                ONLINE_DIRECTORY: { className: 'OnlineDirectory', useSQLite: true },
-              },
-              bindings: {
-                ADMIN_PANEL_PASSWORD: 'admin-password',
-              },
-            },
-          }),
-        ],
-        test: {
-          name: 'functions',
-          include: ['functions/**/*.test.ts', 'worker/**/*.test.ts'],
-          exclude: ['.claude/**/*'],
-        },
-      },
     ],
   },
-}));
+});

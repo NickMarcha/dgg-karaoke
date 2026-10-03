@@ -3,6 +3,8 @@ import { expect, test } from '@playwright/test';
 import { initTestMode, mockSongs } from './helpers';
 import initialise from './page-objects/initialise';
 
+test.skip(true, 'The global leaderboard is hidden until our API serves it (layer 3 of docs/plans/dgg-karaoke.md)');
+
 let pages: ReturnType<typeof initialise>;
 
 const song = 'e2e-multitrack-polish-1994';

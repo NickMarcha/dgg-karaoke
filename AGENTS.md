@@ -44,12 +44,15 @@ wherever this fork has replaced something: the backend, sign-in, the theme.
 file. Keep the upstream copyright and attribution intact, and do not present
 the game as written from scratch.
 
-Upstream's backend is Cloudflare: a Worker in `worker/` and `functions/`, KV,
-Durable Objects, PartyKit and a Realtime SFU, configured in `wrangler.jsonc`.
-`.env` still points at allkaraoke's own hosts. **Nothing may be deployed that
+Upstream's backend was Cloudflare: a Worker, KV, Durable Objects, PartyKit and
+a Realtime SFU. It has been removed. Our own API lives in `server/` (Hono,
+Drizzle, Postgres) and is its own npm package with its own lockfile, so the
+image never installs the frontend's toolchain. **Nothing may be deployed that
 talks to allkaraoke's infrastructure**: our users must not run on somebody
-else's servers or quota. The plan replaces each of those pieces with this
-project's own API.
+else's servers or quota. Features that upstream ran on Cloudflare and we have
+not rebuilt yet (online mode, the global leaderboard, shared songs and their
+admin page) are hidden, not deleted; the plan says which layer brings each back.
+`docs/deployment.md` says how the API and the site are deployed.
 
 ## Working in the codebase
 

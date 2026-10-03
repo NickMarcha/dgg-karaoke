@@ -16,8 +16,6 @@ import { nextValue } from '~/modules/utils/indexes';
 import { useDevicePing } from '~/routes/select-input/hooks/use-device-ping';
 import {
   DefaultRemoteMicPermission,
-  RemoteMicConnectionType,
-  RemoteMicConnectionTypeSetting,
   RemoteMicPermissions,
   UnassignOnSongFinishedSetting,
   useSettingValue,
@@ -30,7 +28,6 @@ function RemoteMicSettings() {
 
   const { register } = useKeyboardNav({ onBackspace: goBack, title: 'Remote Microphone Settings' });
 
-  const [remoteMicConnectionType, setRemoteMicConnectionType] = useSettingValue(RemoteMicConnectionTypeSetting);
   const [defaultPermission, setDefaultPermission] = useSettingValue(DefaultRemoteMicPermission);
   const [unassignOnSongFinished, setUnassignOnSongFinished] = useSettingValue(UnassignOnSongFinishedSetting);
   const remoteMics = useEventListenerSelector(events.inputListChanged, () => RemoteMicManager.getRemoteMics());
@@ -44,7 +41,7 @@ function RemoteMicSettings() {
         onClick={() => {
           const code = prompt('Code');
 
-          if (code?.length === GAME_CODE_LENGTH - 1) {
+          if (code?.length === GAME_CODE_LENGTH) {
             storeGameCode(code);
 
             global.location.reload();
@@ -53,13 +50,6 @@ function RemoteMicSettings() {
         Remote Microphone Settings
       </Menu.Header>
       <KeyboardNavContext value={register}>
-        <NavSwitcher
-          name="connection type"
-          label="Connection type"
-          value={remoteMicConnectionType}
-          onClick={() => setRemoteMicConnectionType(nextValue(RemoteMicConnectionType, remoteMicConnectionType))}
-        />
-        <hr />
         <NavSwitcher
           name="default-permission"
           label="Default permission"

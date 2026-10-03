@@ -4,12 +4,10 @@ import { ServerSubscriptionRegistry } from '~/modules/network/rpc/server-subscri
 import { ChannelName, SubscriptionChannels } from '~/modules/remote-mic/network/client/subscriptions';
 import { NetworkMessages } from '~/modules/remote-mic/network/messages';
 import { ServerTransport } from '~/modules/remote-mic/network/server/transport/interface';
-import { PartyKitServerTransport } from '~/modules/remote-mic/network/server/transport/party-kit-server';
 import { WebSocketServerTransport } from '~/modules/remote-mic/network/server/transport/web-socket-server';
 import RemoteMicManager from '~/modules/remote-mic/remote-mic-manager';
 import generateRoomCode from '~/modules/utils/generate-room-code';
 import storage from '~/modules/utils/storage';
-import { RemoteMicConnectionTypeSetting } from '~/routes/settings/settings-state';
 
 import { serverHandlers } from './server-handlers';
 
@@ -39,9 +37,7 @@ export class NetworkServer {
 
   public constructor() {
     if (!this.gameCode) {
-      // One character short of GAME_CODE_LENGTH: `getGameCode()` prepends the transport-type letter,
-      // and that prefix has to fit within the length remote mics type in.
-      this.gameCode = generateRoomCode(GAME_CODE_LENGTH - 1);
+      this.gameCode = generateRoomCode(GAME_CODE_LENGTH);
     }
 
     global?.addEventListener?.('beforeunload', () => {
@@ -52,13 +48,7 @@ export class NetworkServer {
 
   public start = () => {
     if (!this.transport) {
-      const type = RemoteMicConnectionTypeSetting.get();
-      this.transport =
-        type === 'WebSockets'
-          ? new WebSocketServerTransport()
-          : type === 'PartyKit'
-            ? new PartyKitServerTransport()
-            : new PartyKitServerTransport();
+      this.transport = new WebSocketServerTransport();
     }
     if (this.started) return;
     this.started = true;
@@ -102,11 +92,16 @@ export class NetworkServer {
 
         events.micServerStarted.dispatch();
       },
-      () => {
+      (reason) => {
         // Closed on purpose by `stop()` — it has already reported the server as stopped
         if (this.transport !== transport) return;
         events.micServerStopped.dispatch();
         this.started = false;
+
+        // Another game holds this code, usually a duplicated tab, which copies session storage
+        if (reason.includes('room-taken')) {
+          this.gameCode = generateRoomCode(GAME_CODE_LENGTH);
+        }
 
         // try to reconnect
         this.reconnectTimer = setTimeout(() => {
@@ -159,8 +154,5 @@ export class NetworkServer {
     }
   };
 
-  public getGameCode = (): string => {
-    const type = RemoteMicConnectionTypeSetting.get();
-    return (type === 'WebSockets' ? 'w' : type === 'PartyKit' ? 'k' : 'p') + this.gameCode;
-  };
+  public getGameCode = (): string => this.gameCode;
 }

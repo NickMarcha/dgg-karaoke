@@ -1,5 +1,6 @@
 import { ComponentProps } from 'react';
 
+import { Chip } from '~/modules/elements/akui/chip';
 import storage from '~/modules/utils/storage';
 import { MobilePhoneModeSetting, useSettingValue } from '~/routes/settings/settings-state';
 import { twx } from '~/utils/twx';
@@ -31,6 +32,10 @@ export default function Logo(props: ComponentProps<'div'>) {
           .par<span className="text-text-player-1">t</span>y
         </DotParty>
       </LetterBase>
+      {/* Stored data is disposable while this is here; removing it is the promise that it no longer is (AGENTS.md) */}
+      <Chip variant="orange" className="absolute top-0 left-full ml-[1em]" data-test="beta-badge">
+        Beta
+      </Chip>
     </div>
   );
 }

@@ -4,7 +4,6 @@ import { ValuesType } from 'utility-types';
 
 import { milliseconds } from '~/interfaces';
 import { backgroundTheme } from '~/modules/elements/layout-with-background';
-import { ServerTransport } from '~/modules/remote-mic/network/server/transport/interface';
 import { FeatureFlags } from '~/modules/utils/feature-flags';
 import Listener from '~/modules/utils/listener';
 import storage from '~/modules/utils/storage';
@@ -93,20 +92,8 @@ export const AutoEnableFullscreenSetting = new Setting<boolean>(
   process.env.NODE_ENV === 'development' ? 'local' : 'session',
 );
 
-export const RemoteMicConnectionType = ['WebSockets', 'PeerJS', 'PartyKit'] as const;
-export const RemoteMicConnectionTypeSetting = new Setting<ServerTransport['name']>(
-  'RemoteMicConnectionType',
-  'PartyKit',
-  'session',
-);
 export const IsCalibratedSetting = new Setting<boolean>('IsCalibrated', false);
 export const UnassignOnSongFinishedSetting = new Setting<boolean>('UnassignOnSongFinished', false, 'session');
-
-posthog.onFeatureFlags?.(() => {
-  RemoteMicConnectionTypeSetting.set(
-    (posthog.getFeatureFlagPayload(FeatureFlags.RemoteMicConnectionType) as ServerTransport['name']) ?? 'PartyKit',
-  );
-});
 
 export function useSettingValue<T>(value: Setting<T>) {
   const [currentValue, setCurrentValue] = useState(() => value.get());

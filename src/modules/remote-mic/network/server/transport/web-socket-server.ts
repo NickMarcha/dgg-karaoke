@@ -1,3 +1,4 @@
+import { apiSocketUrl } from '~/modules/api';
 import { NetworkMessages } from '~/modules/remote-mic/network/messages';
 import {
   SenderInterface,
@@ -23,10 +24,9 @@ interface WebsocketPongMessage {
 
 export type WebsocketMessage = ForwardedMessage | WebsocketConnectedMessage | WebsocketPongMessage;
 
-export const WEBSOCKETS_SERVER = import.meta.env.VITE_APP_WEBSOCKET_URL;
+export const WEBSOCKETS_SERVER = apiSocketUrl('/remote-mic');
 
 export class WebSocketServerTransport extends Listener<[NetworkMessages, SenderInterface]> implements ServerTransport {
-  public readonly name = 'WebSockets';
   private connection: WebSocket | null = null;
 
   private sendEvent(event: NetworkMessages) {

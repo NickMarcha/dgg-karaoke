@@ -10,14 +10,10 @@ import { devices } from '@playwright/test';
 const prodRun = process.env.CI || process.env.PROD_RUN;
 
 /**
- * Online mode's P2P rooms run against a fake Cloudflare Realtime SFU (tests/fake-sfu) — there is no
- * Realtime app to reach from here. The app's Worker is pointed at it by `E2E_FAKE_SFU_URL`, see
- * vite.config.mts; CI sets it on its build step, and the local servers below set it themselves.
- * 127.0.0.1 rather than localhost: in the CI container localhost can resolve to an address the fake
- * is not listening on.
+ * Remote mics talk through the relay in server/, so the specs run the API's local test stack next to
+ * the app. Its address is the one in .env (`VITE_APP_API_URL`), which the app is built against.
  */
-const FAKE_SFU_PORT = 3480;
-const FAKE_SFU_URL = `http://127.0.0.1:${FAKE_SFU_PORT}/v1`;
+const API_PORT = 8788;
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -56,8 +52,8 @@ const config: PlaywrightTestConfig = {
     /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
     actionTimeout: 14_000,
     /* Base URL to use in actions like `await page.goto('/')`. */
-    // Not 3000: the suite's dev server runs in fake-SFU mode, so it must not be mistaken for (or
-    // collide with) the `pnpm start` you develop against.
+    // Not 3000: the suite runs its own dev server, which must not collide with the `pnpm start` you
+    // develop against.
     baseURL: prodRun ? 'http://localhost:3010/?e2e-test' : 'http://localhost:3020/?e2e-test',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
@@ -108,16 +104,10 @@ const config: PlaywrightTestConfig = {
     prodRun
       ? {
           // On CI we check the same build as would be deployed - with the risk that some issues won't happen
-          // locally. CI builds in its own step, so it only needs to serve the result. Both paths serve it with
-          // `vite preview`, which runs the built Worker in the Workers runtime via @cloudflare/vite-plugin.
-          //
-          // Not `wrangler dev`: it fronts the Worker with a ProxyWorker whose fetch rejects with "Network
-          // connection lost." whenever a request is aborted mid-flight - a browser page or context closing,
-          // which the remote-mic specs do constantly. Wrangler treats that as fatal and exits, so the rest of
-          // the shard fails with ERR_CONNECTION_REFUSED.
+          // locally. CI builds in its own step, so it only needs to serve the result.
           command: process.env.CI
             ? 'vite preview --port 3010'
-            : `E2E_FAKE_SFU_URL=${FAKE_SFU_URL} VITE_APP_PRERENDER=true vite build && vite preview --port 3010`,
+            : 'VITE_APP_PRERENDER=true vite build && vite preview --port 3010',
           port: 3010,
           timeout: 60_000 * 3,
           reuseExistingServer: true,
@@ -130,18 +120,13 @@ const config: PlaywrightTestConfig = {
           reuseExistingServer: true,
         },
     {
-      command: 'node tests/fake-sfu/server.mts',
-      env: { FAKE_SFU_PORT: String(FAKE_SFU_PORT) },
-      port: FAKE_SFU_PORT,
-      timeout: 30_000,
+      // In the foreground, so stopping Playwright stops the stack. The database volume is kept.
+      command: 'docker compose -f server/compose.yaml -f server/compose.test.yaml up --build db api',
+      env: { POSTGRES_PASSWORD: 'local_only', CLOUDFLARE_TUNNEL_TOKEN: 'unused-locally' },
+      port: API_PORT,
+      timeout: 60_000 * 5,
       reuseExistingServer: true,
     },
-    // {
-    //   command: 'pnpm peerjs',
-    //   port: 3001,
-    //   timeout: 60_000 * 3,
-    //   reuseExistingServer: true,
-    // },
   ].filter(Boolean) as PlaywrightTestConfig['webServer'],
 };
 

@@ -1,0 +1,15 @@
+[build]
+# The build prerenders every route in a headless Chromium (vite-plugin-html-prerender), which
+# Netlify's image does not ship, so Playwright fetches its own first.
+command = "pnpm exec playwright install chromium && pnpm build"
+publish = "build"
+
+[build.environment]
+# Read at build time. Changing it needs a rebuild, not just a redeploy.
+VITE_APP_API_URL = "https://karaoke-api.nickmarcha.com"
+
+# Prerendered routes are real files and win over this. Anything else is the single-page app.
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200

@@ -13,6 +13,8 @@ import { openAndConnectRemoteMicDirectly } from './steps/open-and-connect-remote
 import { openOnlinePauseOverlay } from './steps/open-online-pause-overlay';
 import { startOnlineSongAndReachLeaderboard } from './steps/start-online-song';
 
+test.skip(true, 'Online mode is hidden until it runs on our relay (layer 1b of docs/plans/dgg-karaoke.md)');
+
 // Online mode's signaling is part of the Worker that serves the app — see docs/online-mode.md. P2P
 // rooms run against the fake SFU in tests/fake-sfu, started by playwright.config.ts.
 

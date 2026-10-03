@@ -2,7 +2,6 @@ import { Helmet } from 'react-helmet';
 import { useHotkeys } from 'react-hotkeys-hook';
 
 import { ButtonLink } from '~/modules/elements/akui/button';
-import { Chip } from '~/modules/elements/akui/chip';
 import { Menu } from '~/modules/elements/akui/menu';
 import Box from '~/modules/elements/akui/primitives/box';
 import Typography from '~/modules/elements/akui/primitives/typography';
@@ -11,7 +10,6 @@ import Logo from '~/modules/elements/logo';
 import PageFrame from '~/modules/elements/page-frame';
 import SmoothLink from '~/modules/elements/smooth-link';
 import useSmoothNavigate from '~/modules/hooks/use-smooth-navigate';
-import LeaderboardPanel from '~/routes/welcome/leaderboard-panel';
 import MenuFooter from '~/routes/welcome/menu-footer';
 import { MenuViewTransition } from '~/routes/welcome/menu-view-transitions';
 import { twx } from '~/utils/twx';
@@ -48,9 +46,9 @@ const bullets = [
 
 /**
  * The landing page built from the main menu's own vocabulary — the same `Box` surfaces, the same
- * `LeaderboardPanel` rail, the same footer — so arriving at the menu reads as the next screen of one
- * app rather than a different product. The pitch keeps its place at the top; below it the entry
- * point, the online-mode teaser and the newest songs sit in cards, with the live global board alongside.
+ * footer — so arriving at the menu reads as the next screen of one app rather than a different
+ * product. The pitch keeps its place at the top; below it the entry point and the newest songs sit
+ * in cards. Online play and the global board come back with layers 1b and 3 of docs/plans/dgg-karaoke.md.
  *
  * The call to action swaps by viewport rather than by copy: on a desktop the visitor is the one
  * hosting, so "Enter the game" is the primary and joining is a text link under it; on a phone they
@@ -90,7 +88,7 @@ function LandingPage() {
         {/* The rail is the menu's own column, to the rem: the board is the same panel on both
             screens and it morphs from one to the other, so a different width here would make it
             jump. */}
-        <div className="grid flex-1 gap-4 lg:gap-6 xl:grid-cols-[minmax(0,1fr)_32rem]">
+        <div className="grid flex-1 gap-4 lg:gap-6">
           <div className="flex flex-col gap-3 lg:gap-4 xl:gap-6">
             <Box
               className={`${MenuViewTransition.SING_A_SONG} flex-1 items-stretch justify-start gap-4 p-4 lg:flex-row lg:gap-6 lg:p-6`}>
@@ -157,46 +155,9 @@ function LandingPage() {
               </div>
             </Box>
 
-            {/* Its own row rather than a line of text: online play is the newest thing here and the
-                one part of the page a visitor is unlikely to go looking for, so it gets a real
-                button and the height to be seen. */}
-            <Box
-              className={`${MenuViewTransition.SING_ONLINE} hidden shrink-0 flex-row items-center justify-start gap-6 p-5 lg:flex`}>
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <div className="flex items-center gap-3">
-                  <Chip variant="orange">Preview</Chip>
-                  <Typography className="text-md font-bold uppercase">Sing Online</Typography>
-                </div>
-                <Typography className="text-sm">
-                  Friends not in the room? Host a game they join from their own browser — same songs, same scoring.
-                </Typography>
-              </div>
-              <SmoothLink to="online/" asChild>
-                <ButtonLink data-test="sing-online" subtleFocused focused size="small">
-                  Host or join an online room
-                </ButtonLink>
-              </SmoothLink>
-            </Box>
-
             {/* Dropped below `lg` for the same reason the board is: it is neither the pitch nor a
                 way into a game, and four song tiles side by side need the width to stay readable. */}
             <RecentlyAddedSongs className="hidden lg:flex" />
-          </div>
-
-          {/* Dropped on a phone rather than stacked: it is the one block here that is neither the
-              pitch nor a way into a game, and it would push everything else past two screenfuls.
-
-              As a rail (from `xl`) the board fills its grid cell absolutely rather than sitting in
-              it: fifty rows are taller than everything to their left, and in flow that height
-              becomes the row's, so the whole page scrolls to show a list that can scroll itself.
-              Out of flow it has no height to give, the row is as tall as the cards beside it, and
-              the list takes what is left and scrolls. Below `xl` there is no second column and the
-              board is a block under the cards, where its own five-row height is what it should be. */}
-          <div className="relative hidden lg:block">
-            <LeaderboardPanel
-              className={`${MenuViewTransition.LEADERBOARD} xl:absolute xl:inset-0`}
-              listClassName="xl:h-auto xl:min-h-0 xl:flex-1"
-            />
           </div>
         </div>
 

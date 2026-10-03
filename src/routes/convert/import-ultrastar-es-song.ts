@@ -1,3 +1,4 @@
+import { apiUrl } from '~/modules/api';
 import { AuthorAndVidEntity } from '~/routes/convert/steps/author-and-video';
 
 export default async function importSongFromSource(url: string) {
@@ -15,7 +16,7 @@ export default async function importSongFromSource(url: string) {
 }
 
 async function importUltrastarEsSong(url: string): Promise<AuthorAndVidEntity> {
-  const response = await fetch(`/proxy?url=${encodeURIComponent(url)}`);
+  const response = await fetch(apiUrl(`/proxy?url=${encodeURIComponent(url)}`));
   const text = await response.text();
 
   const doc = new DOMParser().parseFromString(text, 'text/html');
@@ -35,7 +36,7 @@ async function importUltrastarEsSong(url: string): Promise<AuthorAndVidEntity> {
 }
 
 async function importUsDbAnimuxSong(url: string, obj: URL): Promise<AuthorAndVidEntity> {
-  const response = await fetch(`/proxy?url=${encodeURIComponent(url)}`);
+  const response = await fetch(apiUrl(`/proxy?url=${encodeURIComponent(url)}`));
   const text = await response.text();
 
   const doc = new DOMParser().parseFromString(text, 'text/html');

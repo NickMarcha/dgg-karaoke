@@ -18,17 +18,16 @@ NetworkClient                          NetworkServer
 
 ## Transport Adapters
 
-The actual WebSocket connection is provided by a swappable adapter. Both the client and server have matching adapter pairs:
+There is one transport: a WebSocket to the relay in `server/src/relay.ts`, at `/remote-mic` on our API (`VITE_APP_API_URL`). The phone side is `web-socket-client.ts` and the game side is `web-socket-server.ts`. Upstream also had PartyKit and PeerJS adapters and picked one by a letter in front of the game code; both ran on allkaraoke's servers and are gone, so a game code is five letters with no prefix.
 
-| Adapter       | Client               | Server               | When used                                                           |
-| ------------- | -------------------- | -------------------- | ------------------------------------------------------------------- |
-| **PartyKit**  | `PartyKitClient.ts`  | `PartyKitServer.ts`  | Default; room IDs starting with `k` (Cloudflare Workers / PartyKit) |
-| **WebSocket** | `WebSocketClient.ts` | `WebSocketServer.ts` | Room IDs starting with `w`; direct WebSocket server                 |
-| **PeerJS**    | `PeerJSClient.ts`    | `PeerJSServer.ts`    | Legacy peer-to-peer WebRTC                                          |
+The relay never reads the game's messages. It knows rooms, which socket is the host and which are phones, and wraps each message with who sent it. The protocol is written out at the top of `relay.ts`. Two things it does on its own:
 
-The client selects an adapter based on the room ID prefix in `NetworkClient.connect()`. The server side uses whichever transport is registered for the active session.
+- When a phone's socket closes, it sends the host an `unregister` from that phone. A phone that reloads or loses signal never sends one itself, and the game marks the singer as gone when it arrives.
+- When the host's socket closes, it closes every phone with `host-left`. The phones keep retrying with `game-not-found` until the game is back, then register again.
 
-Both sides implement a common interface (`Client/Transport/interface.ts`, `Server/Transport/interface.ts`) so `NetworkClient` and `NetworkServer` are transport-agnostic.
+A game whose code is already taken (a duplicated tab copies session storage, code included) is closed with `room-taken` and picks a new code.
+
+Both sides still implement the transport interfaces (`client/transport/interface.ts`, `server/transport/interface.ts`), so `NetworkClient` and `NetworkServer` don't know about sockets.
 
 ## RPC System
 

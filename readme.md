@@ -19,6 +19,19 @@ pnpm install
 pnpm start
 ```
 
+Remote mics talk through our API, so start it too. It needs Docker, and runs Postgres and the API on
+`localhost:8788`, which the root `.env` points the app at:
+
+```
+cd server
+cp .env.example .env
+npm install
+npm run stack:test
+```
+
+A phone on the LAN cannot reach `localhost:8788`. To test with a real phone, set `VITE_APP_API_URL` to an address the
+phone can reach and add the phone's origin of the site to `APP_ORIGIN` in `server/compose.test.yaml`.
+
 #### Run in offline mode
 
 Plays dummy local video instead of YouTube to work properly in offline environments (eg. planes).
