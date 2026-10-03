@@ -27,8 +27,9 @@ const alive = new WeakSet<WebSocket>();
 server.on('upgrade', (request, socket, head) => {
   const { pathname } = new URL(request.url ?? '/', 'http://localhost');
   if (pathname !== '/remote-mic' || !env.APP_ORIGIN.includes(request.headers.origin ?? '')) {
-    socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
-    socket.destroy();
+    // A complete response, ended rather than destroyed: the tunnel reports a socket cut off
+    // mid-response as a 502 from the origin.
+    socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\nContent-Length: 0\r\n\r\n');
     return;
   }
   sockets.handleUpgrade(request, socket, head, (client) => sockets.emit('connection', client));
