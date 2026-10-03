@@ -1,7 +1,7 @@
 import MicInput from './mic-input';
 
 afterEach(async () => {
-  await MicInput.stopMonitoring();
+  await MicInput.release();
 });
 
 // The browser project feeds tests/fixtures/test-440hz.wav as the fake microphone

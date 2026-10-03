@@ -103,6 +103,8 @@ class InputManager {
     await Promise.all(
       inputs.map((input) => this.sourceNameToInput(input.source).startMonitoring(input.deviceId, inputs)),
     );
+    // Microphones stay open between sessions; one nobody switched back to is given back here
+    await MicInput.releaseUnused(inputs);
     this.openedInputs = inputs;
     this.isMonitoring = true;
   };

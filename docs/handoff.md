@@ -203,12 +203,18 @@ not the one picked in the first prompt. Firefox grants per device (and
 tell), and the list opened every device to read its channel count. In Firefox
 only the granted device is opened now, and it is the default; the others are
 listed as one channel, so a two-channel SingStar mic only shows both channels
-in Firefox if it is the one picked in the prompt. **Not yet confirmed by the
-user in Firefox.** The probe streams are
-still never stopped, as upstream left them; stopping them might make Firefox
-ask again when the game opens the microphone. `MicInput` asks with
-`{ deviceId, exact: true }`, which is not a valid constraint, so it only
-prefers the device; left alone for now.
+in Firefox if it is the one picked in the prompt. The user confirmed that,
+then got one more prompt when the song started: monitoring stopped the
+microphone when the setup screen closed, and Firefox only re-shares a stopped
+device within its grace period. The computer's microphones now stay open,
+muted, between monitoring sessions, as the phone's already did;
+`InputManager.open` gives back any no player sings through. In Playwright's
+Firefox, leaving the setup screen and coming back now makes no new requests
+(before: four tracks stopped and one more request). `MicInput` also asks for
+`deviceId: { exact }` now; it passed `exact: true` beside the id, which only
+preferred the device. **The song-start prompt is not yet confirmed gone by
+the user.** The probe streams the list opens are still never stopped, as
+upstream left them.
 
 Next:
 

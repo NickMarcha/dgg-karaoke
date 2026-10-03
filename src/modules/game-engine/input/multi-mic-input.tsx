@@ -8,16 +8,23 @@ const isDeviceSelectedForMultipleChannels = (allInputs: SelectedPlayerInput[] = 
 };
 
 class MultiMicInput implements InputInterface {
-  private devices: Record<string, InputInterface> = {};
+  /** Kept between monitoring sessions, so each device is asked for once; see {@link releaseUnused}. */
+  private devices: Record<string, MicInput> = {};
   public startMonitoring = async (deviceId?: string, allInputs?: SelectedPlayerInput[]) => {
     if (deviceId) {
-      if (!this.devices[deviceId]) {
-        this.devices[deviceId] = isDeviceSelectedForMultipleChannels(allInputs, deviceId)
-          ? new MicInput(2)
-          : new MicInput(1);
-      }
+      this.devices[deviceId] ??= new MicInput();
+      this.devices[deviceId].channels = isDeviceSelectedForMultipleChannels(allInputs, deviceId) ? 2 : 1;
       await this.devices[deviceId].startMonitoring(deviceId);
     }
+  };
+
+  /** Gives back the devices none of `inputs` sings through. */
+  public releaseUnused = async (inputs: SelectedPlayerInput[]) => {
+    const used = new Set(inputs.filter((input) => input.source === 'Microphone').map((input) => input.deviceId));
+    const unused = Object.keys(this.devices).filter((deviceId) => !used.has(deviceId));
+
+    await Promise.all(unused.map((deviceId) => this.devices[deviceId].release()));
+    unused.forEach((deviceId) => delete this.devices[deviceId]);
   };
 
   public getFrequencies = (deviceId?: string) => {
@@ -35,12 +42,11 @@ class MultiMicInput implements InputInterface {
   };
   public clearFrequencies = (deviceId?: string) => {
     if (deviceId && this.devices[deviceId]) {
-      return this.devices[deviceId].clearFrequencies(deviceId);
+      return this.devices[deviceId].clearFrequencies();
     }
   };
   public stopMonitoring = async () => {
     await Promise.all(Object.values(this.devices).map((device) => device.stopMonitoring()));
-    this.devices = {};
   };
 
   public getInputLag = (deviceId?: string) => {

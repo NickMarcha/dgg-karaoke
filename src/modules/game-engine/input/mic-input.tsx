@@ -16,19 +16,17 @@ export class MicInput implements InputInterface {
 
   private startedMonitoring = false;
 
-  constructor(private channels = 2) {}
+  /** Read when monitoring starts: one analyser per channel. */
+  public channels = 2;
 
   public startMonitoring = async (deviceId?: string) => {
     if (this.startedMonitoring) return;
     this.startedMonitoring = true;
 
     try {
-      this.stream = await userMediaService.getUserMedia({
-        audio: {
-          ...(deviceId ? { deviceId, exact: true } : {}),
-          echoCancellation: false,
-        },
-        video: false,
+      this.stream = await this.acquireStream(deviceId);
+      this.stream.getTracks().forEach((track) => {
+        track.enabled = true;
       });
       try {
         this.context = new AudioContext({
@@ -88,12 +86,28 @@ export class MicInput implements InputInterface {
   public getVolumes = () => this.volumes;
   public clearFrequencies = () => undefined;
 
+  /** Reuses the stream from the last session while it is live: a fresh request makes Firefox ask again. */
+  private acquireStream = async (deviceId?: string) => {
+    const tracks = this.stream?.getTracks() ?? [];
+    if (this.stream && tracks.length > 0 && tracks.every((track) => track.readyState === 'live')) return this.stream;
+
+    return userMediaService.getUserMedia({
+      audio: {
+        ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+        echoCancellation: false,
+      },
+      video: false,
+    });
+  };
+
   public stopMonitoring = async () => {
     if (!this.startedMonitoring) return;
     this.startedMonitoring = false;
     this.interval && clearInterval(this.interval);
-    this.stream?.getTracks().forEach(function (track) {
-      track.stop();
+    // Muted, not stopped: Firefox asks again for a device stopped more than a few seconds ago,
+    // and the game turns monitoring on and off around every song. `release()` gives the mic back.
+    this.stream?.getTracks().forEach((track) => {
+      track.enabled = false;
     });
     try {
       await this.context?.close();
@@ -102,6 +116,13 @@ export class MicInput implements InputInterface {
     }
 
     events.micMonitoringStopped.dispatch();
+  };
+
+  /** Stops monitoring and gives the microphone back to the browser. */
+  public release = async () => {
+    await this.stopMonitoring();
+    this.stream?.getTracks().forEach((track) => track.stop());
+    this.stream = null;
   };
 
   public getInputLag = () => 180;
