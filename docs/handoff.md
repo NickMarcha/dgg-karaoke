@@ -22,7 +22,9 @@ repository for the next session and update this file when stopping.
 
 ## Where things stand
 
-Layers 0, 1 and 1b of `docs/plans/dgg-karaoke.md` are done. The site is live at
+Layers 0, 1 and 1b of `docs/plans/dgg-karaoke.md` are done, and layer 2
+(sign-in and the look) is built and live apart from its visual baselines. The
+site is live at
 `https://dgg-karaoke.netlify.app` with a Beta badge, and the API at
 `https://karaoke-api.nickmarcha.com`. A real phone has joined a game and sung
 through the relay. `docs/deployment.md` describes how both halves deploy.
@@ -30,7 +32,9 @@ through the relay. `docs/deployment.md` describes how both halves deploy.
 - The API (`server/`) is its own npm package: Hono, Drizzle, Postgres,
   migrations at startup, `/health`, the remote-mic relay at `/remote-mic` and
   the song importer's proxy at `/proxy`, and online mode at `/online` (room
-  relay plus directory, the directory's one table `online_rooms`).
+  relay plus directory, the directory's one table `online_rooms`), and
+  destiny.gg sign-in under `/api` (`users`, `sessions`,
+  `oauth_login_transactions`).
 - Nothing talks to allkaraoke's servers any more. PeerJS, PartyKit, the
   Cloudflare Worker, the Realtime SFU, wrangler and the fake SFU are gone. The
   global leaderboard, shared songs and the admin page are hidden, not deleted,
@@ -53,6 +57,13 @@ pre-commit hook runs both when `server/` changes.
 - In a real browser on the live site: the game opens its socket, a phone joins
   by code.
 - On a real phone, by the user: one song sung with the phone as player 1.
+- Sign-in, locally in headless Chromium against the stand-in: signing in, the
+  flair colour, a reload, signing out, a used state. On the live site only that
+  `/api/me` answers through Netlify and `/api/auth/login` redirects to
+  destiny.gg with the right client and redirect.
+- "Join with code" with an online room code, and the coloured room codes, in a
+  local browser: a phone-sized page lands on `online/?room=…`, and a hosted
+  room's lobby and the joining guest's wizard show the digit in blue.
 
 ## Not checked
 
@@ -63,8 +74,11 @@ pre-commit hook runs both when `server/` changes.
 - **ultrastar-es.org imports.** That site now serves every scripted request a
   Cloudflare challenge (403), so the importer's path to it is broken on their
   side. usdb works through the proxy.
-- The visual regression baselines for the landing page and menu predate the
-  layout change and will fail until regenerated.
+- **A real destiny.gg sign-in on the live site**, in Safari as well, which is
+  why `/api` is proxied through Netlify.
+- **"Join with code" with an online room code on a real phone.** It used to
+  open the remote-mic join and answer "room not found"; fixed in `ffb3183a`.
+- **The visual baselines**, all 291, still show the old look (see Next).
 
 ## Waiting on a person
 
@@ -76,11 +90,11 @@ pre-commit hook runs both when `server/` changes.
    extra login check. Tell the user if SSH is needed; public endpoint checks
    did not require it.
 
-The destiny.gg OAuth application is already registered. Its client ID and
-secret, admin usernames and PostHog token were recorded as present in the
-Komodo stack environment. The registered redirect is
-`https://dgg-karaoke.netlify.app/auth/callback`. Registration is not a blocker
-for layer 2. Keep secret values out of documentation and diagnostic output.
+The destiny.gg OAuth application is registered with the redirect
+`https://dgg-karaoke.netlify.app/auth/callback`, and the user has set
+`DGG_CLIENT_ID`, `DGG_CLIENT_SECRET`, `DGG_REDIRECT_URI` and
+`ADMIN_DGG_USERNAMES` in the Komodo stack. Keep secret values out of
+documentation and diagnostic output.
 
 ## Noted for later
 
@@ -152,41 +166,45 @@ for layer 2. Keep secret values out of documentation and diagnostic output.
 
 ## Next
 
-Layer 2 is built and committed, not yet pushed.
+Layer 2 is pushed and live except for its visual baselines.
 
-**Sign-in** (`3f78372f`): the API's `users`, `sessions` and
-`oauth_login_transactions` tables (migration `0001_sign_in`),
-`/api/auth/login`, `/api/auth/callback`, `/api/auth/logout` and `/api/me`, the
-`/auth/callback` page, and a sign-in button in the toolbar that becomes the
-flair-coloured username and a sign-out button. Roles are `singer` and `admin`;
-reviewers come with layer 4. Checked locally in headless Chromium against the
-stand-in. The site proxies `/api/*` to the API (Netlify in production, Vite
-locally) so the session cookie is first-party and Safari keeps it;
-`docs/deployment.md` explains it. The user has set the `DGG_*` values in
-Komodo.
-
-**The look**: destiny.gg's near-black canvas with its blue let in from one
-corner, `#0090ff` as the accent in place of orange, `#18191b` dialogs edged in
-`#43484e`, Inter and Poppins bundled through `@fontsource`, sentence case
-instead of all-caps buttons and headings, and a "DGG Karaoke" wordmark beside
-upstream's microphones. `info` became violet so no status reads as focus. Page
-titles and the PWA manifest say DGG Karaoke; the landing page credits
-AllKaraoke. `using-tailwind` and the Foundations stories describe the new
-tokens.
+- **Sign-in** (`3f78372f`): the tables above, `/api/auth/login`,
+  `/api/auth/callback`, `/api/auth/logout`, `/api/me`, the `/auth/callback`
+  page, and a toolbar button that becomes the flair-coloured name and a
+  sign-out button. Roles are `singer` and `admin`; reviewers come with layer
+  4. Sign-in is not yet required for anything; layers 3 and 4 make scores and
+  song submissions need it.
+- **The look** (`f6b7d5eb`): destiny.gg's near-black canvas, `#0090ff` in place
+  of orange, `#18191b` dialogs edged in `#43484e`, Inter and Poppins bundled,
+  sentence case instead of all-caps, a "DGG Karaoke" wordmark beside
+  upstream's microphones, `info` violet so no status reads as focus. Titles
+  and the manifest say DGG Karaoke; the landing page credits AllKaraoke.
+  `using-tailwind` and the Foundations stories describe the tokens.
+- **Join with code** (`ffb3183a`): the landing page's phone button takes both
+  kinds of code. An online room code starts with a digit
+  (`P2P_ROOM_CODE_PATTERN`) and a remote-mic code never does, so the shape
+  decides; an online code goes to `online/?room=…`.
+- **Room codes** (`cfa1582b`): `RoomCode` draws digits in the accent and
+  letters in the default colour. The code input itself cannot.
 
 Next:
 
-1. Push, then on the live site: sign in (Safari too), sign out, sing without an
-   account, a phone microphone and an online room.
+1. On the live site: sign in and out (Safari too), sing without an account,
+   a phone microphone, and joining an online room from a phone with "Join with
+   code".
 2. **Refresh the visual baselines.** All 291 (`tests/visual-regression`,
    `tests/storybook`) are Linux renders of the old look, and upstream's CI
    that produced them is gone. Regenerating on Windows only adds `-win32`
    copies, so it needs a Linux Playwright container (or `sage-dev`) with the
    API stack reachable.
-3. Left as they were: the toolbar covers the right end of the song list's
+3. Then layer 3, leaderboards on our API, which is the first thing to require
+   sign-in.
+4. Left as they were: the toolbar covers the right end of the song list's
    filter row on wide screens (it did before; the account button adds a
-   little), the Beta badge sits under the toolbar on a phone, and the menu
-   footer's "Get in touch" links and the GitHub ribbon are still upstream's.
+   little), the Beta badge sits under the toolbar on a phone, the menu
+   footer's "Get in touch" links and the GitHub ribbon are still upstream's,
+   and on a phone the landing page shows no "Sing online" entry, only "Join
+   with code".
 
 `pnpm lint` fails on `.agents/skills/d3-viz/assets/interactive-template.jsx`,
 a skill asset that arrived with `9b9d6c64`, not on app code. Excluding
