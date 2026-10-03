@@ -22,16 +22,7 @@ class SimplifiedMic extends Listener<[number, number]> implements InputInterface
     this.startedMonitoring = true;
 
     try {
-      this.stream = await userMediaService.getUserMedia({
-        audio: {
-          // echoCancellation is turned on because without it there is silence from the mic
-          // every other second (possibly some kind of Chrome Mobile bug)
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: false,
-        },
-        video: false,
-      });
+      this.stream = await this.acquireStream();
       try {
         this.context = new AudioContext({
           sampleRate: 44100,
@@ -84,8 +75,10 @@ class SimplifiedMic extends Listener<[number, number]> implements InputInterface
     if (!this.startedMonitoring) return;
     this.startedMonitoring = false;
     this.interval && clearInterval(this.interval);
-    this.stream?.getTracks().forEach(function (track) {
-      track.stop();
+    // Muted, not stopped: a fresh getUserMedia makes Firefox and iOS Safari ask for permission again,
+    // and the game turns monitoring on and off around every song. `release()` gives the mic back.
+    this.stream?.getTracks().forEach((track) => {
+      track.enabled = false;
     });
     try {
       await this.context?.close();
@@ -94,6 +87,33 @@ class SimplifiedMic extends Listener<[number, number]> implements InputInterface
     }
 
     events.micMonitoringStopped.dispatch();
+  };
+
+  /** Stops monitoring and gives the microphone back to the browser, for when the phone leaves the game. */
+  public release = async () => {
+    await this.stopMonitoring();
+    this.stream?.getTracks().forEach((track) => track.stop());
+    this.stream = null;
+  };
+
+  private acquireStream = async () => {
+    const tracks = this.stream?.getTracks() ?? [];
+    if (this.stream && tracks.length > 0 && tracks.every((track) => track.readyState === 'live')) {
+      tracks.forEach((track) => {
+        track.enabled = true;
+      });
+      return this.stream;
+    }
+    return userMediaService.getUserMedia({
+      audio: {
+        // echoCancellation is turned on because without it there is silence from the mic
+        // every other second (possibly some kind of Chrome Mobile bug)
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: false,
+      },
+      video: false,
+    });
   };
 
   public getInputLag = () => 180;

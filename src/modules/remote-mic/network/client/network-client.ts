@@ -183,7 +183,9 @@ export class NetworkClient extends Listener<[NetworkMessages]> {
         subscriptionManager.handlePublish('keyboard-layout', undefined);
 
         SimplifiedMic.removeListener(this.onFrequencyUpdate);
-        SimplifiedMic.stopMonitoring();
+        // A reconnect keeps the microphone so the phone does not ask for it again; removal ends the session
+        if (reason === 'player-removed') SimplifiedMic.release();
+        else SimplifiedMic.stopMonitoring();
 
         if (reason !== 'player-removed') {
           if (!this.reconnecting && this.connected) {
@@ -271,5 +273,6 @@ export class NetworkClient extends Listener<[NetworkMessages]> {
 
   public disconnect = () => {
     this.transport?.close();
+    SimplifiedMic.release();
   };
 }
