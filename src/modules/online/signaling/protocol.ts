@@ -1,175 +1,56 @@
 /**
- * Shared contract between the browser and the `/online/*` signaling endpoints in the Worker.
+ * Shared contract between the browser and the online relay on our API (server/src/online/), which
+ * carries the room's messages and keeps the room directory: who is in a room, which slot each of
+ * them holds, and who hosts. The room itself runs in the host's browser.
  *
- * The Worker is the only thing that holds the Realtime app token, so every SFU API call is
- * proxied through it. It stays stateless apart from one small Durable Object (the room
- * directory) that is touched on join, leave and host promotion — never while a song is playing.
- *
- * Relative-import-safe: the Worker build has no `~` alias, so nothing here may import from
- * anywhere that does.
+ * The server is a separate package and keeps its own copies of the constants below;
+ * `protocol.test.ts` reads them out of its source so the two cannot drift.
  */
 
-/** Channel every participant subscribes to. The host publishes it once and the SFU fans it out,
- * so the host's uplink does not grow with the room. Read-only for everyone but the host. */
-export const ROOM_BROADCAST_CHANNEL = 'room';
-
-/** Per-participant duplex pipe. The host publishes one of these per slot; the single client
- * holding the slot subscribes with `canReply: true`, which makes the same negotiated channel
- * bidirectional. Cloudflare grants reply access to exactly one subscriber per publisher channel
- * (a later grant revokes the earlier one), so a slot must never have two live claimants — the
- * directory Durable Object is what guarantees that. */
-export const slotChannelName = (slot: number) => `slot-${slot}`;
-
-/** Rooms are capped at ONLINE_MAX_PLAYERS, so the host can publish every slot channel up front
- * and never renegotiate when somebody joins. Kept in sync with `ONLINE_MAX_PLAYERS` by a test —
- * it cannot be imported here without dragging the app's `~` alias into the Worker build. */
+/** Rooms are capped at ONLINE_MAX_PLAYERS, one slot each. Kept in sync with it by a test. */
 export const ONLINE_SLOT_COUNT = 6;
 
 /**
  * The first character of a room code: a digit, left over from when the all-letter codes belonged to
- * the PartyKit room server this one replaced. 0 and 1 are left out — they read as O and l, and the
- * code is read out across a room and typed on phones.
+ * the PartyKit room server this one replaced. 0 and 1 are left out, because they read as O and l,
+ * and the code is read out across a room and typed on phones.
  */
 export const P2P_ROOM_CODE_LEADS = '23456789';
 
 /** A room code in full: a lead digit and four lowercase letters, five characters like every room
- * code (`ONLINE_ROOM_CODE_LENGTH`, kept in sync by a test). The Worker holds its directory to this. */
+ * code (`ONLINE_ROOM_CODE_LENGTH`, kept in sync by a test). The directory refuses anything else. */
 export const P2P_ROOM_CODE_PATTERN = /^[2-9][a-z]{4}$/;
 
-/** A room's directory row is wiped this long after the last call touching it. The host's keepalive
- * is what holds a live room open, so this only has to outlast the gap between keepalives. */
-export const DIRECTORY_TTL_MS = 30 * 60 * 1_000;
-
-/** How often the host refreshes the room's TTL. Far enough apart to cost nothing, far enough below
- * the TTL that a couple of missed beats are harmless. */
+/** How often the host tells the directory its room is still in use. The directory forgets a room
+ * after 30 idle minutes, so a couple of missed beats are harmless. */
 export const DIRECTORY_KEEPALIVE_MS = 5 * 60 * 1_000;
-
-/** A WebRTC ICE server, in the shape `RTCPeerConnection` takes it. */
-export interface IceServerDto {
-  urls: string[];
-  username?: string;
-  credential?: string;
-}
-
-/**
- * `GET /online/ice` — what to hand `RTCPeerConnection`.
- *
- * STUN is always there and needs no credentials of any kind, so a checkout with nothing configured
- * still connects. TURN is opt-in: it only appears when the Worker has been given either Cloudflare
- * Realtime TURN keys or a static TURN server, and it only matters for the minority of networks
- * that block UDP to the SFU outright.
- */
-export interface IceServersResponse {
-  iceServers: IceServerDto[];
-  /** Seconds the credentials stay valid; absent when none of them are credentialed. */
-  ttlSeconds?: number;
-}
-
-export interface SessionDescriptionDto {
-  type: 'offer' | 'answer';
-  sdp: string;
-}
-
-/**
- * `POST /online/session` (no body) — opens an SFU session for this browser and starts its
- * data-channel transport.
- *
- * The SFU makes the offer, not the browser: Cloudflare's `datachannels/establish` takes no SDP and
- * answers with an offer of its own (and `requiresImmediateRenegotiation`). The browser answers it
- * and hands the answer back through `POST /online/session/answer`.
- */
-export interface CreateSessionResponse {
-  sessionId: string;
-  offer: SessionDescriptionDto;
-  /** Proof that the caller is the browser this session was opened for — required by the answer
-   * endpoint. Session ids are not secret (a room's host session id is published to anyone who
-   * asks), so without it anyone could renegotiate somebody else's session out from under them. */
-  answerToken: string;
-}
-
-/** `POST /online/session/answer` — completes the transport with the browser's answer to the SFU's
- * offer. */
-export interface AnswerSessionRequest {
-  sessionId: string;
-  answer: SessionDescriptionDto;
-  answerToken: string;
-}
-
-export interface DataChannelSpec {
-  name: string;
-  /** Absent for a publisher ('local') channel; the host session id for a subscriber one. */
-  publisherSessionId?: string;
-  /** Only meaningful on a subscriber channel — asks for the upstream half of the slot pipe. */
-  canReply?: boolean;
-}
-
-/**
- * `POST /online/datachannels` — creates negotiated channels on an existing session. Returns the
- * ids the browser must pass to `createDataChannel(name, { negotiated: true, id })`.
- *
- * The room code and participant id are not bookkeeping: the Worker checks them against the room
- * directory and will only open the channels that membership entitles you to. Without that check,
- * anyone holding a room code could subscribe to another singer's slot — and because Cloudflare
- * grants reply access to one subscriber at a time, claiming it would also revoke the rightful
- * occupant's upstream.
- */
-export interface CreateDataChannelsRequest {
-  roomCode: string;
-  participantId: string;
-  sessionId: string;
-  channels: DataChannelSpec[];
-}
-export interface CreateDataChannelsResponse {
-  channels: Array<{ name: string; id: number }>;
-}
 
 export type JoinRejectedReason = 'room-full' | 'not-found' | 'banned' | 'not-authorized';
 
 /**
- * `POST /online/room/:code/join` — claims a slot in the directory and reports who is hosting.
- *
- * A participant id is not a credential: it is published to the whole room in `room-state`, so
- * anybody who has been in a room knows everyone else's. The directory therefore mints a secret for
- * each membership on its first join and requires it on every later call that acts on that
- * membership. Without it, re-joining as somebody else's participant id would re-point their row —
- * taking the host's channels over, or leaving any singer unable to open one.
+ * The directory's answer to a join. A participant id is not a credential: it is published to the
+ * whole room in `room-state`. So the directory mints a secret on a membership's first join and wants
+ * it on every later call acting on that membership.
  */
-export interface JoinRoomRequest {
-  participantId: string;
-  sessionId: string;
-  /** Opens the room when it does not exist yet. Without it an unknown code is `not-found`. */
-  create?: boolean;
-  /** Proof that this caller is the participant it claims to be. Absent on a first join (there is
-   * nothing to prove yet) and required on every rejoin. */
-  secret?: string;
-}
 export type JoinRoomResponse =
   | {
       ok: true;
       /** True when this participant is the one that has to run the room logic. */
       isHost: boolean;
-      /** Whose channels to subscribe to. Equals the caller's own session when `isHost`. */
+      /** The host's relay session. Equals the caller's own when `isHost`. */
       hostSessionId: string;
       /** Bumped on every host change; carried into a promotion claim so two singers reacting to
        * the same stall cannot both win. */
       epoch: number;
-      /** The slot channel this participant owns for the lifetime of its membership. */
+      /** The slot this participant owns for the lifetime of its membership. */
       slot: number;
-      /** This membership's secret — minted on the first join and returned unchanged afterwards.
-       * Handed only to the joiner, and never published in room state. */
+      /** This membership's secret, minted on the first join and returned unchanged afterwards. */
       secret: string;
     }
   | { ok: false; reason: JoinRejectedReason };
 
-/** `POST /online/room/:code/promote` — a client that saw the host go quiet claims the role. The
- * directory accepts it only if `fromEpoch` still matches, so simultaneous claims cannot both win —
- * and only if `secret` matches, so the claim can only be made by the participant itself. */
-export interface PromoteHostRequest {
-  participantId: string;
-  sessionId: string;
-  fromEpoch: number;
-  secret: string;
-}
+/** A client that saw the host go quiet claims the role. Accepted only if its epoch is still current
+ * and its secret matches; a rejection carries the winner's session, so the loser can follow it. */
 export type PromoteHostResponse =
   | { ok: true; epoch: number }
   | {
@@ -179,23 +60,7 @@ export type PromoteHostResponse =
       hostSessionId: string | null;
     };
 
-/** `POST /online/room/:code/leave` — frees the slot so somebody else can take it. Best-effort:
- * a browser that just closes is cleaned up by the directory's own expiry instead. */
-export interface LeaveRoomRequest {
-  /** Who is being removed. */
-  participantId: string;
-  /** Who is asking. Anyone may release their own slot; only the current host may remove or ban
-   * somebody else, so this is checked against the directory rather than trusted. */
-  requestedBy: { participantId: string; sessionId: string };
-  /** Set by the host when it kicks somebody. The room logic already refuses their `hello`, but
-   * without this they could still hold a slot and keep reading the room's broadcast channel. */
-  ban?: boolean;
-}
-
-/** What the directory says a session is allowed to do, used to authorise channel creation. */
-export type ChannelAuthorization = { ok: true; isHost: boolean; slot: number; hostSessionId: string } | { ok: false };
-
-/** `GET /online/room/:code` — lets the join screen check a code without claiming a slot. */
+/** `GET /online/room/:code`, which lets the join screen check a code without claiming a slot. */
 export interface RoomInfoResponse {
   created: boolean;
   hostSessionId: string | null;

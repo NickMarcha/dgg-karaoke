@@ -14,7 +14,8 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "stack:test": "docker compose -f compose.yaml -f compose.test.yaml up -d --build",
-    "stack:test:down": "docker compose -f compose.yaml -f compose.test.yaml down"
+    "stack:test:down": "docker compose -f compose.yaml -f compose.test.yaml down",
+    "test:db": "node --env-file=.env node_modules/vitest/vitest.mjs run"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.1",

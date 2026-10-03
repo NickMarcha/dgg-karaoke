@@ -9,7 +9,7 @@ import { OnlineMessages } from '~/modules/online/protocol/types';
  * listeners, because nothing above this layer cares which one a frame arrived on. Everything sent
  * goes up the slot, which is the only half of the wiring this client is allowed to write to.
  */
-export class SfuClientTransport implements OnlineClientTransport {
+export class RoomClientTransport implements OnlineClientTransport {
   private listeners = new Set<(message: OnlineMessages) => void>();
   private detach: (() => void) | null = null;
 

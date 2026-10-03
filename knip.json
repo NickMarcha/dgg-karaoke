@@ -9,9 +9,9 @@
     "!src/**/*.d.ts"
   ],
   "ignore": [
+    "server/**",
     "src/modules/leaderboard/**",
     "src/routes/admin/**",
-    "src/routes/online/**",
     "src/routes/game/singing/post-game/views/leaderboard/**",
     "src/routes/welcome/leaderboard-panel.tsx",
     "src/modules/game-engine/input/mic-strategies/yin.ts",

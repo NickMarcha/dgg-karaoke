@@ -142,7 +142,11 @@ the deploy. A real phone has sung through the relay.
   and dropped if it does not.
 - Netlify site, tunnel hostname, webhook. A `beta` badge in the header.
 
-### 1b. Online mode on our relay
+### 1b. Online mode on our relay (done 2026-10-03)
+
+Online mode runs through `/online` on our API: a relay with the SFU's channel rules, and the
+Durable Object's directory ported rule for rule, kept in Postgres so deploys do not end rooms.
+`docs/online-mode.md` describes it. The 11 upstream online e2e specs pass against it.
 
 Replace `SfuClientTransport` and the host's SFU publishing with the WebSocket
 relay, and the `OnlineDirectory` Durable Object (who is in which room, who

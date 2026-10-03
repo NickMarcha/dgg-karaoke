@@ -29,6 +29,7 @@ import SelectInput from './routes/select-input/select-input';
 const LazySongList = lazy(() =>
   import('~/routes/manage-songs/song-management').then((modules) => ({ default: modules.SongList })),
 );
+const LazyOnline = lazy(() => import('~/routes/online/online'));
 const LazyHistory = lazy(() => import('~/routes/history/history-page'));
 const LazySetlist = lazy(() => import('~/routes/edit/setlists').then((modules) => ({ default: modules.default })));
 // import.meta.env.DEV is statically replaced at build time, so this whole branch (and the dev-screenshots
@@ -85,6 +86,13 @@ function App() {
                 <Route path={routePaths.GAME}>
                   {/*<Suspense fallback={<PageLoader />}><LazyGame /></Suspense>*/}
                   <Game />
+                </Route>
+                {/* One entry for the room and the host's song browser (`online/pick-song`): a second
+                    <Route> would remount `Online` on the way in and drop the room connection */}
+                <Route path={`${routePaths.ONLINE}/:section?`}>
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyOnline />
+                  </Suspense>
                 </Route>
                 <Route path={routePaths.SELECT_INPUT} component={SelectInput} />
                 <Route path={routePaths.SETTINGS} component={Settings} />

@@ -50,8 +50,8 @@ Drizzle, Postgres) and is its own npm package with its own lockfile, so the
 image never installs the frontend's toolchain. **Nothing may be deployed that
 talks to allkaraoke's infrastructure**: our users must not run on somebody
 else's servers or quota. Features that upstream ran on Cloudflare and we have
-not rebuilt yet (online mode, the global leaderboard, shared songs and their
-admin page) are hidden, not deleted; the plan says which layer brings each back.
+not rebuilt yet (the global leaderboard, shared songs and their admin page)
+are hidden, not deleted; the plan says which layer brings each back.
 `docs/deployment.md` says how the API and the site are deployed.
 
 ## Working in the codebase

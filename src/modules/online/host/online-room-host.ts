@@ -1,7 +1,7 @@
 import { RpcServer } from '~/modules/network/rpc/rpc-server';
 import { ServerSubscriptionRegistry } from '~/modules/network/rpc/server-subscription-registry';
 import { getCachedChartData } from '~/modules/online/client/chart-cache';
-import { OnlinePeerSender, OnlineRoomChannels, SfuRoomMembership } from '~/modules/online/client/transport/interface';
+import { OnlinePeerSender, OnlineRoomChannels, RoomMembership } from '~/modules/online/client/transport/interface';
 import { LoopbackTransportPair } from '~/modules/online/client/transport/loopback-transport';
 import {
   ONLINE_HOST_HEARTBEAT_MS,
@@ -52,7 +52,7 @@ interface OnlineRoomHostOptions {
   roomCode: string;
   participantId: string;
   connection: OnlineRoomChannels;
-  membership: SfuRoomMembership;
+  membership: RoomMembership;
   /** Present only on a takeover: the last snapshot this browser saw from the previous host. */
   restoreFrom?: OnlineHostSnapshot | null;
   /**
@@ -69,19 +69,16 @@ interface OnlineRoomHostOptions {
  *
  * It used to run on a server. `OnlineRoomLogic` is untouched and still drives everything — only its
  * environment changed: the Durable Object's alarm became a `setTimeout`, its storage became a
- * snapshot broadcast to the succession line, and its per-socket fan-out became one publish on the
- * SFU's broadcast channel.
- *
- * That last one is the point of the whole design. The old room paid for a server that stayed
- * resident for the length of every song; this one pays for bytes the SFU forwards, and the host's
- * uplink is flat no matter how many people are in the room.
+ * snapshot broadcast to the succession line, and its per-socket fan-out became one broadcast through
+ * the API's online relay, which copies it to everyone, so the host's uplink is flat no matter how
+ * many people are in the room.
  */
 export class OnlineRoomHost {
   private readonly logic: OnlineRoomLogic;
   private readonly rpcServer: RpcServer<ReturnType<OnlineRoomLogic['createHandlers']>>;
   private readonly subscriptions: ServerSubscriptionRegistry<OnlineSubscriptionChannels>;
 
-  /** Which participant owns which slot. The SFU tells us the slot a frame came in on and nothing
+  /** Which participant owns which slot. The relay tells us the slot a frame came in on and nothing
    * else, so this is populated by each peer's `hello` and is the only link between the two. */
   private readonly slotToParticipant = new Map<number, string>();
   private readonly participantToSlot = new Map<string, number>();
@@ -94,7 +91,7 @@ export class OnlineRoomHost {
   private lastSnapshotBroadcastAt = 0;
   private closed = false;
 
-  private readonly membership: SfuRoomMembership;
+  private readonly membership: RoomMembership;
   private readonly connection: OnlineRoomChannels;
   private readonly participantId: string;
   private readonly roomCode: string;
@@ -183,7 +180,7 @@ export class OnlineRoomHost {
     this.keepAcrossNavigation();
   }
 
-  /** The host's own client talks to the room through here — same RPC, no SFU round trip. */
+  /** The host's own client talks to the room through here — same RPC, no round trip to the relay. */
   public getLoopbackTransport = () => this.loopback.transport;
 
   public getEpoch = () => this.membership.epoch;
@@ -304,14 +301,14 @@ export class OnlineRoomHost {
   private broadcast = (message: OnlineMessages) => {
     if (this.closed) return;
     this.connection.broadcast(message);
-    // The host's own client is not an SFU subscriber, so it is fanned out to separately.
+    // The relay does not echo a broadcast to its sender, so the host's own client gets it here.
     this.loopback.peer.send(message);
   };
 
   /**
    * Throws someone out for good — a kick. They are told before their slot goes, because nothing
-   * else would tell them: the old server closed their socket with a status code, and over the SFU
-   * there is no equivalent gesture. Without this a kicked singer sits in a room that has forgotten
+   * else would tell them: releasing the slot only stops the relay delivering to them, and nothing
+   * reaches them to say so. Without this a kicked singer sits in a room that has forgotten
    * them, seeing neither the lobby nor a rejection.
    */
   private evictParticipant = (participantId: string) => {

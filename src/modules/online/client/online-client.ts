@@ -7,10 +7,10 @@ import { trackOnlinePing } from '~/modules/online/client/online-analytics';
 import {
   OnlineClientTransport,
   OnlineRoomConnection,
-  SfuRoomMembership,
+  RoomMembership,
 } from '~/modules/online/client/transport/interface';
-import { SfuClientTransport } from '~/modules/online/client/transport/sfu-client-transport';
-import { SfuRoomConnection } from '~/modules/online/client/transport/sfu-room-connection';
+import { RelayRoomConnection } from '~/modules/online/client/transport/relay-room-connection';
+import { RoomClientTransport } from '~/modules/online/client/transport/room-client-transport';
 import {
   OnlineHostSnapshot,
   OnlineRoomHost,
@@ -60,7 +60,7 @@ type IncomingMessage = OnlineMessages | JoinedMessage | JoinRejectedMessage;
  * This browser's seat in an online room.
  *
  * The room's authority runs in a browser now, not on a server — either somebody else's, reached
- * over the Cloudflare SFU, or this one's, in which case the transport is a loopback straight into
+ * through the API's online relay, or this one's, in which case the transport is a loopback straight into
  * `OnlineRoomHost` in the same tab. Above this line the difference is invisible: the RPC proxy,
  * the subscription manager and the ping loop are the same either way.
  *
@@ -214,7 +214,7 @@ export class OnlineClient extends Listener<[OnlineConnectionStatus, string?]> {
     let connection: OnlineRoomConnection | null = null;
     let outcome;
     try {
-      connection = new SfuRoomConnection(this.roomCode, this.getParticipantId());
+      connection = new RelayRoomConnection(this.roomCode, this.getParticipantId());
       if (attempt !== this.openAttempt) {
         connection.close();
         return;
@@ -223,7 +223,10 @@ export class OnlineClient extends Listener<[OnlineConnectionStatus, string?]> {
       outcome = await connection.join({ create: this.createRoom });
     } catch {
       connection?.close();
-      if (this.connection === connection) this.connection = null;
+      // An attempt a newer connect()/disconnect() already replaced failed because it was closed;
+      // reconnecting on its behalf would tear down the connection that replaced it
+      if (this.connection !== connection) return;
+      this.connection = null;
       this.scheduleReconnect();
       return;
     }
@@ -260,9 +263,9 @@ export class OnlineClient extends Listener<[OnlineConnectionStatus, string?]> {
 
   /** Builds the transport for whichever side of the room this browser ended up on, and — when it
    * is the host — starts the room logic in this tab. */
-  private attachRole = (membership: SfuRoomMembership, restoreFrom: OnlineHostSnapshot | null = null) => {
+  private attachRole = (membership: RoomMembership, restoreFrom: OnlineHostSnapshot | null = null) => {
     const connection = this.connection!;
-    // Closing, not just clearing: an SfuClientTransport also holds a `connection.onMessage`
+    // Closing, not just clearing: an RoomClientTransport also holds a `connection.onMessage`
     // subscription, and the same connection object outlives a role change.
     this.transport?.clearAllListeners();
     this.transport?.close();
@@ -283,7 +286,7 @@ export class OnlineClient extends Listener<[OnlineConnectionStatus, string?]> {
       this.transport = this.host.getLoopbackTransport();
       this.stopHeartbeatWatchdog();
     } else {
-      this.transport = new SfuClientTransport(connection);
+      this.transport = new RoomClientTransport(connection);
       this.startHeartbeatWatchdog();
     }
 
@@ -411,7 +414,7 @@ export class OnlineClient extends Listener<[OnlineConnectionStatus, string?]> {
     // the normal outcome for everyone but one candidate — they must keep theirs for the next stall.
     const restoreFrom = this.lastHostSnapshot ?? takeStashedHostSnapshot(this.roomCode!);
 
-    const membership: SfuRoomMembership = {
+    const membership: RoomMembership = {
       isHost: true,
       hostSessionId: connection.getSessionId()!,
       epoch,
@@ -440,7 +443,7 @@ export class OnlineClient extends Listener<[OnlineConnectionStatus, string?]> {
     await this.followNewHost(info.epoch, info.hostSessionId);
   };
 
-  /** Re-subscribes to a different host's channels, keeping this browser's own SFU session. */
+  /** Follows a different host, keeping this browser's own relay session. */
   private followNewHost = async (epoch: number, hostSessionId?: string) => {
     const connection = this.connection;
     const current = connection?.getMembership();
@@ -461,7 +464,7 @@ export class OnlineClient extends Listener<[OnlineConnectionStatus, string?]> {
       return;
     }
 
-    const membership: SfuRoomMembership = {
+    const membership: RoomMembership = {
       ...current,
       isHost: false,
       hostSessionId: resolvedHostSessionId,

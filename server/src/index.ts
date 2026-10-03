@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { serve } from '@hono/node-server';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { WebSocket, WebSocketServer } from 'ws';
@@ -5,6 +7,9 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { createApp } from './app.js';
 import { getDatabase } from './db.js';
 import { getEnv } from './env.js';
+import { OnlineDirectory } from './online/directory.js';
+import { type OnlinePeer, OnlineRelay } from './online/relay.js';
+import { PostgresRoomStore } from './online/room-store.js';
 import { type Peer, Relay } from './relay.js';
 
 const env = getEnv();
@@ -14,46 +19,63 @@ const database = getDatabase();
 // refuses to serve rather than running against the wrong schema.
 await migrate(database, { migrationsFolder: 'drizzle' });
 
-const app = createApp({ appOrigins: env.APP_ORIGIN, database });
+const directory = new OnlineDirectory(new PostgresRoomStore(database));
+const app = createApp({ appOrigins: env.APP_ORIGIN, database, directory });
 const server = serve({ fetch: app.fetch, port: env.PORT }, ({ port }) =>
   console.log(`DGG Karaoke API listening on http://localhost:${port}`),
 );
 
-const relay = new Relay();
+const remoteMics = new Relay();
+const online = new OnlineRelay(directory);
 // The song list a game sends a phone is the largest message, a few MB for the full library.
 const sockets = new WebSocketServer({ noServer: true, maxPayload: 16 * 1024 * 1024 });
 const alive = new WeakSet<WebSocket>();
 
 server.on('upgrade', (request, socket, head) => {
   const { pathname } = new URL(request.url ?? '/', 'http://localhost');
-  if (pathname !== '/remote-mic' || !env.APP_ORIGIN.includes(request.headers.origin ?? '')) {
+  const known = pathname === '/remote-mic' || pathname === '/online';
+  if (!known || !env.APP_ORIGIN.includes(request.headers.origin ?? '')) {
     // A complete response, ended rather than destroyed: the tunnel reports a socket cut off
     // mid-response as a 502 from the origin.
     socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\nContent-Length: 0\r\n\r\n');
     return;
   }
-  sockets.handleUpgrade(request, socket, head, (client) => sockets.emit('connection', client));
+  sockets.handleUpgrade(request, socket, head, (client) => {
+    alive.add(client);
+    client.on('pong', () => alive.add(client));
+    client.on('error', (error) => console.warn('Socket error', error.message));
+    if (pathname === '/online') connectOnline(client);
+    else connectRemoteMic(client);
+  });
 });
 
-sockets.on('connection', (client: WebSocket) => {
+function connectRemoteMic(client: WebSocket) {
   const peer: Peer = {
     send: (data) => {
       if (client.readyState === WebSocket.OPEN) client.send(data);
     },
     close: (code, reason) => client.close(code, reason),
   };
-  alive.add(client);
-
-  client.on('pong', () => alive.add(client));
   // The default binaryType hands every message over as one Buffer.
   client.on('message', (data: Buffer, isBinary) => {
-    if (isBinary) relay.receive(peer, data);
+    if (isBinary) remoteMics.receive(peer, data);
   });
-  client.on('close', () => {
-    relay.disconnect(peer);
+  client.on('close', () => remoteMics.disconnect(peer));
+}
+
+function connectOnline(client: WebSocket) {
+  const peer: OnlinePeer = {
+    sessionId: randomUUID(),
+    send: (message) => {
+      if (client.readyState === WebSocket.OPEN) client.send(JSON.stringify(message));
+    },
+  };
+  online.connect(peer);
+  client.on('message', (data: Buffer, isBinary) => {
+    if (!isBinary) void online.receive(peer, data.toString());
   });
-  client.on('error', (error) => console.warn('Relay socket error', error.message));
-});
+  client.on('close', () => online.disconnect(peer));
+}
 
 // Cloudflare closes a socket idle for 100 s, and a phone that loses signal never says goodbye. A
 // protocol-level ping every 30 s keeps the tunnel open and drops sockets that stop answering.
@@ -68,11 +90,16 @@ const heartbeat = setInterval(() => {
   }
 }, 30_000);
 
+const roomExpiry = setInterval(() => {
+  directory.expire().catch((error) => console.error('Could not expire online rooms', error));
+}, 5 * 60_000);
+
 let shuttingDown = false;
 function shutdown() {
   if (shuttingDown) return;
   shuttingDown = true;
   clearInterval(heartbeat);
+  clearInterval(roomExpiry);
   for (const client of sockets.clients) client.close(1001, 'Server shutting down');
   server.close(() => process.exit(0));
 }

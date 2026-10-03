@@ -2,7 +2,7 @@ import { OnlineClientTransport, OnlinePeerSender } from '~/modules/online/client
 import { OnlineMessages } from '~/modules/online/protocol/types';
 
 /**
- * The host is a singer too, and its own client has no business going out to the SFU and back to
+ * The host is a singer too, and its own client has no business going out to the relay and back to
  * reach room logic running in the same tab. This is that shortcut: a transport on one side, a peer
  * sender on the other, wired straight together.
  *

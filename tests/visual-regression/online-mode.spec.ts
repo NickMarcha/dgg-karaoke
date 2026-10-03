@@ -1,12 +1,10 @@
-import { expect, Page, test } from '@playwright/test';
+import { expect, Page } from '@playwright/test';
 
 import { mockSongs } from '../helpers';
 import initialise from '../page-objects/initialise';
 import { joinOnlineRoom } from '../steps/join-online-room';
 import { newPlayerPage } from '../steps/new-player-page';
 import { visual } from './visual';
-
-test.skip(true, 'Online mode is hidden until it runs on our relay (layer 1b of docs/plans/dgg-karaoke.md)');
 
 const song = {
   ID: 'e2e-single-english-1995',

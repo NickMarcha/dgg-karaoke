@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { OnlineRoomChannels, SfuRoomMembership } from '~/modules/online/client/transport/interface';
+import { OnlineRoomChannels, RoomMembership } from '~/modules/online/client/transport/interface';
 import { OnlineHostSnapshot, OnlineRoomHost } from '~/modules/online/host/online-room-host';
 import {
   ONLINE_HOST_HEARTBEAT_MS,
@@ -11,7 +11,7 @@ import {
 import { OnlineMessages, OnlineRoomState } from '~/modules/online/protocol/types';
 
 /**
- * Stands in for the SFU. The host publishes one broadcast that lands on every connected slot, and
+ * Stands in for the online relay. The host publishes one broadcast that lands on every connected slot, and
  * each slot is a private duplex pipe — which is the whole contract the host runtime relies on.
  */
 const createFabric = () => {
@@ -46,7 +46,7 @@ const createFabric = () => {
     },
   };
 
-  const membership: SfuRoomMembership = { isHost: true, hostSessionId: 'host-session', epoch: 1, slot: 0 };
+  const membership: RoomMembership = { isHost: true, hostSessionId: 'host-session', epoch: 1, slot: 0 };
 
   return {
     channels,

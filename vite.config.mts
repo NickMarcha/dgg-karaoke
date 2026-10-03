@@ -72,9 +72,9 @@ export default defineConfig({
     process.env.VITE_APP_PRERENDER
       ? htmlPrerender({
           staticDir: path.join(__dirname, 'build'),
-          // Online play and the admin page have no screens until our API serves them (docs/plans/dgg-karaoke.md)
+          // The admin page has no screen until our API serves it (docs/plans/dgg-karaoke.md)
           routes: Object.values(routePaths)
-            .filter((route) => !route.startsWith('online') && route !== 'admin')
+            .filter((route) => route !== 'admin')
             .map((route) => `/${route}`),
           minify: {
             collapseBooleanAttributes: true,

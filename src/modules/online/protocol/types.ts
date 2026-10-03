@@ -199,7 +199,7 @@ interface OnlinePongMessage {
 }
 
 /**
- * First thing a client sends on its slot channel. The SFU tells the host which slot a frame came
+ * First thing a client sends on its slot. The relay tells the host which slot a frame came
  * in on but nothing about who owns it, so this is where a slot gets bound to a participant — it
  * carries exactly what the old server read off the connection URL.
  */

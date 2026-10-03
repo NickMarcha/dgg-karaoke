@@ -9,17 +9,17 @@ Last updated 2026-10-03.
 
 ## Where things stand
 
-Layers 0 and 1 of `docs/plans/dgg-karaoke.md` are done. The site is live at
+Layers 0, 1 and 1b of `docs/plans/dgg-karaoke.md` are done. The site is live at
 `https://dgg-karaoke.netlify.app` with a Beta badge, and the API at
 `https://karaoke-api.nickmarcha.com`. A real phone has joined a game and sung
 through the relay. `docs/deployment.md` describes how both halves deploy.
 
 - The API (`server/`) is its own npm package: Hono, Drizzle, Postgres,
   migrations at startup, `/health`, the remote-mic relay at `/remote-mic` and
-  the song importer's proxy at `/proxy`. The database has no tables yet; they
-  arrive with sign-in in layer 2.
+  the song importer's proxy at `/proxy`, and online mode at `/online` (room
+  relay plus directory, the directory's one table `online_rooms`).
 - Nothing talks to allkaraoke's servers any more. PeerJS, PartyKit, the
-  Cloudflare Worker, wrangler and the fake SFU are gone. Online mode, the
+  Cloudflare Worker, the Realtime SFU, wrangler and the fake SFU are gone. The
   global leaderboard, shared songs and the admin page are hidden, not deleted,
   until their layers rebuild them on our API.
 - GitHub: `NickMarcha/dgg-karaoke`, public, a fork of `Asvarox/allkaraoke`,
@@ -130,5 +130,5 @@ pre-commit hook runs both when `server/` changes.
 
 ## Next
 
-Layer 1b (online mode on our relay) or layer 2 (destiny.gg sign-in and the
-look), in the plan's order.
+Layer 2: destiny.gg sign-in and the look. The OAuth values are already in the
+API stack's environment.

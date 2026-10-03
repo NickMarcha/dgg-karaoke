@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Helmet } from 'react-helmet';
 
+import { Chip } from '~/modules/elements/akui/chip';
 import { useBackground } from '~/modules/elements/background-context';
 import Logo from '~/modules/elements/logo';
 import PageFrame from '~/modules/elements/page-frame';
@@ -18,10 +19,10 @@ import MenuTile from '~/routes/welcome/menu-tile';
 import { MenuViewTransition } from '~/routes/welcome/menu-view-transitions';
 
 /**
- * The main menu as tiles rather than the stacked button list every other screen uses: the way into
- * a game gets a row of its own at the top, and the supporting screens share a shorter row underneath.
- * Online play and the global leaderboard are left out until our API serves them
- * (docs/plans/dgg-karaoke.md, layers 1b and 3).
+ * The main menu as tiles rather than the stacked button list every other screen uses: the two ways
+ * into a game get a row of their own at the top, and the supporting screens share a shorter row
+ * underneath. The global leaderboard is left out until our API serves it (layer 3 of
+ * docs/plans/dgg-karaoke.md).
  */
 function Welcome() {
   useBackground(true);
@@ -135,6 +136,20 @@ function Welcome() {
                   remoteIcon="play"
                   className={MenuViewTransition.SING_A_SONG}
                   onClick={goToSongList}
+                />
+                <MenuTile
+                  name="online"
+                  variant="primary"
+                  label="Sing online"
+                  displayLabel={
+                    <div className="flex items-center gap-2">
+                      <Chip variant="orange">Preview</Chip> Sing online
+                    </div>
+                  }
+                  hint="Play with friends remotely"
+                  remoteIcon="play"
+                  className={MenuViewTransition.SING_ONLINE}
+                  onClick={() => navigate('online/')}
                 />
               </div>
               <div className="grid flex-1 grid-cols-1 gap-4 max-lg:gap-3 lg:auto-cols-fr lg:grid-flow-col lg:gap-6">
