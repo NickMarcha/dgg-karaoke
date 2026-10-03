@@ -10,6 +10,15 @@ const sendRpcCall = (connection: SenderInterface, method: string, args: unknown[
   connection.send({ t: 'rpc-call', method, args } as NetworkMessages);
 };
 
+/**
+ * A phone runs the same pitch detection as a microphone on this machine (`MicInput` allows 180 ms for
+ * it) and then batches readings every 50 ms before sending, 25 ms late on average. The trip over the
+ * network comes on top of that, from the measured ping.
+ */
+const PHONE_PROCESSING_LAG_MS = 180 + 25;
+/** A ping slower than this is a stall, not the delay the singer is steadily hearing. */
+const MAX_COUNTED_ROUND_TRIP_MS = 500;
+
 class RemoteMicInput {
   private frequencies: number[] | number[][] = [0];
   private volumes = [0];
@@ -19,6 +28,7 @@ class RemoteMicInput {
   public constructor(
     private connection: SenderInterface,
     private inputLag: number,
+    private getNetworkDelay: () => number,
   ) {}
 
   getFrequencies = () => {
@@ -34,8 +44,9 @@ class RemoteMicInput {
   };
   getVolumes = () => this.volumes;
 
+  /** How late this phone's readings arrive: processing, network, plus the singer's own correction. */
   getInputLag = () => {
-    return this.inputLag;
+    return PHONE_PROCESSING_LAG_MS + this.getNetworkDelay() + this.inputLag;
   };
 
   setInputLag = (inputLag: number) => {
@@ -114,7 +125,7 @@ export class RemoteMic {
     public connection: SenderInterface,
     lag: number,
   ) {
-    this.input = new RemoteMicInput(connection, lag);
+    this.input = new RemoteMicInput(connection, lag, this.getNetworkDelay);
 
     this.pingClient();
   }
@@ -138,9 +149,14 @@ export class RemoteMic {
   private isPinging = false;
   private latency: number = 9999;
 
+  /** Round trips averaged over the last few pings, so one slow ping does not shift scoring mid-song. */
+  private smoothedRoundTrip: number | null = null;
+
   public onPong = () => {
     this.latency = getPingTime() - this.pingTime;
     this.isPinging = false;
+    const sample = Math.min(this.latency, MAX_COUNTED_ROUND_TRIP_MS);
+    this.smoothedRoundTrip = this.smoothedRoundTrip === null ? sample : this.smoothedRoundTrip * 0.8 + sample * 0.2;
 
     this.pingClient();
   };
@@ -154,6 +170,9 @@ export class RemoteMic {
   };
 
   public getLatency = () => (this.isPinging ? getPingTime() - this.pingTime : this.latency);
+
+  /** One way, phone to game: half the round trip. Nothing until the first pong comes back. */
+  public getNetworkDelay = () => Math.round((this.smoothedRoundTrip ?? 0) / 2);
 
   public getPingTime = () => this.pingTime;
 }
