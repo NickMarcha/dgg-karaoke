@@ -5,6 +5,7 @@ import useKeyboardNav from '~/modules/hooks/use-keyboard-nav';
 import { PlayerEntity } from '~/modules/players/players-manager';
 import { useMicrophoneList } from '~/routes/select-input/hooks/use-microphone-list';
 import { usePlayerInput } from '~/routes/select-input/hooks/use-player-input';
+import { fakeInputsAvailable } from '~/routes/select-input/input-sources/dummy';
 import { twx } from '~/utils/twx';
 
 interface Props {
@@ -18,6 +19,8 @@ interface Props {
 export const PlayerSelector = (props: Props) => {
   const player = props.player;
   const [source, cycleSource, input, cycleInput] = usePlayerInput(player.number, props.inputs);
+  // Outside development the fake input only marks a player nobody has given a microphone
+  const unassigned = source === 'Dummy' && !fakeInputsAvailable();
 
   return (
     <>
@@ -30,7 +33,7 @@ export const PlayerSelector = (props: Props) => {
         <SwitcherWithPlayerHeader
           {...(props.readonly ? {} : props.register(`player-${player.number}-source`, () => cycleSource()))}
           label={<span className="ph-no-capture">{player.getName()} Source</span>}
-          value={source}
+          value={unassigned ? 'None' : source}
           disabled={props.readonly}
         />
       )}
@@ -38,7 +41,7 @@ export const PlayerSelector = (props: Props) => {
         {...(props.readonly ? {} : props.register(`player-${player.number}-input`, cycleInput))}
         label="Input"
         disabled={props.readonly}
-        value={input?.label}>
+        value={unassigned ? 'No microphone' : input?.label}>
         <PlayerMicCheck
           playerNumber={player.number}
           className="m-[2.5px] h-[calc(100%-5px)]! w-1/2 rounded-[9.5px] opacity-75"

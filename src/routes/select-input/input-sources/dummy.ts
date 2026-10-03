@@ -1,4 +1,5 @@
 import { getInputId } from '~/modules/players/utils';
+import isE2E from '~/modules/utils/is-e2-e';
 
 import { InputSource } from './interfaces';
 
@@ -18,6 +19,12 @@ const inputList = [
     deviceId: 'default',
   },
 ];
+
+/**
+ * The fake input "sings" a sine wave, which is useful for developing and for the e2e specs. In
+ * production it marks a player nobody has assigned a microphone to, and it never sings.
+ */
+export const fakeInputsAvailable = () => import.meta.env.DEV || isE2E();
 
 export class DummyInputSource {
   public static readonly inputName = 'Dummy';

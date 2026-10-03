@@ -210,6 +210,22 @@ class PlayersManager {
     return newPlayer;
   };
 
+  /**
+   * Drops the players still on the fake input, lowering the player count so none are added back.
+   * Returns false, changing nothing, when no player has a real input.
+   */
+  public dropFakeInputs = () => {
+    const real = this.players.filter((player) => player.input.source !== 'Dummy');
+    if (real.length === 0) return false;
+    if (real.length === this.players.length) return true;
+
+    this.setMinPlayerNumber(Math.min(this.minPlayerNumber, real.length));
+    this.players
+      .filter((player) => player.input.source === 'Dummy')
+      .forEach((player) => this.removePlayer(player.number));
+    return true;
+  };
+
   public removePlayer = (playerNumber: PlayerNumber) => {
     if (GameState.isPlaying()) {
       return;

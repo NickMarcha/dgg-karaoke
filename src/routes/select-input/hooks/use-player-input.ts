@@ -45,7 +45,9 @@ export function usePlayerInput(playerNumber: PlayerNumber, sources: Record<strin
   };
   const cycleInput = () => {
     if (!selectedPlayerInput) return;
-    const list = sources[selectedPlayerInput.source].list;
+    // A source that is not on offer (the fake input outside development) moves on to the first real one
+    const list = sources[selectedPlayerInput.source]?.list;
+    if (!list) return cycleSource(0);
     const currentIndex = playerInputData ? list.findIndex((item) => item.id === playerInputData.id) : 0;
     const newIndex = nextIndex(list, currentIndex);
     if (newIndex === 0) {

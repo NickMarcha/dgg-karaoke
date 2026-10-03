@@ -54,11 +54,8 @@ pre-commit hook runs both when `server/` changes.
 
 ## Waiting on a person
 
-1. **Player 2 on the fake input.** A new game creates two players on upstream's
-   Dummy input, which "sings" a sine wave and scores. The user met this in the
-   first real game, and the fake singer's score landed on the local scoreboard.
-   Decide: hide Dummy outside development, or keep its scores out of high
-   scores.
+1. **The phone's microphone prompt** (one per game now) on Firefox and iOS
+   Safari, which the user will test.
 2. **The destiny.gg OAuth application** is registered; its values are in the
    API stack's environment for layer 2. Redirect URI
    `https://dgg-karaoke.netlify.app/auth/callback`.
@@ -78,6 +75,13 @@ pre-commit hook runs both when `server/` changes.
 - **The prerender saves what a browser rendered**, including links Vite adds at
   runtime. It rewrites its own `localhost` server address out of the HTML;
   anything else absolute that appears there would leak the same way.
+- **The fake input exists only in development and the e2e specs**
+  (`fakeInputsAvailable()` in `input-sources/dummy.ts`). In production a new
+  player still starts on it internally, as the marker for "no microphone": setup
+  shows it as None, and pressing Play drops such players and lowers the player
+  count, or opens mic setup if nobody has a real input. The e2e specs run with
+  `?e2e-test`, so they never exercise the production path; it was checked by
+  hand in a production build.
 - **`APP_ORIGIN` on the API is a comma-separated list of the site's origins.**
   The relay refuses sockets from any other origin, so a new site address needs
   adding there first.
@@ -114,5 +118,4 @@ pre-commit hook runs both when `server/` changes.
 ## Next
 
 Layer 1b (online mode on our relay) or layer 2 (destiny.gg sign-in and the
-look), in the plan's order. The Dummy-input decision above is small and can go
-first.
+look), in the plan's order.

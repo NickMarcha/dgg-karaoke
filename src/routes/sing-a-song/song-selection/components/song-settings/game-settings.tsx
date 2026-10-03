@@ -17,6 +17,7 @@ import { PlayerNumber } from '~/modules/players/player-number';
 import PlayersManager from '~/modules/players/players-manager';
 import { nextIndex, nextValue } from '~/modules/utils/indexes';
 import isDev from '~/modules/utils/is-dev';
+import { fakeInputsAvailable } from '~/routes/select-input/input-sources/dummy';
 import SelectInputModal from '~/routes/select-input/select-input-modal';
 import { MicSetupPreferenceSetting, MobilePhoneModeSetting, useSettingValue } from '~/routes/settings/settings-state';
 
@@ -81,7 +82,17 @@ export default function GameSettings({ songPreview, onNextStep, keyboardControl,
 
   const areInputsConfigured = !!storedPreference && storedPreference !== 'skip';
 
-  const handlePlay = () => onNextStep({ id: v4(), players: playerSetup, mode, tolerance: tolerance + 1 });
+  const handlePlay = () => {
+    // Outside development a player nobody gave a microphone does not sing; with nobody left, set up mics
+    if (!fakeInputsAvailable() && !online) {
+      if (!PlayersManager.dropFakeInputs()) {
+        setShowModal(true);
+        return;
+      }
+    }
+    const players = playerSetup.filter((setup) => PlayersManager.getPlayer(setup.number));
+    onNextStep({ id: v4(), players, mode, tolerance: tolerance + 1 });
+  };
 
   const changeMode = () => setMode(nextValue(Object.values(GAME_MODE), mode));
   const changeTolerance = () => setTolerance((current) => nextIndex(difficultyNames, current, -1));
