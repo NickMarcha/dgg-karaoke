@@ -6,6 +6,7 @@ import SimplifiedMic from '~/modules/game-engine/input/simplified-mic';
 import events from '~/modules/game-events/game-events';
 import useQueryParam from '~/modules/hooks/use-query-param';
 import useSmoothNavigate from '~/modules/hooks/use-smooth-navigate';
+import { P2P_ROOM_CODE_PATTERN } from '~/modules/online/signaling/protocol';
 import RemoteMicClient from '~/modules/remote-mic/network/client';
 import { transportErrorReason } from '~/modules/remote-mic/network/client/network-client';
 import startViewTransition from '~/modules/utils/start-view-transition';
@@ -105,6 +106,13 @@ export default function ConnectionWizard({ roomId, connectionStatus, connectionE
   };
 
   const handleConnect = (resolvedRoomId: string) => {
+    // The landing page's one "Join with code" takes both kinds of code. An online room's starts with
+    // a digit and a game's never does, so the shape alone says which one was typed.
+    const code = resolvedRoomId.toLowerCase();
+    if (P2P_ROOM_CODE_PATTERN.test(code)) {
+      navigate('online/', { room: code });
+      return;
+    }
     setConnectedRoomId(resolvedRoomId);
     RemoteMicClient.connect(resolvedRoomId, effectiveName, false);
     // Stay on step 1 — connection status changes will drive the transition to the name step
