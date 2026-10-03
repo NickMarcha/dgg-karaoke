@@ -121,7 +121,13 @@ and the three game fixes:
   its level relative to other songs. The song editor's volume step is left
   alone on purpose, because it reads the player's volume back into the song.
 
-### 1. Our own API, and the first deploy
+### 1. Our own API, and the first deploy (done 2026-10-03)
+
+Live at `https://dgg-karaoke.netlify.app`, API at `https://karaoke-api.nickmarcha.com`.
+Two departures from what was planned, both in `docs/deployment.md`: the API ships
+as an image built by GitHub Actions rather than being cloned and built on the
+server (this fork's 2.5 GB of history), and a GitHub package webhook triggers
+the deploy. A real phone has sung through the relay.
 
 - `server/` with Hono, Drizzle and Postgres, packaged like DGG Radio's: a
   `Dockerfile`, `compose.yaml` with the database and the tunnel, migrations on
