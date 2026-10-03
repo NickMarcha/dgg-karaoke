@@ -16,19 +16,26 @@ class SimplifiedMic extends Listener<[number, number]> implements InputInterface
   private volumes: [number, number] = [0, 0];
 
   private startedMonitoring = false;
+  /** The permission request in flight, shared so overlapping callers produce one browser prompt. */
+  private streamRequest: Promise<MediaStream> | null = null;
 
   public startMonitoring = async () => {
     if (this.startedMonitoring) return;
     this.startedMonitoring = true;
 
     try {
-      this.stream = await this.acquireStream();
+      const stream = await this.acquireStream();
+      // Stopped while the browser was asking: keep the microphone, muted, for the next start
+      if (!this.startedMonitoring) return;
+      stream.getTracks().forEach((track) => {
+        track.enabled = true;
+      });
       try {
         this.context = new AudioContext({
           sampleRate: 44100,
         });
 
-        const source = this.context.createMediaStreamSource(this.stream);
+        const source = this.context.createMediaStreamSource(stream);
 
         const analyserCh0 = this.context.createAnalyser();
         analyserCh0.fftSize = 2048;
@@ -92,28 +99,51 @@ class SimplifiedMic extends Listener<[number, number]> implements InputInterface
   /** Stops monitoring and gives the microphone back to the browser, for when the phone leaves the game. */
   public release = async () => {
     await this.stopMonitoring();
+    this.streamRequest = null;
     this.stream?.getTracks().forEach((track) => track.stop());
     this.stream = null;
   };
 
-  private acquireStream = async () => {
+  /**
+   * The one way the phone asks for its microphone. Firefox and iOS Safari prompt on every request
+   * unless the user ticked "remember", so callers share the stream already obtained, or the request
+   * still waiting for an answer. It arrives muted unless monitoring is on.
+   */
+  public acquireStream = (): Promise<MediaStream> => {
     const tracks = this.stream?.getTracks() ?? [];
     if (this.stream && tracks.length > 0 && tracks.every((track) => track.readyState === 'live')) {
-      tracks.forEach((track) => {
-        track.enabled = true;
-      });
-      return this.stream;
+      return Promise.resolve(this.stream);
     }
-    return userMediaService.getUserMedia({
-      audio: {
-        // echoCancellation is turned on because without it there is silence from the mic
-        // every other second (possibly some kind of Chrome Mobile bug)
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: false,
-      },
-      video: false,
-    });
+    if (!this.streamRequest) {
+      const request: Promise<MediaStream> = userMediaService
+        .getUserMedia({
+          audio: {
+            // echoCancellation is turned on because without it there is silence from the mic
+            // every other second (possibly some kind of Chrome Mobile bug)
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: false,
+          },
+          video: false,
+        })
+        .then((stream) => {
+          // Released while the browser was asking: hand the microphone straight back
+          if (this.streamRequest !== request) {
+            stream.getTracks().forEach((track) => track.stop());
+            return stream;
+          }
+          stream.getTracks().forEach((track) => {
+            track.enabled = this.startedMonitoring;
+          });
+          this.stream = stream;
+          return stream;
+        })
+        .finally(() => {
+          if (this.streamRequest === request) this.streamRequest = null;
+        });
+      this.streamRequest = request;
+    }
+    return this.streamRequest;
   };
 
   public getInputLag = () => 180;
