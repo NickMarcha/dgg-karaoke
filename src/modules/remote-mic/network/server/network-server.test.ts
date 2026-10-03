@@ -21,6 +21,7 @@ const fake = vi.hoisted(() => {
 });
 
 vi.mock('~/modules/remote-mic/network/server/transport/web-socket-server', () => ({
+  SIGN_IN_REQUIRED_REASON: 'sign-in-required',
   WebSocketServerTransport: class extends fake.FakeTransport {
     public constructor() {
       super();
@@ -113,6 +114,16 @@ describe('NetworkServer.stop', () => {
       expect.any(Function),
       expect.any(Function),
     );
+  });
+
+  // Signing in leaves the page and comes back, which starts the server again
+  it('does not retry while nobody is signed in and the relay needs somebody', () => {
+    server.start();
+    fake.instances[0].onClose?.('sign-in-required');
+    vi.advanceTimersByTime(RECONNECT_DELAY_MS * 2);
+
+    expect(fake.instances[0].connect).toHaveBeenCalledOnce();
+    expect(server.isStarted()).toBe(false);
   });
 
   it('opens a fresh server when started again', () => {

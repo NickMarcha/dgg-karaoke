@@ -1,6 +1,7 @@
 import NoSleep from '@uriopass/nosleep.js';
 import { useLayoutEffect, useState } from 'react';
 
+import SignInGate, { SignInPrompt } from '~/modules/account/sign-in-gate';
 import { useBackground } from '~/modules/elements/background-context';
 import { switchToTheme } from '~/modules/game-engine/drawing/styles';
 import events from '~/modules/game-events/game-events';
@@ -60,7 +61,12 @@ function RemoteMic() {
   };
 
   return (
-    <>
+    <SignInGate
+      fallback={
+        <div className="mx-auto flex h-dvh w-full max-w-[45rem] flex-col justify-center p-6">
+          <SignInPrompt why="Phones join a game as a destiny.gg account, and you sing under its name." />
+        </div>
+      }>
       <ConfirmReadiness onConfirm={onConfirm} />
       <div id="phone-ui-container" className="mx-auto flex h-dvh w-full max-w-[45rem] flex-col landscape:max-w-none">
         <TopBar connectionStatus={connectionStatus} roomId={roomId} />
@@ -104,7 +110,7 @@ function RemoteMic() {
           </div>
         </div>
       </div>
-    </>
+    </SignInGate>
   );
 }
 export default RemoteMic;

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRoute } from 'wouter';
 
 import { SongPreview } from '~/interfaces';
+import { useAccountSingerName } from '~/modules/account/account';
 import { Menu } from '~/modules/elements/akui/menu';
 import { useBackground } from '~/modules/elements/background-context';
 import MenuWithLogo from '~/modules/elements/menu-with-logo';
@@ -47,9 +48,11 @@ function OnlineRoom({ roomCode }: Props) {
   // Joining via an invite link goes through the same name → mic → join wizard first
   const [setupDone, setSetupDone] = useState(() => storage.session.getItem(ONLINE_SETUP_DONE_KEY) === '1');
 
+  const accountName = useAccountSingerName();
+
   useEffect(() => {
     if (!setupDone) return;
-    const name = getStoredOnlineName();
+    const name = accountName ?? getStoredOnlineName();
     // Only the session that explicitly opened this room may create it — joining a
     // non-existing code gets rejected with 'not-found' instead of creating a room
     const create = storage.session.getItem(ONLINE_CREATED_ROOM_KEY) === roomCode;
@@ -57,7 +60,7 @@ function OnlineRoom({ roomCode }: Props) {
     return () => {
       OnlineClient.disconnect();
     };
-  }, [roomCode, setupDone]);
+  }, [roomCode, setupDone, accountName]);
 
   useEffect(() => {
     // The local game path (lyrics, score display) renders from PlayersManager — online mode

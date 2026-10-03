@@ -9,7 +9,7 @@ import useKeyboardNav from '~/modules/hooks/use-keyboard-nav';
 import OnlineClient from '~/modules/online/client/online-client';
 import { OnlineParticipant } from '~/modules/online/protocol/types';
 import { PLAYER_NUMBERS, PlayerNumber } from '~/modules/players/player-number';
-import { setStoredOnlineName } from '~/routes/online/hooks/use-online-name';
+import useOnlineName, { setStoredOnlineName } from '~/routes/online/hooks/use-online-name';
 import { BackgroundThemeSetting, useSettingValue } from '~/routes/settings/settings-state';
 
 interface Props {
@@ -23,6 +23,7 @@ interface Props {
 function CustomizeModal({ open, onClose, self, participants }: Props) {
   const [name, setName] = useState(self?.name ?? '');
   const [theme] = useSettingValue(BackgroundThemeSetting);
+  const { canRename } = useOnlineName();
 
   useEffect(() => {
     if (open) setName(self?.name ?? '');
@@ -30,6 +31,7 @@ function CustomizeModal({ open, onClose, self, participants }: Props) {
   }, [open]);
 
   const submitName = () => {
+    if (!canRename) return;
     const trimmed = name.trim();
     if (trimmed && trimmed !== self?.name) {
       setStoredOnlineName(trimmed);
@@ -61,19 +63,21 @@ function CustomizeModal({ open, onClose, self, participants }: Props) {
     <Modal open={open} onClose={close}>
       {open && (
         <Menu modal data-test="online-customize-modal">
-          <Menu.Header>Name &amp; color</Menu.Header>
-          <Input
-            {...register('online-name', () => undefined)}
-            label="Your name"
-            value={name}
-            onChange={setName}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') close();
-            }}
-            maxLength={MAX_NAME_LENGTH}
-            placeholder="Enter your name"
-            data-test="online-lobby-name-input"
-          />
+          <Menu.Header>{canRename ? <>Name &amp; color</> : 'Color'}</Menu.Header>
+          {canRename && (
+            <Input
+              {...register('online-name', () => undefined)}
+              label="Your name"
+              value={name}
+              onChange={setName}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') close();
+              }}
+              maxLength={MAX_NAME_LENGTH}
+              placeholder="Enter your name"
+              data-test="online-lobby-name-input"
+            />
+          )}
           <PlayerColorPicker
             theme={theme}
             playerNumbers={PLAYER_NUMBERS}

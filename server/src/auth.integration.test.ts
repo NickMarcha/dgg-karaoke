@@ -11,6 +11,7 @@ import { parseEnv } from './env.js';
 import { OnlineDirectory } from './online/directory.js';
 import { PostgresRoomStore } from './online/room-store.js';
 import { oauthLoginTransactions, sessions, users } from './schema.js';
+import { SocketTickets } from './socket-tickets.js';
 
 // Runs against a real Postgres: `npm run stack:test` starts one, and `.env.example` has its URL.
 const url = process.env.DATABASE_URL;
@@ -175,6 +176,7 @@ describe.skipIf(!url)('Auth', () => {
 describe.skipIf(!url)('sign-in routes', () => {
   const database = drizzle({ connection: url! });
   let challenge = '';
+  const tickets = new SocketTickets();
   const app = createApp({
     appOrigins: ['http://localhost:3000'],
     auth: new Auth({
@@ -186,6 +188,8 @@ describe.skipIf(!url)('sign-in routes', () => {
       ),
     }),
     secureCookies: true,
+    signInRequired: true,
+    tickets,
     database,
     directory: new OnlineDirectory(new PostgresRoomStore(database)),
   });
@@ -227,10 +231,13 @@ describe.skipIf(!url)('sign-in routes', () => {
     const cookie = cookieOf(await signIn());
 
     const me = await app.request('/api/me', { headers: { cookie } });
-    expect(await me.json()).toEqual({ user: expect.objectContaining({ username: 'Singer', role: 'singer' }) });
+    expect(await me.json()).toEqual({
+      user: expect.objectContaining({ username: 'Singer', role: 'singer' }),
+      signInRequired: true,
+    });
 
     const anonymous = await app.request('/api/me');
-    expect(await anonymous.json()).toEqual({ user: null });
+    expect(await anonymous.json()).toEqual({ user: null, signInRequired: true });
   });
 
   it('signs out', async () => {
@@ -239,7 +246,20 @@ describe.skipIf(!url)('sign-in routes', () => {
     expect(logout.headers.get('set-cookie')).toMatch(/dgg_karaoke_session=;/);
 
     const me = await app.request('/api/me', { headers: { cookie } });
-    expect(await me.json()).toEqual({ user: null });
+    expect(await me.json()).toEqual({ user: null, signInRequired: true });
+  });
+
+  it('hands a signed-in user a ticket for the relays', async () => {
+    const cookie = cookieOf(await signIn());
+    const response = await app.request('/api/socket-ticket', { method: 'POST', headers: { ...site, cookie } });
+
+    const { ticket } = (await response.json()) as { ticket: string };
+    expect(tickets.redeem(ticket)).toEqual(expect.objectContaining({ username: 'Singer' }));
+  });
+
+  it('hands nobody else a ticket', async () => {
+    const response = await app.request('/api/socket-ticket', { method: 'POST', headers: site });
+    expect(response.status).toBe(401);
   });
 
   it('explains a failed sign-in', async () => {

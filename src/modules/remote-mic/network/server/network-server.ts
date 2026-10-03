@@ -4,7 +4,10 @@ import { ServerSubscriptionRegistry } from '~/modules/network/rpc/server-subscri
 import { ChannelName, SubscriptionChannels } from '~/modules/remote-mic/network/client/subscriptions';
 import { NetworkMessages } from '~/modules/remote-mic/network/messages';
 import { ServerTransport } from '~/modules/remote-mic/network/server/transport/interface';
-import { WebSocketServerTransport } from '~/modules/remote-mic/network/server/transport/web-socket-server';
+import {
+  SIGN_IN_REQUIRED_REASON,
+  WebSocketServerTransport,
+} from '~/modules/remote-mic/network/server/transport/web-socket-server';
 import RemoteMicManager from '~/modules/remote-mic/remote-mic-manager';
 import generateRoomCode from '~/modules/utils/generate-room-code';
 import storage from '~/modules/utils/storage';
@@ -102,6 +105,9 @@ export class NetworkServer {
         if (reason.includes('room-taken')) {
           this.gameCode = generateRoomCode(GAME_CODE_LENGTH);
         }
+
+        // Retrying cannot sign anybody in; signing in reloads the page, which starts the server again
+        if (reason === SIGN_IN_REQUIRED_REASON) return;
 
         // try to reconnect
         this.reconnectTimer = setTimeout(() => {

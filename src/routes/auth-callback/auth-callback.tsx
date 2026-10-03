@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 
-import { completeSignIn } from '~/modules/account/account';
+import { completeSignIn, takeSignInReturnTo } from '~/modules/account/account';
 import { Menu } from '~/modules/elements/akui/menu';
 import Typography from '~/modules/elements/akui/primitives/typography';
 import MenuWithLogo from '~/modules/elements/menu-with-logo';
@@ -32,7 +32,7 @@ function AuthCallback() {
       return;
     }
     completeSignIn(code, state).then(
-      () => navigate('menu/'),
+      () => navigate(takeSignInReturnTo().slice(1)),
       (failure: Error) => setError(failure.message),
     );
   }, [navigate]);

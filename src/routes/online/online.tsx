@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet';
 
+import { signIn } from '~/modules/account/account';
+import SignInGate from '~/modules/account/sign-in-gate';
 import { Menu } from '~/modules/elements/akui/menu';
 import MenuWithLogo from '~/modules/elements/menu-with-logo';
 import NoPrerender from '~/modules/elements/no-prerender';
@@ -63,6 +65,27 @@ function CreateOrJoin() {
   );
 }
 
+function SignInFirst() {
+  const navigate = useSmoothNavigate();
+  const { register } = useKeyboardNav({ onBackspace: () => navigate('menu/') });
+
+  return (
+    <MenuWithLogo>
+      <Menu.Header>Sing Online</Menu.Header>
+      <Menu.HelpText data-test="sign-in-required">
+        Rooms are for destiny.gg accounts, and you sing under your destiny.gg name.
+      </Menu.HelpText>
+      <Menu.Button {...register('sign-in', signIn)} data-test="sign-in-required-button">
+        Sign in with destiny.gg
+      </Menu.Button>
+      <Menu.Divider />
+      <Menu.Button {...register('back-button', () => navigate('menu/'))} size="small" data-test="back-button">
+        Back to main menu
+      </Menu.Button>
+    </MenuWithLogo>
+  );
+}
+
 function Online() {
   const roomCode = useQueryParam('room');
 
@@ -73,7 +96,11 @@ function Online() {
       </Helmet>
       {/* Every online singer brings their own device, so there's nothing for a phone to connect to */}
       <NoRemoteMics>
-        <NoPrerender>{roomCode ? <OnlineRoom roomCode={roomCode} /> : <CreateOrJoin />}</NoPrerender>
+        <NoPrerender>
+          <SignInGate fallback={<SignInFirst />}>
+            {roomCode ? <OnlineRoom roomCode={roomCode} /> : <CreateOrJoin />}
+          </SignInGate>
+        </NoPrerender>
       </NoRemoteMics>
     </>
   );

@@ -1,4 +1,4 @@
-import { apiSocketUrl } from '~/modules/api';
+import { apiSocketUrl, SignInRequiredError } from '~/modules/api';
 import { NetworkMessages } from '~/modules/remote-mic/network/messages';
 import {
   SenderInterface,
@@ -24,10 +24,13 @@ interface WebsocketPongMessage {
 
 export type WebsocketMessage = ForwardedMessage | WebsocketConnectedMessage | WebsocketPongMessage;
 
-export const WEBSOCKETS_SERVER = apiSocketUrl('/remote-mic');
+/** Closes a connection with when nobody is signed in and the relay needs somebody to be. */
+export const SIGN_IN_REQUIRED_REASON = 'sign-in-required';
 
 export class WebSocketServerTransport extends Listener<[NetworkMessages, SenderInterface]> implements ServerTransport {
   private connection: WebSocket | null = null;
+  /** Bumped by every connect and disconnect, so a ticket arriving after either opens nothing. */
+  private attempt = 0;
 
   private sendEvent(event: NetworkMessages) {
     if (this.connection?.readyState !== WebSocket.OPEN) {
@@ -45,7 +48,26 @@ export class WebSocketServerTransport extends Listener<[NetworkMessages, SenderI
     onConnect: () => void,
     onClose: (reason: transportCloseReason, originalEvent: CloseEvent) => void,
   ) {
-    this.connection = new WebSocket(WEBSOCKETS_SERVER);
+    const attempt = ++this.attempt;
+    apiSocketUrl('/remote-mic').then(
+      (url) => {
+        if (attempt === this.attempt) this.open(url, roomId, onConnect, onClose);
+      },
+      (error) => {
+        if (attempt !== this.attempt) return;
+        const reason = error instanceof SignInRequiredError ? SIGN_IN_REQUIRED_REASON : 'unreachable';
+        onClose(reason, new CloseEvent('close', { reason }));
+      },
+    );
+  }
+
+  private open(
+    url: string,
+    roomId: string,
+    onConnect: () => void,
+    onClose: (reason: transportCloseReason, originalEvent: CloseEvent) => void,
+  ) {
+    this.connection = new WebSocket(url);
     this.connection.binaryType = 'arraybuffer';
     this.connection.onopen = () => {
       this.sendEvent({ t: 'register-room', id: roomId });
@@ -75,6 +97,7 @@ export class WebSocketServerTransport extends Listener<[NetworkMessages, SenderI
   }
 
   public disconnect = () => {
+    this.attempt++;
     this.connection?.close();
   };
 

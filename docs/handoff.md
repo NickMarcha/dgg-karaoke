@@ -196,19 +196,39 @@ shows both channels only if it was the one picked. The computer's microphones
 stay open, muted, between songs (the browser's in-use indicator stays on,
 which the user accepted); `InputManager.open` gives back any no player uses.
 
+**Sign-in for online rooms and phones** (the commit after `4e3c09e1`). The
+API's `SIGN_IN_REQUIRED`, `true` unless set, makes both relays serve only
+signed-in people. Sockets go to the API directly without the site's cookie,
+so the browser takes a one-minute, single-use ticket from
+`POST /api/socket-ticket` and puts it in the socket URL; the upgrade answers
+401 without one. `/api/me` reports the setting. The online pages, the phone
+page and the game's phone-connection panel show a sign-in prompt instead
+(`SignInGate`); signing in returns to the page it started on. Names are the
+destiny.gg username: the name steps drop out and the rename controls hide.
+Off, everything is as before. The e2e stack runs it off, which is what the
+existing specs cover; the on path was checked with a throwaway spec against
+the stand-in (two signed-in browsers in a room, a signed-in phone joining a
+signed-in game), not kept, because it needs the stack started with
+`SIGN_IN_REQUIRED=true`. Names are not verified by the relay: a modified
+client could send another, though only from a signed-in account.
+
 Next:
 
-1. On the live site: sign in and out (Safari too), sing without an account,
+1. **An admin page for moderators**, asked for by the user: admins appoint
+   moderators, who manage songs (create, edit, review). Roles today are
+   `singer` and `admin`. The role management can be built now; managing
+   songs needs layer 4, which moves community songs into Postgres.
+2. On the live site: sign in and out (Safari too), sing without an account,
    a phone microphone, and joining an online room from a phone with "Join with
    code".
-2. **Refresh the visual baselines.** All 291 (`tests/visual-regression`,
+3. **Refresh the visual baselines.** All 291 (`tests/visual-regression`,
    `tests/storybook`) are Linux renders of the old look, and upstream's CI
    that produced them is gone. Regenerating on Windows only adds `-win32`
    copies, so it needs a Linux Playwright container (or `sage-dev`) with the
    API stack reachable.
-3. Then layer 3, leaderboards on our API, which is the first thing to require
+4. Then layer 3, leaderboards on our API, which is the first thing to require
    sign-in.
-4. Left as they were: the toolbar covers the right end of the song list's
+5. Left as they were: the toolbar covers the right end of the song list's
    filter row on wide screens (it did before; the account button adds a
    little), the Beta badge sits under the toolbar on a phone, the menu
    footer's "Get in touch" links and the GitHub ribbon are still upstream's,

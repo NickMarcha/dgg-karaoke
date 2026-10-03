@@ -29,6 +29,11 @@ const envSchema = z
     DGG_ORIGIN: providerOrigin,
     /** Where the browser is sent to authorize. */
     DGG_AUTHORIZE_ORIGIN: providerOrigin,
+    /**
+     * Whether the remote-mic and online relays serve only signed-in people, who then sing under
+     * their destiny.gg names. Off, anyone may connect and types a nickname.
+     */
+    SIGN_IN_REQUIRED: z.stringbool().default(true),
     /** Usernames that are always admins, comma-separated. Everyone else's role is in the database. */
     ADMIN_DGG_USERNAMES: z
       .string()

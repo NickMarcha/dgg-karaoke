@@ -12,6 +12,7 @@ import { OnlineDirectory } from './online/directory.js';
 import { type OnlinePeer, OnlineRelay } from './online/relay.js';
 import { PostgresRoomStore } from './online/room-store.js';
 import { type Peer, Relay } from './relay.js';
+import { SocketTickets } from './socket-tickets.js';
 
 const env = getEnv();
 const database = getDatabase();
@@ -21,10 +22,13 @@ const database = getDatabase();
 await migrate(database, { migrationsFolder: 'drizzle' });
 
 const directory = new OnlineDirectory(new PostgresRoomStore(database));
+const tickets = new SocketTickets();
 const app = createApp({
   appOrigins: env.APP_ORIGIN,
   auth: new Auth({ database, env }),
   secureCookies: isDeployed(env),
+  signInRequired: env.SIGN_IN_REQUIRED,
+  tickets,
   database,
   directory,
 });
@@ -39,14 +43,13 @@ const sockets = new WebSocketServer({ noServer: true, maxPayload: 16 * 1024 * 10
 const alive = new WeakSet<WebSocket>();
 
 server.on('upgrade', (request, socket, head) => {
-  const { pathname } = new URL(request.url ?? '/', 'http://localhost');
+  const { pathname, searchParams } = new URL(request.url ?? '/', 'http://localhost');
   const known = pathname === '/remote-mic' || pathname === '/online';
-  if (!known || !env.APP_ORIGIN.includes(request.headers.origin ?? '')) {
-    // A complete response, ended rather than destroyed: the tunnel reports a socket cut off
-    // mid-response as a 502 from the origin.
-    socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\nContent-Length: 0\r\n\r\n');
-    return;
-  }
+  // A complete response, ended rather than destroyed: the tunnel reports a socket cut off
+  // mid-response as a 502 from the origin.
+  const refuse = (status: string) => socket.end(`HTTP/1.1 ${status}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
+  if (!known || !env.APP_ORIGIN.includes(request.headers.origin ?? '')) return refuse('403 Forbidden');
+  if (env.SIGN_IN_REQUIRED && !tickets.redeem(searchParams.get('ticket'))) return refuse('401 Unauthorized');
   sockets.handleUpgrade(request, socket, head, (client) => {
     alive.add(client);
     client.on('pong', () => alive.add(client));

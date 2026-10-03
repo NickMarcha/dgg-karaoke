@@ -126,9 +126,12 @@ export class RelayRoomConnection implements OnlineRoomConnection {
     this.failPending('Connection closed');
   };
 
-  private open = () =>
-    new Promise<void>((resolve, reject) => {
-      const socket = new WebSocket(apiSocketUrl('/online'));
+  private open = async () => {
+    const url = await apiSocketUrl('/online');
+    if (this.closedOnPurpose) throw new Error('Connection closed');
+
+    return new Promise<void>((resolve, reject) => {
+      const socket = new WebSocket(url);
       this.socket = socket;
       let welcomed = false;
 
@@ -161,6 +164,7 @@ export class RelayRoomConnection implements OnlineRoomConnection {
         if (this.socket === socket && !this.closedOnPurpose) this.lostListeners.forEach((listener) => listener());
       });
     });
+  };
 
   private request = <T = unknown>(message: object): Promise<T> => {
     const id = this.nextRequestId++;

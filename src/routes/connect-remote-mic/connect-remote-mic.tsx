@@ -2,13 +2,26 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useEffect } from 'react';
 import { useRoute } from 'wouter';
 
+import SignInGate, { SignInPrompt } from '~/modules/account/sign-in-gate';
 import CopyLinkField from '~/modules/elements/copy-link-field';
 import RoomCode from '~/modules/elements/room-code';
 import useQueryParam from '~/modules/hooks/use-query-param';
 import RemoteMicServer from '~/modules/remote-mic/network/server';
 import buildRoomLink from '~/modules/utils/build-room-link';
 
+/** The game's side of phones as microphones: the code and the QR code a phone joins with. */
 function ConnectRemoteMic() {
+  return (
+    <SignInGate
+      fallback={
+        <SignInPrompt why="Phones join a game through our server, which needs this game signed in to destiny.gg first. Each phone signs in too, and sings under its own name." />
+      }>
+      <GameCode />
+    </SignInGate>
+  );
+}
+
+function GameCode() {
   // Validate if the component is rendered in a remote mic or in the "main" game via the URL
   const [match] = useRoute('remote-mic');
   const gameCode = useQueryParam('room') ?? RemoteMicServer.getGameCode();

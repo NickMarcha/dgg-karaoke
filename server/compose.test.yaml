@@ -22,6 +22,8 @@ services:
       DGG_CLIENT_ID: dev-client
       DGG_CLIENT_SECRET: dev-secret
       DGG_REDIRECT_URI: http://localhost:3000/auth/callback
+      # The e2e specs drive the relays as anonymous browsers, the flag's off position.
+      SIGN_IN_REQUIRED: ${SIGN_IN_REQUIRED:-false}
     depends_on:
       dgg-oauth:
         condition: service_started

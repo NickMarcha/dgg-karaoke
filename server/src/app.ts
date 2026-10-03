@@ -9,6 +9,7 @@ import { type Auth, AuthenticationError } from './auth.js';
 import type { Database } from './db.js';
 import { type OnlineDirectory, ROOM_CODE_PATTERN } from './online/directory.js';
 import { fetchThroughProxy, ProxyRefused, proxyTarget } from './proxy.js';
+import type { SocketTickets } from './socket-tickets.js';
 
 const SESSION_COOKIE = 'dgg_karaoke_session';
 
@@ -19,12 +20,24 @@ interface AppDeps {
   auth: Auth;
   /** Over https the session cookie is `Secure`. The site proxies `/api`, so it never needs to be cross-site. */
   secureCookies: boolean;
+  /** Whether the relays need a ticket; the site reads it from `/api/me`. */
+  signInRequired: boolean;
+  tickets: SocketTickets;
   database: Database;
   directory: OnlineDirectory;
   fetchImpl?: typeof fetch;
 }
 
-export function createApp({ appOrigins, auth, secureCookies, database, directory, fetchImpl = fetch }: AppDeps) {
+export function createApp({
+  appOrigins,
+  auth,
+  secureCookies,
+  signInRequired,
+  tickets,
+  database,
+  directory,
+  fetchImpl = fetch,
+}: AppDeps) {
   const app = new Hono();
 
   app.use('*', secureHeaders());
@@ -68,7 +81,15 @@ export function createApp({ appOrigins, auth, secureCookies, database, directory
 
   app.get('/api/me', async (context) => {
     const token = getCookie(context, SESSION_COOKIE);
-    return context.json({ user: token ? await auth.userForToken(token) : null });
+    return context.json({ user: token ? await auth.userForToken(token) : null, signInRequired });
+  });
+
+  app.post('/api/socket-ticket', async (context) => {
+    const token = getCookie(context, SESSION_COOKIE);
+    const user = token ? await auth.userForToken(token) : null;
+    if (!user && !signInRequired) return context.json({ ticket: null });
+    if (!user) return context.json({ error: 'Sign in with destiny.gg first.' }, 401);
+    return context.json({ ticket: tickets.issue(user) });
   });
 
   app.get('/health', async (context) => {

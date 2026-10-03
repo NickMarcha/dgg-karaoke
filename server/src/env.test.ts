@@ -33,4 +33,9 @@ describe('parseEnv', () => {
     );
     expect(() => parseEnv(deployed)).not.toThrow();
   });
+
+  it('requires sign-in for the relays unless told otherwise', () => {
+    expect(parseEnv(base).SIGN_IN_REQUIRED).toBe(true);
+    expect(parseEnv({ ...base, SIGN_IN_REQUIRED: 'false' }).SIGN_IN_REQUIRED).toBe(false);
+  });
 });

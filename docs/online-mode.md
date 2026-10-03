@@ -79,6 +79,14 @@ call touching it; the host's five-minute keepalive holds a live one open.
 
 ## Who a participant is
 
+While the API's `SIGN_IN_REQUIRED` is on, only a signed-in browser reaches the relay at all. The
+socket goes to the API directly and carries no site cookie, so the browser first asks
+`POST /api/socket-ticket` (through the site's `/api` proxy, which does carry it) for a ticket, good
+once for a minute, and puts it in the socket's URL. A participant's name is then their destiny.gg
+username. The relay does not read the room's messages, so it is each browser that sends that name;
+the account behind every socket is known to the API, but nothing checks the two against each other
+yet.
+
 A participant id proves nothing. It is published to the whole room in `room-state` (that is how
 every client computes the same succession order), so everyone who has been in a room knows
 everyone else's.

@@ -156,8 +156,12 @@ hosts) with state on the API. Then show online mode again.
 
 - Sign-in carried over from DGG Radio: `/auth/callback`, `GET /api/me`,
   sign-out, root admins from `ADMIN_DGG_USERNAMES`, roles held in the database.
-- Signing in is not required to sing. It is required to submit a song or a
-  score.
+- Signing in is not required to sing on one computer. It is required to submit
+  a song or a score, and, while the API's `SIGN_IN_REQUIRED` is on (the
+  default), to sing online or through a phone: both go through our relays,
+  and a signed-in singer sings under their destiny.gg name rather than a typed
+  nickname. Turning it off brings back anonymous rooms and phones with
+  nicknames.
 - The destiny.gg theme. Upstream's design language lives in `tailwind.config.js`,
   `src/index.css`, the AKUI components and `src/modules/game-engine/drawing/styles`
   (the canvas colours); the `using-tailwind` skill describes it. Retheming is

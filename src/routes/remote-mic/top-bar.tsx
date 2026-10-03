@@ -30,7 +30,7 @@ interface Props {
 function TopBar({ connectionStatus, roomId }: Props) {
   const [isQRCodeModalOpen, setIsQRCodeModalOpen] = useState(false);
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
-  const { name, setName } = useRemoteMicName();
+  const { name, setName, canRename } = useRemoteMicName();
 
   const isSmallScreen = useResponsiveValue({ xs: false, sm: true });
   return (
@@ -56,7 +56,14 @@ function TopBar({ connectionStatus, roomId }: Props) {
             {connectionStatus === 'connected' ? <Ping /> : connectionStatus.toUpperCase()}
           </span>
         </div>
-        {connectionStatus === 'connected' && (
+        {connectionStatus === 'connected' && !canRename && (
+          <span
+            className="ph-no-capture text-default/90 max-w-[40vw] truncate text-sm font-bold"
+            data-test="topbar-player-name">
+            {name}
+          </span>
+        )}
+        {connectionStatus === 'connected' && canRename && (
           <button
             type="button"
             className="ph-no-capture text-default/90 flex max-w-[40vw] items-center gap-1 text-sm font-bold"
