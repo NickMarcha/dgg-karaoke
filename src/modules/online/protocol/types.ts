@@ -93,6 +93,9 @@ export interface OnlineRoomState {
    * ONLINE_MAX_TOLERANCE (see consts.ts) — same scale as the local game's difficulty picker,
    * higher is more forgiving. Set by the host via selection.setChart. */
   tolerance: number;
+  /** Whether one singer buffering pauses the room for everyone (after ONLINE_BUFFERING_PAUSE_MS).
+   * Off, a stalled singer catches up on their own. Set by the host via settings.setPauseOnBuffering. */
+  pauseOnBuffering: boolean;
   chart: ChartManifest | null;
   /** Server timestamp when the song starts whether or not everyone has confirmed. Set for the
    * whole readiness phase, null otherwise. */

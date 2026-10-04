@@ -96,6 +96,7 @@ export class OnlineRoomLogic {
   private nextJoinOrder = 0;
   private hostId: string | null = null;
   private tolerance = 2;
+  private pauseOnBuffering = false;
   private phase: OnlineRoomState['phase'] = 'lobby';
   private chart: ChartManifest | null = null;
   private chartData: string | null = null;
@@ -165,6 +166,7 @@ export class OnlineRoomLogic {
       this.nextJoinOrder = restoreFrom.nextJoinOrder;
       this.hostId = restoreFrom.hostId;
       this.tolerance = restoreFrom.tolerance;
+      this.pauseOnBuffering = restoreFrom.pauseOnBuffering;
       this.chart = restoreFrom.chart;
       this.chartData = restoreFrom.chartData;
       this.chartPreview = restoreFrom.chartPreview ?? null;
@@ -318,6 +320,7 @@ export class OnlineRoomLogic {
     participants: this.participants.map((participant) => ({ ...participant })),
     hostId: this.hostId,
     tolerance: this.tolerance,
+    pauseOnBuffering: this.pauseOnBuffering,
     chart: this.chart,
     readinessDeadline: this.readinessDeadline,
     playbackAnchor: this.playbackAnchor,
@@ -344,6 +347,7 @@ export class OnlineRoomLogic {
     nextJoinOrder: this.nextJoinOrder,
     hostId: this.hostId,
     tolerance: this.tolerance,
+    pauseOnBuffering: this.pauseOnBuffering,
     phase: this.phase,
     chart: this.chart,
     /** Compressed (gzip+base64) chart payload, served as-is to (late-)joining clients. */
@@ -660,7 +664,7 @@ export class OnlineRoomLogic {
     const anyBuffering = this.connectedParticipants().some((other) => this.playback[other.id] === 'buffering');
 
     if (this.phase === 'singing' && this.pause === null) {
-      if (status === 'buffering') {
+      if (status === 'buffering' && this.pauseOnBuffering) {
         // Only pause everyone when the stall lasts longer than the configured threshold
         if (!this.timers.has('buffering')) {
           this.setTimer('buffering', ONLINE_BUFFERING_PAUSE_MS, () => {
@@ -967,6 +971,14 @@ export class OnlineRoomLogic {
           throw new Error('Color already taken');
         }
         participant.playerNumber = desired;
+        this.publishState();
+      }),
+    },
+    settings: {
+      setPauseOnBuffering: defineMutation(async (ctx, enabled: boolean) => {
+        this.requireHost(ctx.senderId);
+        if (typeof enabled !== 'boolean') throw new Error('Invalid setting');
+        this.pauseOnBuffering = enabled;
         this.publishState();
       }),
     },

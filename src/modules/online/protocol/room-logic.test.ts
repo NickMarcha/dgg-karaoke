@@ -453,9 +453,34 @@ describe('pause policy', () => {
     expect(resumed.playbackAnchor).toEqual({ serverTimeMs: Date.now(), videoTimeMs: 10_000 });
   });
 
+  it('does not pause anyone for buffering unless the host turned it on', async () => {
+    const room = createRoom();
+    join(room, ['p1', 'p2']);
+    await startSinging(room, ['p1', 'p2']);
+    expect(room.logic.getState().pauseOnBuffering).toBe(false);
+
+    await room.handlers.playback.reportStatus.handler(ctx('p2'), 'buffering');
+    vi.advanceTimersByTime(ONLINE_BUFFERING_PAUSE_MS * 2);
+    expect(room.logic.getState().pause).toBeNull();
+  });
+
+  it('lets only the host choose whether buffering pauses the room, and keeps the choice across a restart', async () => {
+    const room = createRoom();
+    join(room, ['p1', 'p2']);
+
+    await expect(room.handlers.settings.setPauseOnBuffering.handler(ctx('p2'), true)).rejects.toThrow();
+    await room.handlers.settings.setPauseOnBuffering.handler(ctx('p1'), true);
+    expect(room.logic.getState().pauseOnBuffering).toBe(true);
+    expect(room.persist.mock.calls.at(-1)?.[0].pauseOnBuffering).toBe(true);
+
+    const restored = createRoom(room.persist.mock.calls.at(-1)?.[0]);
+    expect(restored.logic.getState().pauseOnBuffering).toBe(true);
+  });
+
   it('auto-pauses when a singer buffers longer than the threshold and auto-resumes when recovered', async () => {
     const room = createRoom();
     join(room, ['p1', 'p2']);
+    await room.handlers.settings.setPauseOnBuffering.handler(ctx('p1'), true);
     await startSinging(room, ['p1', 'p2']);
 
     await room.handlers.playback.reportStatus.handler(ctx('p2'), 'buffering');
@@ -474,6 +499,7 @@ describe('pause policy', () => {
   it('does not auto-pause when the singer recovers before the threshold', async () => {
     const room = createRoom();
     join(room, ['p1', 'p2']);
+    await room.handlers.settings.setPauseOnBuffering.handler(ctx('p1'), true);
     await startSinging(room, ['p1', 'p2']);
 
     await room.handlers.playback.reportStatus.handler(ctx('p2'), 'buffering');

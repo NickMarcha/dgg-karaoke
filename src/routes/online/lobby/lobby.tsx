@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { Song } from '~/interfaces';
 import { Button } from '~/modules/elements/akui/button';
+import { Checkbox } from '~/modules/elements/akui/checkbox';
 import ConfirmModal from '~/modules/elements/akui/confirm-modal';
 import { Icon } from '~/modules/elements/akui/icon';
 import { Menu } from '~/modules/elements/akui/menu';
@@ -267,6 +268,24 @@ function Lobby({ roomCode, roomState, song, songError, upload, onChooseSong }: P
                             ? 'Change song'
                             : 'Choose song'}
                       </Menu.Button>
+                    )}
+                    {/* A stall otherwise only holds up the singer who has it, who catches up on their own */}
+                    {isHost ? (
+                      <Checkbox
+                        {...register('online-pause-on-buffering', () =>
+                          OnlineClient.send.settings.setPauseOnBuffering(!roomState.pauseOnBuffering),
+                        )}
+                        size="small"
+                        checked={roomState.pauseOnBuffering}
+                        data-test="online-pause-on-buffering">
+                        Pause everyone when a singer buffers
+                      </Checkbox>
+                    ) : (
+                      roomState.pauseOnBuffering && (
+                        <Menu.HelpText data-test="online-pause-on-buffering-info">
+                          The room pauses for everyone when a singer&apos;s video buffers.
+                        </Menu.HelpText>
+                      )
                     )}
                     {(upload.state === 'error' || startError) && (
                       <Menu.HelpText data-test="online-upload-error">

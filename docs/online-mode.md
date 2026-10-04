@@ -145,6 +145,23 @@ Three consequences worth knowing:
 The standings are persisted with the rest of the snapshot, so a host takeover or a hibernation wake
 does not reset the party's running totals — see `LatePersistedField` for why the field is optional.
 
+## Keeping singers in step
+
+Every client plays the video itself, from a playback anchor the room publishes: the host's time the
+song (re)started and the video position at that moment. Each browser estimates its offset from the
+host's clock (five round trips, the median) and plays at `anchor position + (host time now - anchor
+time)`, the same model DGG Radio uses against its server.
+
+- **Drift.** Every two seconds a client checks its video against that position and jumps only when it
+  is more than 1.5 s off. Scores come from each singer's own video, so drift costs nothing; a jump
+  costs a buffer, and so is avoided while a previous jump is still loading.
+- **Buffering.** Within five seconds of its own jump, a client keeps its buffering to itself unless it
+  outlasts that, so a resume cannot set off another pause.
+- **Pausing for buffering is the host's choice** (`pauseOnBuffering`, off by default, a checkbox in the
+  lobby). On, a singer buffering for three seconds pauses the room for everyone until they are
+  playing again. Off, a stall holds up only the singer who has it, who catches up at the next drift
+  check. Anyone can still pause the room by hand.
+
 ## Host succession
 
 Every client watches the host's heartbeat. Silence for `ONLINE_HOST_STALL_MS` means the host is

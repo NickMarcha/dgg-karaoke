@@ -589,3 +589,18 @@ test('Online mode: singers chat in the lobby, and a late joiner gets the backlog
     expect(await pages.onlineLobbyPage.chatInput.inputValue()).toHaveLength(ONLINE_MAX_CHAT_LENGTH);
   });
 });
+
+test('Online mode: the host chooses whether buffering pauses everyone', async ({ page, context, browser }) => {
+  const roomCode = await createOnlineRoom(page, context, browser, hostName);
+  const guestPage = await newPlayerPage(browser);
+  await joinOnlineRoom(guestPage, guestPage.context(), browser, roomCode, guestName);
+
+  const hostSetting = page.getByTestId('online-pause-on-buffering');
+  const guestNotice = guestPage.getByTestId('online-pause-on-buffering-info');
+  await expect(hostSetting).toHaveAttribute('data-checked', 'false');
+  await expect(guestNotice).toHaveCount(0);
+
+  await hostSetting.click();
+  await expect(hostSetting).toHaveAttribute('data-checked', 'true');
+  await expect(guestNotice).toBeVisible();
+});
