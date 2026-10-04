@@ -20,6 +20,8 @@ interface Props {
   title: string;
   /** What the board covers — the heading has no room to say it. */
   subtitle: ReactNode;
+  /** A control under the subtitle, such as the song of the day's way into the song. */
+  action?: ReactNode;
   children: ReactNode;
   isLoading?: boolean;
   error?: unknown;
@@ -50,6 +52,7 @@ interface Props {
 function ScoreboardPanel({
   title,
   subtitle,
+  action,
   children,
   isLoading,
   error,
@@ -67,6 +70,7 @@ function ScoreboardPanel({
       data-test={dataTest}>
       <Menu.Header as="h2">{title}</Menu.Header>
       <Menu.HelpText className="text-left">{subtitle}</Menu.HelpText>
+      {action}
       {/* The same fade-and-arrow treatment the song group rows use, turned on its side: whichever
           edge cuts a row off fades it and points that way, so a half-drawn row reads as more rows
           rather than as one that failed to draw. A board whose rows all fit shows neither. */}

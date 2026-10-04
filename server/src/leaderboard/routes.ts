@@ -3,6 +3,7 @@ import { bodyLimit } from 'hono/body-limit';
 import { z } from 'zod';
 
 import type { SessionUser } from '../auth.js';
+import type { Daily } from '../daily/daily.js';
 import type { Database } from '../db.js';
 import { Leaderboard } from './leaderboard.js';
 import { MAX_ID_LENGTH, MAX_SUBMISSION_BYTES, MAX_SUBMITTED_TOLERANCE } from './rules.js';
@@ -20,10 +21,11 @@ const songQuery = z.object({
 interface Deps {
   database: Database;
   signedInUser: (context: Context) => Promise<SessionUser | null>;
+  daily: Daily;
 }
 
 /** `/api/leaderboard`: the boards are public, putting a run on one takes a signed-in account. */
-export function leaderboardRoutes({ database, signedInUser }: Deps) {
+export function leaderboardRoutes({ database, signedInUser, daily }: Deps) {
   const leaderboard = new Leaderboard(database);
   const recent = new Map<string, number[]>();
   const routes = new Hono();
@@ -44,7 +46,10 @@ export function leaderboardRoutes({ database, signedInUser }: Deps) {
     try {
       const run = readSubmission(new Uint8Array(await context.req.arrayBuffer()));
       recent.set(user.id, [...times, now]);
-      return context.json({ improved: await leaderboard.submit(user.id, run) }, 201);
+      const improved = await leaderboard.submit(user.id, run);
+      // Today's board counts a run that is not the singer's best of all time too
+      await daily.record(user.id, run);
+      return context.json({ improved }, 201);
     } catch (error) {
       if (error instanceof SubmissionRefused) return context.json({ error: error.message }, 400);
       throw error;

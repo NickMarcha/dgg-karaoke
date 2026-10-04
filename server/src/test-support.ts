@@ -10,7 +10,7 @@ import { sessions, type UserRole, users } from './schema.js';
 import { SocketTickets } from './socket-tickets.js';
 
 /** For the integration tests: the API's routes over a real database, served to `app.request`. */
-export function createTestApp(database: Database) {
+export function createTestApp(database: Database, { dailyPool = async () => [] as string[] } = {}) {
   const env = parseEnv({
     DATABASE_URL: 'postgresql://unused',
     APP_ORIGIN: 'http://localhost:3000',
@@ -26,6 +26,7 @@ export function createTestApp(database: Database) {
     tickets: new SocketTickets(),
     database,
     directory: new OnlineDirectory(new PostgresRoomStore(database)),
+    dailyPool,
   });
 }
 

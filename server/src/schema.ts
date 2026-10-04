@@ -1,11 +1,13 @@
 import { sql } from 'drizzle-orm';
 import {
   customType,
+  date,
   index,
   integer,
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   smallint,
   text,
   timestamp,
@@ -160,4 +162,29 @@ export const communitySongs = pgTable(
       .where(sql`${table.status} = 'published'`),
     index('community_songs_status_index').on(table.status, table.updatedAt),
   ],
+);
+
+/** The song of each UTC day: picked from the site's popular songs when first asked for, or by a moderator. */
+export const dailySongs = pgTable('daily_songs', {
+  day: date('day', { mode: 'string' }).primaryKey(),
+  songId: text('song_id').notNull(),
+  /** The moderator who chose it; null for the automatic pick. */
+  chosenBy: uuid('chosen_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** A singer's best run of a day's song on that day, for the day's own board. */
+export const dailyRuns = pgTable(
+  'daily_runs',
+  {
+    day: date('day', { mode: 'string' }).notNull(),
+    songId: text('song_id').notNull(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    score: integer('score').notNull(),
+    tolerance: smallint('tolerance').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.day, table.songId, table.userId] })],
 );

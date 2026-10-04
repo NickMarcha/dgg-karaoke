@@ -7,11 +7,12 @@ import { Selector } from '~/modules/elements/akui/selector';
 import MenuWithLogo from '~/modules/elements/menu-with-logo';
 import NoPrerender from '~/modules/elements/no-prerender';
 import useSmoothNavigate from '~/modules/hooks/use-smooth-navigate';
+import DailyTab from '~/routes/admin-panel/daily-tab';
 import LeaderboardTab from '~/routes/admin-panel/leaderboard-tab';
 import ModeratorsTab from '~/routes/admin-panel/moderators-tab';
 import SongsTab from '~/routes/admin-panel/songs-tab';
 
-type Tab = 'songs' | 'leaderboard' | 'moderators';
+type Tab = 'songs' | 'daily' | 'leaderboard' | 'moderators';
 
 /**
  * Where moderators look after what the community puts up, and admins appoint moderators. Admins
@@ -25,6 +26,7 @@ function AdminPanel() {
   const isStaff = account?.role === 'moderator' || account?.role === 'admin';
   const tabs: { id: Tab; label: string }[] = [
     { id: 'songs', label: 'Songs' },
+    { id: 'daily', label: 'Song of the day' },
     { id: 'leaderboard', label: 'Leaderboard' },
     ...(account?.role === 'admin' ? [{ id: 'moderators' as const, label: 'Moderators' }] : []),
   ];
@@ -53,6 +55,7 @@ function AdminPanel() {
               ))}
             </Selector>
             {tab === 'songs' && <SongsTab />}
+            {tab === 'daily' && <DailyTab />}
             {tab === 'leaderboard' && <LeaderboardTab />}
             {tab === 'moderators' && <ModeratorsTab />}
           </>

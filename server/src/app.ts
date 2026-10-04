@@ -6,6 +6,8 @@ import { secureHeaders } from 'hono/secure-headers';
 import { z } from 'zod';
 
 import { type Auth, AuthenticationError } from './auth.js';
+import { Daily, popularSongPool } from './daily/daily.js';
+import { dailyModerationRoutes, dailyRoutes } from './daily/routes.js';
 import type { Database } from './db.js';
 import { leaderboardModerationRoutes, leaderboardRoutes } from './leaderboard/routes.js';
 import { type OnlineDirectory, ROOM_CODE_PATTERN } from './online/directory.js';
@@ -31,6 +33,8 @@ interface AppDeps {
   database: Database;
   directory: OnlineDirectory;
   fetchImpl?: typeof fetch;
+  /** Song ids the song of the day is picked from; the site's popular songs unless given. */
+  dailyPool?: () => Promise<string[]>;
 }
 
 export function createApp({
@@ -42,9 +46,11 @@ export function createApp({
   database,
   directory,
   fetchImpl = fetch,
+  dailyPool = popularSongPool(appOrigins[0]!, fetchImpl),
 }: AppDeps) {
   const app = new Hono();
   const people = new Users(database);
+  const daily = new Daily(database, dailyPool);
 
   const signedInUser = (context: Context) => {
     const token = getCookie(context, SESSION_COOKIE);
@@ -99,7 +105,8 @@ export function createApp({
     return context.json({ ticket: tickets.issue(user) });
   });
 
-  app.route('/api/leaderboard', leaderboardRoutes({ database, signedInUser }));
+  app.route('/api/leaderboard', leaderboardRoutes({ database, signedInUser, daily }));
+  app.route('/api/daily', dailyRoutes(daily));
   app.route('/api/songs', songRoutes({ database, signedInUser }));
 
   // The admin page: appointing moderators. Admins themselves come from ADMIN_DGG_USERNAMES.
@@ -117,6 +124,7 @@ export function createApp({
   app.use('/api/moderation/*', requireRole('moderator', 'admin'));
   app.route('/api/moderation/leaderboard', leaderboardModerationRoutes(database));
   app.route('/api/moderation/songs', songModerationRoutes({ database, signedInUser }));
+  app.route('/api/moderation/daily', dailyModerationRoutes(daily, signedInUser));
 
   app.get('/api/admin/users', async (context) => {
     const query = context.req.query('query')?.trim();

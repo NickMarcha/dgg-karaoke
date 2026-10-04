@@ -113,6 +113,21 @@ average on screen, but that is nobody's run: putting it up would credit one sing
 singing, behind notes that do not add up to it. Below the qualifying score, the panel says what
 would reach the board.
 
+## Song of the day
+
+One song a day (UTC), with its own board on the main menu: each singer's best run of it that day,
+Medium and harder (`server/src/daily/`, `song-of-the-day-panel.tsx`). The API picks the song the
+first time a day is asked for, from the site's `most-popular-songs.json` by a hash of the date, and
+stores the pick in `daily_songs` so a deploy or a change to the list never moves it mid-day.
+Moderators choose a song for any of the next fourteen days on the admin page's Song of the day
+tab, or put a day back to the automatic pick.
+
+A run counts toward the day when it is submitted that day, on that song, at Medium or harder,
+whether or not it beats the singer's all-time best (`daily_runs`, one row per singer, the day's
+best). "Sing it" opens the song list on the song. The panel hides when this browser's song list
+does not have the day's song, and in the local e2e stack, whose API cannot reach the dev site to
+read the popular songs.
+
 ## Online rooms
 
 Each browser in a room sings one part, so the results screen offers that singer their own run, with

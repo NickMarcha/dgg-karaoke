@@ -18,6 +18,7 @@ import LeaderboardPanel from '~/routes/welcome/leaderboard-panel';
 import MenuFooter from '~/routes/welcome/menu-footer';
 import MenuTile from '~/routes/welcome/menu-tile';
 import { MenuViewTransition } from '~/routes/welcome/menu-view-transitions';
+import SongOfTheDayPanel from '~/routes/welcome/song-of-the-day-panel';
 
 /**
  * The main menu as tiles rather than the stacked button list every other screen uses: the two ways
@@ -179,13 +180,17 @@ function Welcome() {
           </div>
           {/* One instance, not a desktop/narrow pair: it moves from the rail to the bottom of the
               single column purely by where the grid puts it. As a rail (from `xl`) it fills its cell
-              absolutely, so fifty rows do not make the row taller than the tiles beside them; below
-              `xl` it is a block under them at its own five-row height. */}
+              absolutely, so fifty rows do not make the row taller than the tiles beside them; the
+              song of the day keeps a short list on top and the global board takes the rest. Below
+              `xl` both are blocks under the tiles at their own heights. */}
           <div className="relative">
-            <LeaderboardPanel
-              className={`${MenuViewTransition.LEADERBOARD} xl:absolute xl:inset-0`}
-              listClassName="xl:h-auto xl:min-h-0 xl:flex-1"
-            />
+            <div className="flex flex-col gap-4 lg:gap-6 xl:absolute xl:inset-0">
+              <SongOfTheDayPanel register={register} className="shrink-0" listClassName="h-[9rem]" />
+              <LeaderboardPanel
+                className={`${MenuViewTransition.LEADERBOARD} xl:min-h-0 xl:flex-1`}
+                listClassName="xl:h-auto xl:min-h-0 xl:flex-1"
+              />
+            </div>
           </div>
         </div>
 
