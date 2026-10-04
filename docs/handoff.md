@@ -227,11 +227,9 @@ microphone clears the real threshold. Not built yet: moderators removing rows.
 
 Next:
 
-1. **Phones put their own runs on the board** (the rest of layer 3, decided
-   with the user). Phone singers are left out of the computer's prompt for
-   this. The game has their frequency records; it hands each phone its result
-   after the song, and the phone, signed in, asks and submits. Then a way for
-   moderators to remove a row.
+1. **Moderators removing leaderboard rows**, the last of layer 3. Phones
+   already put their own runs up: the game hands each phone singer's
+   qualifying run to the phone (`leaderboardRun`), which asks its own account.
 2. **What moderators can do.** The admin page (`/admin/`, `src/routes/admin-panel`) appoints them:
    an admin searches signed-in accounts and makes them moderators or singers again. Admins still
    come only from `ADMIN_DGG_USERNAMES`, and the page refuses to change one; somebody must sign in

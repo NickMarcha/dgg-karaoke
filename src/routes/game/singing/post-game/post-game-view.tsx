@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { DetailedScore, SingSetup, Song } from '~/interfaces';
 import Box from '~/modules/elements/akui/primitives/box';
@@ -8,6 +8,7 @@ import { ScoreTimeline } from '~/modules/game-engine/game-state/helpers/calculat
 import { gameModeNames } from '~/modules/game-modes';
 import useBackgroundMusic from '~/modules/hooks/use-background-music';
 import { difficultyName } from '~/modules/leaderboard/difficulty';
+import { sendPhoneRuns } from '~/modules/leaderboard/phone-runs';
 import { PlayerNumber } from '~/modules/players/player-number';
 import { useSongsPlayedToday } from '~/routes/game/singing/post-game/songs-played-today';
 import ResultsView from '~/routes/game/singing/post-game/views/results';
@@ -69,6 +70,10 @@ function PostGameView({
   // snow), which singing does not preserve on its own.
   useBackground(true, backgroundTheme);
   useBackgroundMusic(true);
+  // A local game's phones get their runs as the results open; online games have no phones
+  useEffect(() => {
+    if (highScoresEnabled) sendPhoneRuns(song, singSetup);
+  }, [highScoresEnabled, song, singSetup]);
   const [step, setStep] = useState<'results' | 'highscores'>('results');
   // `highScoresEnabled` is the same signal as "this game was saved locally": online play sets it
   // false precisely because its results never reach local storage, which is where the round count is

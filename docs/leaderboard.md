@@ -101,15 +101,25 @@ Every game with a qualifying score asks; there is no standing answer.
   qualifies, and "None of them". Only the account holder's own run goes up under their name.
 
 A phone's singer is not offered here: they are signed in on the phone, and their run goes up from
-there (the next step of layer 3). Putting a score up sends it at once; the panel then says whether it
-went on, and "Not this time" leaves a way back into the prompt.
+there. Putting a score up sends it at once; the panel then says whether it went on, and "Not this
+time" leaves a way back into the prompt.
+
+## Phones
+
+The computer that ran the game holds every singer's notes, phones' included. When the results open
+(`sendPhoneRuns`, local games only), it builds each phone singer's run the same way as its own
+(`buildRun`) and, if the score qualifies, hands it to that phone over the remote-mic relay as the
+`leaderboardRun` client call. The phone (`leaderboard-run-modal.tsx`) asks its own signed-in account
+and submits through its own `/api` session; signed out, it says to sign in on the phone. The run
+passes through the game, so the phone trusts it as far as the API trusts any client: it is checked
+the same way when it arrives.
 
 ## Tests
 
 - `server/src/leaderboard/leaderboard.integration.test.ts`: the routes against a real Postgres.
 - `src/modules/leaderboard/rules-in-sync.test.ts`: the site's and the API's numbers agree.
 - `tests/leaderboard.spec.ts`: signed out, signed in (choosing a singer, then finding the row on the
-  song's board in the next run), and declining. Signed-in specs open a session straight in the e2e
+  song's board in the next run), declining, and a signed-in phone putting its own run up. Signed-in specs open a session straight in the e2e
   stack's database (`signIn` in `tests/helpers.ts`), since the sign-in stand-in redirects to port
   3000. They sing on Easy, where the stubbed microphone clears the real qualifying score (about 1.7
   million), and so check the song board; the global board's query is covered by the server tests.

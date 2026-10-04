@@ -1,7 +1,8 @@
-import { expect, test } from '@playwright/test';
+import { devices, expect, test } from '@playwright/test';
 
 import { initTestMode, mockSongs, signIn } from './helpers';
 import initialise from './page-objects/initialise';
+import { connectRemoteMic, openRemoteMic } from './steps/open-and-connect-remote-mic';
 
 let pages: ReturnType<typeof initialise>;
 
@@ -119,5 +120,44 @@ test.describe('Leaderboard', () => {
     await expect(pages.leaderboardPage.optInPanel).toBeVisible();
     await pages.leaderboardPage.openPromptButton.click();
     await expect(pages.leaderboardPage.prompt).toBeVisible();
+  });
+
+  // Service worker caches index.json, which breaks the song list mock for the phone
+  test.use({ serviceWorkers: 'block' });
+
+  test("a phone's singer puts their own run up from the phone", async ({ page, browser }) => {
+    test.slow();
+    const username = `E2E phone ${runId}`;
+    await page.goto('/?e2e-test');
+    await pages.landingPage.enterTheGame();
+    await pages.mainMenuPage.goToInputSelectionPage();
+    await pages.inputSelectionPage.selectSmartphones();
+
+    const phoneContext = await browser.newContext({ ...devices['Pixel 5'] });
+    await signIn({ context: phoneContext }, username);
+    const phone = await openRemoteMic(page, phoneContext, browser);
+    await connectRemoteMic(phone._page, 'Phone singer');
+    await pages.smartphonesConnectionPage.goToMainMenu();
+
+    await pages.mainMenuPage.goToSingSong();
+    await pages.songLanguagesPage.ensureSongLanguageIsSelected(language);
+    await pages.songLanguagesPage.continueAndGoToSongList();
+    await singFromTheSongList({ calibrate: true });
+
+    await test.step('The phone asks, as its own account, and the computer does not', async () => {
+      const prompt = phone._page.getByTestId('phone-leaderboard-prompt');
+      await expect(prompt).toContainText(username, { timeout: 15_000 });
+      await expect(pages.leaderboardPage.prompt).toHaveCount(0);
+      await phone._page.getByTestId('phone-leaderboard-submit').click();
+      await expect(phone._page.getByTestId('phone-leaderboard-status')).toBeVisible({ timeout: 15_000 });
+    });
+
+    await test.step("The run is on the song's board", async () => {
+      await pages.postGameHighScoresPage.goToSongList();
+      await singFromTheSongList();
+      await expect(pages.leaderboardPage.songPanelRows.filter({ hasText: username }).first()).toBeVisible({
+        timeout: 15_000,
+      });
+    });
   });
 });

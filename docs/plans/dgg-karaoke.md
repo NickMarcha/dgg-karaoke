@@ -178,8 +178,8 @@ removes the name and country prompt and the rename problem.
 Decided with the user: every qualifying game asks (no standing answer); with
 several singers on one computer it asks which of them is the signed-in
 account; and singers on phones put their own runs up under their own
-accounts, from the phone, in this layer too. The boards and the computer's
-scores are built; phones are the remaining step.
+accounts, from the phone, in this layer too. All three are built; moderators
+removing rows is what is left of the layer.
 
 ### 4. Community songs
 

@@ -9,6 +9,7 @@ import { useEventEffect, useEventListener } from '~/modules/game-events/hooks';
 import useQueryParam from '~/modules/hooks/use-query-param';
 import { useSubscription } from '~/modules/remote-mic/network/client/hooks/use-subscription';
 import BottomBar from '~/routes/remote-mic/bottom-bar';
+import LeaderboardRunModal from '~/routes/remote-mic/components/leaderboard-run-modal';
 import Microphone from '~/routes/remote-mic/panels/microphone';
 import ConfirmReadiness from '~/routes/remote-mic/panels/microphone/confirm-readiness';
 import RemoteSettings from '~/routes/remote-mic/panels/remote-settings';
@@ -68,6 +69,7 @@ function RemoteMic() {
         </div>
       }>
       <ConfirmReadiness onConfirm={onConfirm} />
+      <LeaderboardRunModal />
       <div id="phone-ui-container" className="mx-auto flex h-dvh w-full max-w-[45rem] flex-col landscape:max-w-none">
         <TopBar connectionStatus={connectionStatus} roomId={roomId} />
         {/* Landscape: the tab bar becomes a vertical rail on the left of the panel (top bar stays full width) */}

@@ -1,3 +1,4 @@
+import { SubmitScoreInput } from '~/modules/leaderboard/client';
 import { PlayerNumber } from '~/modules/players/player-number';
 import { RemoteMicPermission } from '~/routes/settings/settings-state';
 
@@ -12,4 +13,6 @@ export interface ClientContract {
   requestReadiness: () => void;
   // Sent by the host when the player settings screen is shown, so unassigned phones can auto-open the player picker
   notifyPlayerSettingsOpen: () => void;
+  // After a song, this phone's run when it is good enough for a board: the phone's own account puts it up
+  leaderboardRun: (run: SubmitScoreInput) => void;
 }

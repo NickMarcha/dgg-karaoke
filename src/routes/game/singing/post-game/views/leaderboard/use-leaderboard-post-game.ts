@@ -3,11 +3,10 @@ import { useMemo, useState } from 'react';
 import { SingSetup, Song } from '~/interfaces';
 import { useAccount } from '~/modules/account/account';
 import GameState from '~/modules/game-engine/game-state/game-state';
-import InputManager from '~/modules/game-engine/input/input-manager';
 import { submitScore } from '~/modules/leaderboard/client';
 import { difficultyName } from '~/modules/leaderboard/difficulty';
-import { encodeNotesPayload } from '~/modules/leaderboard/notes-payload';
 import { hasLeaderboard, qualifiesForLeaderboard, reachesGlobalBoard } from '~/modules/leaderboard/qualifies';
+import { buildRun } from '~/modules/leaderboard/run';
 import { PlayerNumber } from '~/modules/players/player-number';
 import PlayersManager from '~/modules/players/players-manager';
 
@@ -67,20 +66,7 @@ export default function useLeaderboardPostGame({ song, singSetup }: Params) {
     setShared(singer);
     setStatus('submitting');
 
-    const playerState = GameState.getPlayer(singer.number);
-    const ok = await submitScore({
-      songId: song.id,
-      artist: song.artist,
-      title: song.title,
-      songLastUpdate: song.lastUpdate ?? null,
-      score: singer.score,
-      tolerance: GameState.getTolerance(),
-      mode: singSetup.mode,
-      trackIndex: playerState?.getTrackIndex() ?? 0,
-      inputLag: InputManager.getPlayerInputLag(singer.number),
-      notes: encodeNotesPayload(playerState?.getPlayerNotes() ?? []),
-    });
-    setStatus(ok ? 'submitted' : 'failed');
+    setStatus((await submitScore(buildRun(song, singSetup, singer.number))) ? 'submitted' : 'failed');
   };
 
   const decline = () => setIsPromptAnswered(true);
