@@ -37,8 +37,13 @@ export const ONLINE_ROOM_TTL_MS = 30 * 60 * 1_000;
  * room (and its Durable Object duration bill) awake. */
 export const ONLINE_IDLE_AFTER_MS = 30 * 1_000;
 
-/** How long a singer can report buffering before the room auto-pauses for everyone. */
-export const ONLINE_BUFFERING_PAUSE_MS = 1_000;
+/** How long a singer can report buffering before the room auto-pauses for everyone. A second was
+ * too eager: two players on one connection kept pausing each other for stalls they rode out alone. */
+export const ONLINE_BUFFERING_PAUSE_MS = 3_000;
+
+/** After a client jumps its own video (resuming, or catching up), buffering this soon is the jump's
+ * doing: it is not reported to the room unless it outlasts this, so a resume cannot re-pause it. */
+export const ONLINE_SEEK_SETTLE_MS = 5_000;
 
 /** How long the room waits for everyone to confirm readiness before starting the song anyway —
  * the same autostart the local game gives its remote mics. */
@@ -52,8 +57,9 @@ export const ONLINE_START_LEAD_MS = 2_000;
 /** Short countdown before resuming after a pause. */
 export const ONLINE_RESUME_COUNTDOWN_MS = 3_000;
 
-/** Clients seek when their playback drifts further than this from the room's expected position. */
-export const ONLINE_DRIFT_THRESHOLD_MS = 500;
+/** Clients seek when their playback drifts further than this from the room's expected position.
+ * Scores come from each singer's own video, so drift costs nothing but a jump costs a buffer. */
+export const ONLINE_DRIFT_THRESHOLD_MS = 1_500;
 
 /** Leaderboard broadcasts are coalesced so subscribers get at most one update per this interval. */
 export const ONLINE_LEADERBOARD_PUBLISH_MS = 500;
