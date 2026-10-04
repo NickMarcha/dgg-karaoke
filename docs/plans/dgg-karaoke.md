@@ -175,6 +175,12 @@ pitch data stored with its score. What changes is who a row belongs to: the
 signed-in destiny.gg user rather than a localStorage id and a typed name, which
 removes the name and country prompt and the rename problem.
 
+Decided with the user: every qualifying game asks (no standing answer); with
+several singers on one computer it asks which of them is the signed-in
+account; and singers on phones put their own runs up under their own
+accounts, from the phone, in this layer too. The boards and the computer's
+scores are built; phones are the remaining step.
+
 ### 4. Community songs
 
 Moderators do the reviewing. Admins appoint them on the admin page (`/admin/`), which this layer
@@ -216,6 +222,12 @@ synthesised. A third tier would record the singer's audio with `MediaRecorder`
 for the runs that reach the top of a board, for a mod to listen to before the
 row counts as verified. That costs real storage and a consent question, so it
 is a decision for when the first two exist.
+
+The user wants that third tier: **verified entries**, where a singer chooses to
+submit a recording with the run. Only the voice, from the microphone, never the
+song's audio; played back in sync with the YouTube video, so a moderator (or
+anyone) hears the singing against the song. Unverified rows stay on the
+boards; a verified one is marked as such.
 
 ### 6. OBS sources
 

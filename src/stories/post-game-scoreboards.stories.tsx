@@ -1,13 +1,12 @@
 import { Meta, StoryObj } from '@storybook/react-vite';
 import { ComponentProps, ReactNode, useEffect, useRef, useState } from 'react';
 import { expect, userEvent } from 'storybook/test';
+import { SWRConfig } from 'swr';
 
 import { DetailedScore, GAME_MODE, SingSetup } from '~/interfaces';
 import GameState from '~/modules/game-engine/game-state/game-state';
 import useViewportSize from '~/modules/hooks/use-viewport-size';
 import { SONG_BOARD_NEIGHBOURS } from '~/modules/leaderboard/consts';
-import { LeaderboardCountrySetting, LeaderboardNameSetting } from '~/modules/leaderboard/identity';
-import { LeaderboardSharingSetting, SharingDecision } from '~/modules/leaderboard/sharing';
 import { BoardEntry, SongBoardResponse } from '~/modules/leaderboard/types';
 import { PlayerNumber } from '~/modules/players/player-number';
 import convertTxtToSong from '~/modules/songs/utils/convert-txt-to-song';
@@ -30,24 +29,21 @@ interface StoryArgs {
   boardTotal: number;
   /** How many local high scores this device has for the song, so the placeholder fill is visible. */
   localRows: number;
-  /** What `GET /leaderboard-song` does, so the loading and failure states are reachable too. */
+  /** What `GET /api/leaderboard/song` does, so the loading and failure states are reachable too. */
   boardResponse: 'loaded' | 'empty' | 'loading' | 'error';
-  /**
-   * The player's standing decision, which is what the step renders under the boards: the prompt
-   * while undecided, the identity panel once sharing, the way back in once declined.
-   */
-  sharing: SharingDecision | 'undecided';
+  /** Signed in, a qualifying score opens the prompt over the boards; signed out, a line asks to sign in. */
+  account: 'signed-in' | 'signed-out';
 }
 
 const names = [
-  ['Roksana', 'pl'],
-  ['Mateusz', 'pl'],
-  ['Ingrid', 'no'],
-  ['Chidi', 'ng'],
-  ['Yumi', 'jp'],
-  ['Tomás', 'br'],
-  ['Aoife', 'ie'],
-  ['Dilnoza', 'uz'],
+  ['StrawWaffle', 'flair13'],
+  ['Mateusz', null],
+  ['Ingrid', 'flair3'],
+  ['Chidi', null],
+  ['Yumi', 'flair1'],
+  ['Tomás', null],
+  ['Aoife', 'flair8'],
+  ['Dilnoza', null],
 ] as const;
 
 /** A run of rows starting at `startPosition`, scoring down from just above the player's own score. */
@@ -57,7 +53,7 @@ const boardEntries = (count: number, tolerance: number, startPosition: number, s
 
     return {
       name: `${names[rank % names.length][0]} ${rank}`,
-      country: names[rank % names.length][1],
+      flair: names[rank % names.length][1],
       // `- 1` so the row at the insertion point is strictly below the player, the way a
       // submitted tie would be
       score: Math.max(1, score + (SONG_BOARD_NEIGHBOURS - index) * 4_000 - 1),
@@ -70,9 +66,8 @@ const boardEntries = (count: number, tolerance: number, startPosition: number, s
   });
 
 /**
- * Stands in for `GET /leaderboard-song`. Storybook has no request-mocking addon, and the panel is
- * the only thing on this screen that talks to the network, so the story swaps `fetch` for that one
- * path and leaves every other request alone.
+ * Stands in for `GET /api/leaderboard/song` and `GET /api/me`. Storybook has no request-mocking
+ * addon, so the story swaps `fetch` for those two paths and leaves every other request alone.
  *
  * Installed during render rather than in an effect: SWR fires on mount, which is before any effect
  * of a decorator wrapping it would run.
@@ -88,9 +83,14 @@ function StubbedSongBoard({ args, children }: { args: StoryArgs; children: React
 
     window.fetch = (input, init) => {
       const url = String(input instanceof Request ? input.url : input);
-      if (!url.includes('/leaderboard-song')) return previous(input, init);
-
       const args = latestArgs.current;
+
+      if (url.endsWith('/api/me')) {
+        const user = { id: 'story', username: 'StorySinger', role: 'singer', flair: 'flair13' };
+        const me = { user: args.account === 'signed-in' ? user : null, signInRequired: true };
+        return Promise.resolve(new Response(JSON.stringify(me), { status: 200 }));
+      }
+      if (!url.includes('/api/leaderboard/song')) return previous(input, init);
 
       if (args.boardResponse === 'loading') return new Promise<Response>(() => {});
       if (args.boardResponse === 'error') return Promise.resolve(new Response('nope', { status: 500 }));
@@ -98,7 +98,7 @@ function StubbedSongBoard({ args, children }: { args: StoryArgs; children: React
       const tolerance = difficulties[args.difficulty];
       const empty = args.boardResponse === 'empty';
 
-      // The same window the Worker would cut: the player somewhere in the middle of the board, with
+      // The same window the API would cut: the player somewhere in the middle of the board, with
       // up to SONG_BOARD_NEIGHBOURS rows either side
       const position = empty ? 1 : Math.min(Math.round(args.boardTotal / 2), args.boardTotal + 1);
       const startPosition = Math.max(1, position - SONG_BOARD_NEIGHBOURS);
@@ -119,7 +119,12 @@ function StubbedSongBoard({ args, children }: { args: StoryArgs; children: React
 
   useEffect(() => () => void (window.fetch = original), [original]);
 
-  return children;
+  // A cache per account, so switching the control asks `/api/me` again
+  return (
+    <SWRConfig key={args.account} value={{ provider: () => new Map() }}>
+      {children}
+    </SWRConfig>
+  );
 }
 
 const emptyDetailedScore: DetailedScore = {
@@ -150,39 +155,15 @@ const Template = (args: StoryArgs) => {
     tolerance: difficulties[args.difficulty],
   };
 
-  // The settings below are localStorage-backed and shared with every other story in the session, so
-  // whatever was there is put back on the way out
-  const [restoreSettings] = useState(() => {
-    const previous = {
-      sharing: LeaderboardSharingSetting.get(),
-      name: LeaderboardNameSetting.get(),
-      country: LeaderboardCountrySetting.get(),
-    };
-
-    LeaderboardSharingSetting.set(args.sharing === 'undecided' ? null : args.sharing);
-    LeaderboardNameSetting.set('Player #1');
-    LeaderboardCountrySetting.set('pl');
-
+  useState(() => {
     GameState.setSong(song);
     GameState.setSingSetup(singSetup);
     // Patched on the states this story just created, not on the singleton — `getPlayerScore` still
     // runs its own code path (co-op averaging included) on top of them
     GameState.getPlayers().forEach((playerState) => (playerState.getScore = () => args.score));
-
-    return () => {
-      LeaderboardSharingSetting.set(previous.sharing);
-      LeaderboardNameSetting.set(previous.name);
-      LeaderboardCountrySetting.set(previous.country);
-    };
   });
 
-  useEffect(
-    () => () => {
-      GameState.resetSingSetup();
-      restoreSettings();
-    },
-    [restoreSettings],
-  );
+  useEffect(() => () => GameState.resetSingSetup(), []);
 
   const players: PlayerScore[] = [
     {
@@ -224,7 +205,7 @@ const meta = {
     boardTotal: { control: { type: 'range', min: 1, max: 500, step: 1 } },
     localRows: { control: { type: 'range', min: 1, max: 5, step: 1 } },
     boardResponse: { control: 'radio', options: ['loaded', 'empty', 'loading', 'error'] },
-    sharing: { control: 'radio', options: ['always', 'undecided', 'never'] },
+    account: { control: 'radio', options: ['signed-out', 'signed-in'] },
   },
   args: {
     difficulty: 'Medium',
@@ -232,8 +213,8 @@ const meta = {
     boardTotal: 120,
     localRows: 5,
     boardResponse: 'loaded',
-    // Not 'undecided': the prompt opens over the boards, and these stories are about the boards
-    sharing: 'always',
+    // Signed out: signed in, the prompt opens over the boards, and these stories are about the boards
+    account: 'signed-out',
   },
   parameters: {
     layout: 'fullscreen',
@@ -262,9 +243,9 @@ export const ScoreboardsStory: Story = {
   play: goToScoreboards,
 };
 
-/** The first qualifying score, with the prompt still up over the boards. */
+/** A qualifying score while signed in, with the prompt up over the boards. */
 export const FirstScorePromptStory: Story = {
-  args: { sharing: 'undecided' },
+  args: { account: 'signed-in' },
   play: goToScoreboards,
 };
 

@@ -213,25 +213,40 @@ signed-in game), not kept, because it needs the stack started with
 `SIGN_IN_REQUIRED=true`. Names are not verified by the relay: a modified
 client could send another, though only from a signed-in account.
 
+**Leaderboards, first step of layer 3** (`docs/leaderboard.md`). The API
+serves `/api/leaderboard`: submit a run as the signed-in account, the global
+board, a song's board. One row per account, song and difficulty, the best;
+the run's notes are kept beside it for layer 5. The main-menu board and the
+post-game song board are back. Every qualifying game asks; with several
+singers on this computer it asks which one the account was; signed out, it
+asks for a sign-in before the next song. Upstream's name, country, flags and
+standing share decision are gone, and so is its leaderboard admin tab.
+`tests/leaderboard.spec.ts` signs in by opening a session in the e2e
+database (`signIn` in `tests/helpers.ts`) and sings on Easy, where the stubbed
+microphone clears the real threshold. Not built yet: moderators removing rows.
+
 Next:
 
-1. **What moderators can do.** The admin page (`/admin/`, `src/routes/admin-panel`) appoints them:
+1. **Phones put their own runs on the board** (the rest of layer 3, decided
+   with the user). Phone singers are left out of the computer's prompt for
+   this. The game has their frequency records; it hands each phone its result
+   after the song, and the phone, signed in, asks and submits. Then a way for
+   moderators to remove a row.
+2. **What moderators can do.** The admin page (`/admin/`, `src/routes/admin-panel`) appoints them:
    an admin searches signed-in accounts and makes them moderators or singers again. Admins still
    come only from `ADMIN_DGG_USERNAMES`, and the page refuses to change one; somebody must sign in
    once before they can be found. The role is read on every request, so a change applies at once.
    Moderators can do nothing yet: managing songs (create, edit, review) is layer 4, which moves
    community songs into Postgres and should add its tabs to this page. Upstream's password admin page
    (`src/routes/admin`) is still unrouted and goes when layer 4 replaces it.
-2. On the live site: sign in and out (Safari too), sing without an account,
+3. On the live site: sign in and out (Safari too), sing without an account,
    a phone microphone, and joining an online room from a phone with "Join with
    code".
-3. **Refresh the visual baselines.** All 291 (`tests/visual-regression`,
+4. **Refresh the visual baselines.** All 291 (`tests/visual-regression`,
    `tests/storybook`) are Linux renders of the old look, and upstream's CI
    that produced them is gone. Regenerating on Windows only adds `-win32`
    copies, so it needs a Linux Playwright container (or `sage-dev`) with the
    API stack reachable.
-4. Then layer 3, leaderboards on our API, which is the first thing to require
-   sign-in.
 5. Left as they were: the toolbar covers the right end of the song list's
    filter row on wide screens (it did before; the account button adds a
    little), the Beta badge sits under the toolbar on a phone, the menu

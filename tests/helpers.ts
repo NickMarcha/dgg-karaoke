@@ -1,3 +1,5 @@
+import { execFileSync } from 'child_process';
+import { createHash, randomUUID } from 'crypto';
 import { readFileSync, readdirSync } from 'fs';
 
 import { BrowserContext, Page } from '@playwright/test';
@@ -53,17 +55,16 @@ const BOARD_SONGS = [
 
 /**
  * A full global board, for a screen whose point is what a long one does to it. The rows are made
- * here rather than sung: the local Durable Object holds whatever earlier specs happened to submit,
+ * here rather than sung: the local database holds whatever earlier specs happened to submit,
  * which is neither this many rows nor the same rows twice.
  *
- * Everything a row renders is fixed — the dates are whole days back so the relative date each one
- * shows cannot drift mid-run, and the flags, which come from flagcdn.com, are stubbed with a plain
- * swatch so a screenshot never waits on a CDN.
+ * Everything a row renders is fixed: the dates are whole days back so the relative date each one
+ * shows cannot drift mid-run.
  */
 export const mockLeaderboard = async ({ page }: { page: Page; context: BrowserContext }, count = 50) => {
   const entries: BoardEntry[] = Array.from({ length: count }, (_, index) => ({
     name: `E2E Player ${String(index + 1).padStart(2, '0')}`,
-    country: 'pl',
+    flair: index % 3 === 0 ? 'flair13' : null,
     score: 1_200_000 - index * 7_531,
     ...BOARD_SONGS[index % BOARD_SONGS.length],
     songId: `e2e-board-song-${index % BOARD_SONGS.length}`,
@@ -72,15 +73,7 @@ export const mockLeaderboard = async ({ page }: { page: Page; context: BrowserCo
     createdAt: Date.now() - ((index % 13) + 1) * 24 * 60 * 60 * 1000,
   }));
 
-  await page.route('/leaderboard', (route) =>
-    route.fulfill({ status: 200, body: JSON.stringify({ generatedAt: Date.now(), entries }) }),
-  );
-  await page.route('https://flagcdn.com/**', (route) =>
-    route.fulfill({
-      contentType: 'image/svg+xml',
-      body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3 2"><rect width="3" height="2" fill="#3f5170"/></svg>',
-    }),
-  );
+  await page.route('/api/leaderboard', (route) => route.fulfill({ status: 200, body: JSON.stringify({ entries }) }));
 };
 
 export const mockRandom = async ({ context }: { page: Page; context: BrowserContext }, randomValue = 0.5) => {
@@ -191,4 +184,24 @@ export const stubUserMedia = async ({ context, page }: { page: Page; context: Br
         [deviceList],
       ),
   };
+};
+
+/**
+ * Signs the browser in as `username` by opening a session straight in the e2e stack's database.
+ * The sign-in stand-in sends the browser back to port 3000, where the e2e site is not, so the specs
+ * skip it; the stand-in itself was checked by hand.
+ */
+export const signIn = async ({ context }: { context: BrowserContext }, username: string) => {
+  const token = randomUUID();
+  const tokenHash = createHash('sha256').update(token).digest('hex');
+  const sql = `
+    insert into users (dgg_user_id, username, dgg_status) values ('${username}', '${username}', 'Active')
+      on conflict (dgg_user_id) do nothing;
+    insert into sessions (token_hash, user_id, expires_at)
+      select '${tokenHash}', id, now() + interval '1 hour' from users where dgg_user_id = '${username}';`;
+  execFileSync('docker', ['exec', '-i', 'dgg-karaoke-db-1', 'psql', '-U', 'dgg_karaoke', '-d', 'dgg_karaoke'], {
+    input: sql,
+  });
+  // Cookies ignore ports, so this one reaches the dev and the production e2e servers alike
+  await context.addCookies([{ name: 'dgg_karaoke_session', value: token, domain: 'localhost', path: '/' }]);
 };

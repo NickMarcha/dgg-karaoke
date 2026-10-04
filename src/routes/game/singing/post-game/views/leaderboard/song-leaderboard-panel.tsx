@@ -29,7 +29,7 @@ interface Props {
  * gets told where they would have landed, which is the only reason to show it to them at all.
  */
 function SongLeaderboardPanel({ song, singSetup, leaderboard, className, listClassName }: Props) {
-  const { hasLeaderboard, difficulty, score, name, country } = leaderboard;
+  const { hasLeaderboard, difficulty, score, accountName } = leaderboard;
 
   const shouldFetch = hasLeaderboard;
 
@@ -40,7 +40,7 @@ function SongLeaderboardPanel({ song, singSetup, leaderboard, className, listCla
   );
 
   /**
-   * The board as the player should read it: the window the Worker returned with the run just sung
+   * The board as the player should read it: the window the API returned with the run just sung
    * slotted into place, rather than a list they then have to find themselves in.
    *
    * The row is synthetic — the score has usually not been submitted yet, and after it has, nothing
@@ -54,8 +54,8 @@ function SongLeaderboardPanel({ song, singSetup, leaderboard, className, listCla
     if (data.position === null) return listed;
 
     const player: BoardEntry = {
-      name: name.trim() || 'You',
-      country: country || null,
+      name: accountName ?? 'You',
+      flair: null,
       score,
       artist: song.artist,
       title: song.title,
@@ -68,7 +68,7 @@ function SongLeaderboardPanel({ song, singSetup, leaderboard, className, listCla
     listed.splice(index, 0, { entry: player, isPlayer: true });
 
     return listed;
-  }, [data, name, country, score, song, singSetup.tolerance]);
+  }, [data, accountName, score, song, singSetup.tolerance]);
 
   // Away entirely for the dev-only debug widths above Easy — those are never stored, so the list
   // would be permanently empty.

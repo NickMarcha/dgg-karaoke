@@ -1,37 +1,33 @@
 import { pack } from 'msgpackr';
 
-import { getClientId } from '~/modules/leaderboard/identity';
 import { computeNotesHash } from '~/modules/leaderboard/notes-hash';
 import { BoardResponse, LeaderboardSubmission, SongBoardResponse } from '~/modules/leaderboard/types';
 
-export const LEADERBOARD_URL = '/leaderboard';
-const SONG_LEADERBOARD_URL = '/leaderboard-song';
+/** Through the site's `/api` proxy, so a submission carries the session cookie. */
+export const LEADERBOARD_URL = '/api/leaderboard';
+const SONG_LEADERBOARD_URL = '/api/leaderboard/song';
 
-export type SubmitScoreInput = Omit<LeaderboardSubmission, 'clientId' | 'notesHash'>;
+export type SubmitScoreInput = Omit<LeaderboardSubmission, 'notesHash'>;
 
-/**
- * Fire-and-forget. Failures are swallowed on purpose — there is no retry queue and no error is
- * surfaced to the player; a vanity board does not earn one.
- */
-export async function submitScore(input: SubmitScoreInput): Promise<void> {
+/** Puts a run on the board as the signed-in account. Says whether the API took it. */
+export async function submitScore(input: SubmitScoreInput): Promise<boolean> {
   try {
     const score = Math.round(input.score);
-
     const submission: LeaderboardSubmission = {
       ...input,
       score,
-      clientId: getClientId(),
       notesHash: await computeNotesHash(input.notes, score),
     };
 
-    await fetch(LEADERBOARD_URL, {
+    const response = await fetch(LEADERBOARD_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/msgpack' },
       // msgpackr types the return as node's Buffer; in the browser it is a plain Uint8Array
       body: pack(submission) as unknown as Uint8Array<ArrayBuffer>,
     });
+    return response.ok;
   } catch {
-    // ignored on purpose
+    return false;
   }
 }
 

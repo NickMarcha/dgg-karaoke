@@ -13,28 +13,29 @@ export class LeaderboardPagePO {
     return this.page.getByTestId('leaderboard-prompt');
   }
 
-  // `Input` forwards unknown props to the inner `<input>`, so the test id lands on the field itself
-  public get nameInput() {
-    return this.prompt.getByTestId('leaderboard-name');
-  }
-
-  public get countryInput() {
-    return this.prompt.getByTestId('leaderboard-country');
-  }
-
-  public get submitButton() {
-    return this.prompt.getByTestId('leaderboard-submit');
-  }
-
   public get declineButton() {
     return this.prompt.getByTestId('leaderboard-decline');
   }
 
   // --- High-scores step panel ---
 
-  /** Shown once the player shares by default: the identity they share under, and a way to stop. */
+  /** Asked which singer the account was, when several sang on this computer. */
+  public singerButton(playerNumber: number) {
+    return this.prompt.getByTestId(`leaderboard-singer-${playerNumber}`);
+  }
+
+  /** What became of a shared score. */
   public get sharePanel() {
     return this.page.getByTestId('leaderboard-share-panel');
+  }
+
+  public get shareStatus() {
+    return this.page.getByTestId('leaderboard-share-status');
+  }
+
+  /** Shown to a qualifying score while nobody is signed in. */
+  public get signInPanel() {
+    return this.page.getByTestId('leaderboard-sign-in-panel');
   }
 
   /** Shown once the player has declined: the way back into the prompt. */
@@ -42,35 +43,8 @@ export class LeaderboardPagePO {
     return this.page.getByTestId('leaderboard-opt-in-panel');
   }
 
-  public get stopSharingButton() {
-    return this.page.getByTestId('leaderboard-stop-sharing');
-  }
-
   public get openPromptButton() {
     return this.page.getByTestId('leaderboard-open-prompt');
-  }
-
-  public get panelNameInput() {
-    return this.sharePanel.getByTestId('leaderboard-name');
-  }
-
-  public async fillIdentity(name: string, country: string) {
-    await this.nameInput.fill(name);
-
-    // Opening the picker swaps the field from the committed label to an empty search box; typing
-    // before that lands would be wiped by the re-render, so wait for it to actually open
-    await this.countryInput.click();
-    await expect(this.countryInput).toHaveAttribute('aria-expanded', 'true');
-    await this.countryInput.fill(country);
-    await expect(this.prompt.locator('[role="listbox"]')).toContainText(country);
-    await this.countryInput.press('Enter');
-
-    await expect(this.countryInput).toHaveValue(country);
-  }
-
-  public async submit() {
-    await this.submitButton.click();
-    await expect(this.prompt).not.toBeVisible();
   }
 
   // --- High-scores step: the board for the song just sung ---

@@ -1,8 +1,6 @@
 import { pack, unpack } from 'msgpackr';
 
-// Relative and type-only on purpose: the Worker decodes payloads too, and the `~` alias is not
-// configured for the Worker bundle.
-import type { PlayerNote } from '../../interfaces';
+import type { PlayerNote } from '~/interfaces';
 
 // Frequency records are stored as [timestampDelta, frequencyDelta] pairs of integers scaled by
 // PRECISION_SCALE. Deltas are computed over the *scaled* values so decoding is exact at that

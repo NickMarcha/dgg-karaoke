@@ -66,7 +66,6 @@ test('Cooperation mode', async ({ page }) => {
     await pages.postGameResultsPage.waitForPlayersScoreToBeGreaterThan(100);
     await pages.postGameResultsPage.skipScoresAnimation();
     await pages.postGameResultsPage.goToHighScoresStep();
-    await pages.postGameHighScoresPage.dismissLeaderboardPrompt();
     await expect(pages.postGameHighScoresPage.getPlayersNamesCoopInput(player1Name, player2Name)).toBeVisible();
   });
 });

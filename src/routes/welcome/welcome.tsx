@@ -14,15 +14,16 @@ import ExcludeLanguagesView from '~/routes/exclude-languages/exclude-languages-v
 import LayoutGame from '~/routes/layout-game';
 import SelectInputModal from '~/routes/select-input/select-input-modal';
 import { ExcludedLanguagesSetting, useSettingValue } from '~/routes/settings/settings-state';
+import LeaderboardPanel from '~/routes/welcome/leaderboard-panel';
 import MenuFooter from '~/routes/welcome/menu-footer';
 import MenuTile from '~/routes/welcome/menu-tile';
 import { MenuViewTransition } from '~/routes/welcome/menu-view-transitions';
 
 /**
  * The main menu as tiles rather than the stacked button list every other screen uses: the two ways
- * into a game get a row of their own at the top, and the supporting screens share a shorter row
- * underneath. The global leaderboard is left out until our API serves it (layer 3 of
- * docs/plans/dgg-karaoke.md).
+ * into a game get a row of their own at the top, the supporting screens share a shorter row
+ * underneath, and the leaderboard takes a full-height rail on the right. Below `xl` the rail has
+ * nowhere to go, so the whole thing folds into one column with the board under the tiles.
  */
 function Welcome() {
   useBackground(true);
@@ -119,7 +120,7 @@ function Welcome() {
           </div>
         </header>
 
-        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="grid min-h-0 flex-1 gap-4 lg:gap-6 xl:grid-cols-[minmax(0,1fr)_32rem]">
           <div className="flex min-h-0 flex-col gap-4 max-lg:gap-3 lg:gap-6">
             <KeyboardNavContext value={register}>
               {/* `auto-cols-fr` with column flow rather than a fixed column count: the top row is the
@@ -175,6 +176,16 @@ function Welcome() {
                 />
               </div>
             </KeyboardNavContext>
+          </div>
+          {/* One instance, not a desktop/narrow pair: it moves from the rail to the bottom of the
+              single column purely by where the grid puts it. As a rail (from `xl`) it fills its cell
+              absolutely, so fifty rows do not make the row taller than the tiles beside them; below
+              `xl` it is a block under them at its own five-row height. */}
+          <div className="relative">
+            <LeaderboardPanel
+              className={`${MenuViewTransition.LEADERBOARD} xl:absolute xl:inset-0`}
+              listClassName="xl:h-auto xl:min-h-0 xl:flex-1"
+            />
           </div>
         </div>
 

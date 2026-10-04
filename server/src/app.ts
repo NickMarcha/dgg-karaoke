@@ -7,6 +7,7 @@ import { z } from 'zod';
 
 import { type Auth, AuthenticationError } from './auth.js';
 import type { Database } from './db.js';
+import { leaderboardRoutes } from './leaderboard/routes.js';
 import { type OnlineDirectory, ROOM_CODE_PATTERN } from './online/directory.js';
 import { fetchThroughProxy, ProxyRefused, proxyTarget } from './proxy.js';
 import type { SocketTickets } from './socket-tickets.js';
@@ -95,6 +96,8 @@ export function createApp({
     if (!user) return context.json({ error: 'Sign in with destiny.gg first.' }, 401);
     return context.json({ ticket: tickets.issue(user) });
   });
+
+  app.route('/api/leaderboard', leaderboardRoutes({ database, signedInUser }));
 
   // The admin page: appointing moderators. Admins themselves come from ADMIN_DGG_USERNAMES.
   app.use('/api/admin/*', async (context, next) => {

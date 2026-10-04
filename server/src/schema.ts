@@ -1,5 +1,19 @@
 import { sql } from 'drizzle-orm';
-import { index, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import {
+  customType,
+  index,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  smallint,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => 'bytea' });
 
 /**
  * The online-mode room directory (src/online/directory.ts): who is in each room, which slot they
@@ -66,3 +80,46 @@ export const sessions = pgTable(
   },
   (table) => [index('sessions_user_id_index').on(table.userId), index('sessions_expires_at_index').on(table.expiresAt)],
 );
+
+/**
+ * One singer's best run of one song at one difficulty. Rows are kept for good: the main menu's
+ * board looks back a fortnight, but a song's own board is all-time.
+ */
+export const leaderboardRecords = pgTable(
+  'leaderboard_records',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    songId: text('song_id').notNull(),
+    // Kept with the row so the board shows a song the site no longer has
+    artist: text('artist').notNull(),
+    title: text('title').notNull(),
+    songLastUpdate: text('song_last_update'),
+    score: integer('score').notNull(),
+    tolerance: smallint('tolerance').notNull(),
+    mode: text('mode').notNull(),
+    trackIndex: smallint('track_index').notNull(),
+    inputLag: integer('input_lag').notNull(),
+    notesHash: text('notes_hash').notNull(),
+    /** When the run was sung: a better run replaces the row and its date. */
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('leaderboard_records_best_unique').on(table.userId, table.songId, table.tolerance),
+    index('leaderboard_records_song_index').on(table.songId, table.tolerance, table.score),
+    index('leaderboard_records_global_index').on(table.createdAt, table.score),
+  ],
+);
+
+/**
+ * The sung frequency records behind a row, msgpack-packed by the game. Apart from the rows so a
+ * board query never loads them; kept for checking and replaying runs (layer 5 of the plan).
+ */
+export const leaderboardNotes = pgTable('leaderboard_notes', {
+  recordId: uuid('record_id')
+    .primaryKey()
+    .references(() => leaderboardRecords.id, { onDelete: 'cascade' }),
+  notes: bytea('notes').notNull(),
+});

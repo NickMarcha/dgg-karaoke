@@ -1,7 +1,9 @@
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
-import { Flag } from '~/modules/elements/flag';
+import { flairClass } from '~/modules/account/account';
+
+import '~/modules/account/flairs.css';
 import { difficultyName } from '~/modules/leaderboard/difficulty';
 import { BoardEntry } from '~/modules/leaderboard/types';
 import ScoreboardRow from '~/modules/scoreboard/scoreboard-row';
@@ -19,7 +21,7 @@ interface Props {
   'data-test'?: string;
 }
 
-/** A {@link ScoreboardRow} built from a board row: the flag beside the name, the date relative. */
+/** A {@link ScoreboardRow} built from a board row: the name in its destiny.gg flair, the date relative. */
 function LeaderboardRow({
   entry,
   position,
@@ -35,12 +37,7 @@ function LeaderboardRow({
       highlighted={highlighted}
       scrollIntoView={scrollIntoView}
       data-test={dataTest}
-      name={
-        <>
-          <Flag isocode={entry.country ?? 'un'} loading="lazy" className="h-[1em] w-[1.5em] object-cover" />
-          {entry.name}
-        </>
-      }
+      name={<span className={flairClass(entry)}>{entry.name}</span>}
       subtitle={withSongDetails ? `${entry.artist} — ${entry.title}` : undefined}
       meta={[withSongDetails ? difficultyName(entry.tolerance) : null, dayjs(entry.createdAt).fromNow()]
         .filter(Boolean)

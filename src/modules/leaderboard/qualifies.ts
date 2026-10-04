@@ -19,7 +19,7 @@ export const hasLeaderboard = (tolerance: number) => tolerance <= MAX_SUBMITTED_
 /**
  * Whether a score also reaches the single global board on the main menu, which mixes every song and
  * difficulty into one ranking. Easy widens the pitch window enough that its scores would not be
- * comparable there. The Worker's projection enforces the same rule — this only shapes what the
+ * comparable there. The API's global board enforces the same rule — this only shapes what the
  * post-game screen tells the player.
  */
 export const reachesGlobalBoard = (tolerance: number) => tolerance <= MAX_GLOBAL_BOARD_TOLERANCE;

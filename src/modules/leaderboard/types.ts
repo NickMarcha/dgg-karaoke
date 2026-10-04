@@ -1,11 +1,7 @@
-/**
- * Shapes shared between the client and the Worker. This file must stay dependency-free — the
- * Worker imports it and anything pulled in here ends up in the Worker bundle.
- */
+/** What the API's leaderboard routes (`server/src/leaderboard/`) take and answer. */
 
-/** Body of `POST /leaderboard`, msgpack-packed. */
+/** Body of `POST /api/leaderboard`, msgpack-packed. Whose run it is comes from the session. */
 export interface LeaderboardSubmission {
-  clientId: string;
   songId: string;
   artist: string;
   title: string;
@@ -15,18 +11,15 @@ export interface LeaderboardSubmission {
   mode: string;
   trackIndex: number;
   inputLag: number;
-  name: string;
-  /** ISO-3166 alpha-2, `null` when the player preferred not to say. */
-  country: string | null;
   /** sha-256 hex over the packed notes bytes concatenated with the score. */
   notesHash: string;
   notes: Uint8Array;
 }
 
-/** One public row of the board. Carries no `clientId` and no row id — the response is world-readable. */
+/** One public row of the board: the singer's destiny.gg name and the flair it is coloured by. */
 export interface BoardEntry {
   name: string;
-  country: string | null;
+  flair: string | null;
   score: number;
   artist: string;
   title: string;
@@ -36,14 +29,13 @@ export interface BoardEntry {
   createdAt: number;
 }
 
-/** Body of `GET /leaderboard`. */
+/** Body of `GET /api/leaderboard`. */
 export interface BoardResponse {
-  generatedAt: number;
   entries: BoardEntry[];
 }
 
 /**
- * Body of `GET /leaderboard-song`. One song at one difficulty; the vocal track is deliberately not
+ * Body of `GET /api/leaderboard/song`. One song at one difficulty; the vocal track is deliberately not
  * part of the split — the two tracks of a duet are ranked together.
  */
 export interface SongBoardResponse {
@@ -63,10 +55,3 @@ export interface SongBoardResponse {
    */
   position: number | null;
 }
-
-/** Board row as returned by the authenticated admin listing, with the id needed to delete it. */
-export interface AdminBoardEntry extends BoardEntry {
-  id: string;
-}
-
-export const BOARD_KV_KEY = 'board:v1';

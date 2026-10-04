@@ -5,7 +5,7 @@
  * request, but anyone reading the bundle can compute a valid hash for a fabricated record. See the
  * "Abuse Posture" section of the design doc.
  *
- * Both the client and the Worker call this, so the byte layout must stay identical on both sides —
+ * The API recomputes it (server/src/leaderboard/submission.ts), so the byte layout must stay identical —
  * the score is stringified as an integer.
  */
 export async function computeNotesHash(notes: Uint8Array, score: number): Promise<string> {
