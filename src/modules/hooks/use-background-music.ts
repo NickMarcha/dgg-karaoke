@@ -6,7 +6,7 @@ export default function useBackgroundMusic(play: boolean) {
   useEffect(() => {
     if (play) {
       if (!backgroundMusic.playing()) {
-        backgroundMusic.play(false);
+        void backgroundMusic.play();
       }
     } else {
       backgroundMusic.stop();

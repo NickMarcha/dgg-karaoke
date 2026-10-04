@@ -20,7 +20,6 @@ import { CalibrationSettings } from '~/routes/settings/calibration';
 import RemoteMicSettings from '~/routes/settings/remote-mic-settings';
 import Settings from '~/routes/settings/settings';
 import { GraphicSetting, useSettingValue } from '~/routes/settings/settings-state';
-import SocialMediaElements from '~/routes/social-media-elements/social-media-elements';
 import Welcome from '~/routes/welcome/welcome';
 
 import Convert from './routes/convert/convert';
@@ -107,7 +106,6 @@ function App() {
                 <Route path={routePaths.SETTINGS_CALIBRATION} component={CalibrationSettings} />
                 <Route path={routePaths.REMOTE_MIC} component={RemoteMic} />
                 <Route path={routePaths.MANAGE_SONGS} component={ManageSongs} />
-                <Route path="social-media-elements" component={SocialMediaElements} />
                 {/* Not in `routePaths`: a prerendered copy would be a page with no code to finish */}
                 <Route path="auth/callback" component={AuthCallback} />
                 {LazyDevScreenshots && (

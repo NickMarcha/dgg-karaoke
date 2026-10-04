@@ -1,6 +1,7 @@
 import { ComponentProps } from 'react';
 
 import { Chip } from '~/modules/elements/akui/chip';
+import Amazin from '~/modules/elements/amazin';
 import storage from '~/modules/utils/storage';
 import { MobilePhoneModeSetting, useSettingValue } from '~/routes/settings/settings-state';
 import { twx } from '~/utils/twx';
@@ -16,7 +17,8 @@ export default function Logo(props: ComponentProps<'div'>) {
     return null;
   }
   return (
-    <div className="relative h-[1.1em] [view-transition-name:logo]" {...props}>
+    <div className="relative flex h-[1.1em] items-center gap-[0.25em] [view-transition-name:logo]" {...props}>
+      <Amazin className="text-[1.1em]" />
       <Wordmark>
         <span className="text-active">DGG</span> Karaoke
       </Wordmark>

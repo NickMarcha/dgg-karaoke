@@ -1,18 +1,16 @@
-import christmasBackgroundMusicSound from '~/assets/2020-12-16_-_christmas_rock_-_www.fesliyan-studios.com_steve_oxen.ogg';
 import wooshSound from '~/assets/60013__qubodup__whoosh.mp3';
 import waitFinishedSound from '~/assets/376817__original_sound__impact-cinematic.ogg';
 import waitForReadinessSound from '~/assets/459342__papaninkasettratat__cinematic-music-short.ogg';
 import chatMessageSound from '~/assets/chat_message.mp3';
-import backgroundMusicSound from '~/assets/funk-cool-groove-(no-copyright-music)-by-anwar-amr.ogg';
 import halloweenWaitFinishedSound from '~/assets/halloween/boo-and-laugh-7060.mp3';
 import halloweenWooshSound from '~/assets/halloween/croworraven1-6749.mp3';
-import halloweenBackgroundMusicSound from '~/assets/halloween/halloween-cinematic-by-infraction-[no-copyright-music]-halloween-2024-[-ezmp3.cc-].mp3';
 import halloweenSelectSongSound from '~/assets/halloween/halloween-impact-05-93808.mp3';
 import halloweenWaitForReadinessSound from '~/assets/halloween/scary-music-box-for-spooky-scenes-165983.mp3';
 import menuBackSound from '~/assets/menu_back.mp3';
 import menuEnterSound from '~/assets/menu_enter.mp3';
 import menuNavigateSound from '~/assets/menu_navigate.mp3';
 import { backgroundTheme } from '~/modules/elements/layout-with-background';
+import SoundCloudMusic from '~/modules/soundcloud-music';
 import { BackgroundThemeSetting, MasterVolumeSetting } from '~/routes/settings/settings-state';
 
 class Sound {
@@ -126,25 +124,8 @@ export const woosh = new ThemedSound(
   },
 );
 
-export const backgroundMusic = new ThemedSound(
-  new Sound({
-    src: backgroundMusicSound,
-    volume: 0.3,
-    loop: true,
-  }),
-  {
-    christmas: new Sound({
-      src: christmasBackgroundMusicSound,
-      volume: 0.25,
-      loop: true,
-    }),
-    halloween: new Sound({
-      src: halloweenBackgroundMusicSound,
-      volume: 0.3,
-      loop: true,
-    }),
-  },
-);
+/** The menus' soundtrack, the same in every season; see `soundcloud-music.ts`. */
+export const backgroundMusic = new SoundCloudMusic();
 
 export const waitFinished = new ThemedSound(new Sound({ src: waitFinishedSound, preload: true }), {
   halloween: new Sound({ src: halloweenWaitFinishedSound, preload: true, volume: 0.4 }),

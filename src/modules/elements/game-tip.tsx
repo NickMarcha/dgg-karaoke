@@ -6,12 +6,6 @@ import { randomInt } from '~/modules/utils/random-value';
 
 const data = [
   <>
-    You can follow the updates and give feedback on the game through the Facebook Page:{' '}
-    <a href="https://www.facebook.com/allkaraoke.party" target="_blank" rel="noreferrer">
-      <strong>fb.com/AllKaraoke.Party</strong>
-    </a>
-  </>,
-  <>
     Start typing a name of a song in <strong>Song Selection</strong> to active Search feature
   </>,
   <>

@@ -2,7 +2,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { extendTailwindMerge } from 'tailwind-merge';
 
 /**
- * Custom animations. `animation` keys from tailwind.config.js plus the two declared straight as
+ * Custom animations. `animation` keys from tailwind.config.js plus the three declared straight as
  * `@utility animate-*` in index.css. Without these, `animate-blink animate-none` keeps both classes
  * and the two animations fight in the cascade.
  */
@@ -12,11 +12,11 @@ export const CUSTOM_ANIMATIONS = [
   'gradient',
   'focused',
   'button-focused',
-  'logo-pulse',
   'lyrics-pop',
   'lyrics-shake',
   'skeleton',
   'new-song-group-header',
+  'amazin',
 ] as const;
 
 /**

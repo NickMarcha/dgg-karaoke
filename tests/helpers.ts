@@ -115,27 +115,24 @@ export const stubUserMedia = async ({ context, page }: { page: Page; context: Br
       return data;
     };
 
+    /** A stream on one device, as much of `MediaStream` as the game reads. */
+    const streamOf = (device: SimDevice) => {
+      const track = {
+        enabled: true,
+        readyState: 'live',
+        stop: () => (track.readyState = 'ended'),
+        getSettings: () => ({ deviceId: device.id, channelCount: device.channels ?? 1 }),
+      };
+      return { getAudioTracks: () => [track], getTracks: () => [track] };
+    };
+
+    // As a browser does: an exact device, or else the one the user would pick, the first
     const getUserMedia = async (capabilities: MediaStreamConstraints) => {
       // @ts-expect-error deviceId is not in the types
-      if (capabilities.audio?.deviceId?.exact) {
-        // @ts-expect-error deviceId is not in the types
-        const device = mediaDevices.find((device) => device.id === capabilities.audio?.deviceId.exact);
-
-        if (!device) {
-          throw new OverconstrainedError('Device not found');
-        } else {
-          return {
-            getAudioTracks: () => [
-              {
-                getSettings: () => ({
-                  deviceId: device.id,
-                  channelCount: device.channels ?? 1,
-                }),
-              },
-            ],
-          };
-        }
-      }
+      const exact: string | undefined = capabilities.audio?.deviceId?.exact;
+      const device = exact ? mediaDevices.find((candidate) => candidate.id === exact) : mediaDevices[0];
+      if (!device) throw new OverconstrainedError('Device not found');
+      return streamOf(device);
     };
 
     console.log(AudioBuffer);

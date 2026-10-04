@@ -5,7 +5,6 @@ import { useBackground } from '~/modules/elements/background-context';
 import Logo from '~/modules/elements/logo';
 import RecommendedBrowsers from '~/modules/elements/recommended-browsers';
 import LayoutGame from '~/routes/layout-game';
-import GithubRibbon from '~/routes/welcome/github-ribbon';
 
 type Props = PropsWithChildren<{
   supportedBrowsers?: boolean;
@@ -17,7 +16,6 @@ function MenuWithLogo({ children, supportedBrowsers, ...props }: Props) {
 
   return (
     <LayoutGame>
-      <GithubRibbon />
       <div className="flex w-screen flex-col items-center gap-8 pt-8 max-lg:gap-4">
         <div className="text-6xl max-lg:text-5xl">
           <Logo />

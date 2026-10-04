@@ -28,14 +28,7 @@ export const ErrorFallback = ({ error, resetError }: Props) => {
         <span className="typography text-lg">The game crashed</span>
       )}
       <span className="typography text-lg">
-        Help fix it by reporting what exactly has happened at{' '}
-        <a href="https://github.com/Asvarox/allkaraoke" target="_blank" rel="noreferrer">
-          GitHub
-        </a>{' '}
-        or{' '}
-        <a href="https://www.facebook.com/allkaraoke.party" target="_blank" rel="noreferrer">
-          Facebook
-        </a>
+        If it keeps happening, say what you were doing when it did in destiny.gg chat.
       </span>
       <MenuButton onClick={resetError}>Reset Error</MenuButton>
       <Menu.HelpText>If that doesn&#39;t help</Menu.HelpText>

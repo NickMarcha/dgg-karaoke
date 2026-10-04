@@ -7,9 +7,6 @@
  * picks each one listed here out of its `@iconify-json/<prefix>` set.
  */
 export const ICON_NAMES = [
-  'cib:facebook',
-  'cib:github',
-  'cib:instagram',
   'ic:baseline-access-time',
   'ic:baseline-add',
   'ic:baseline-arrow-back',

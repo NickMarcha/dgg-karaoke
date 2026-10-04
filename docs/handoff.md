@@ -111,6 +111,25 @@ documentation and diagnostic output.
 
 ## True but not visible in the code
 
+- **The logo is destiny.gg's AMAZIN emote, its Halloween 2026 version**,
+  downloaded from `r2cdn.destiny.gg` on 2026-10-04 into
+  `src/assets/emotes/AMAZIN.png` (`amazin.tsx`). destiny.gg swaps seasonal
+  versions under the same name; this copy stays until someone replaces it. The
+  favicon and app icons are the user's own illustration of the same face.
+- **The menu music is SoundCloud's embedded player** (`soundcloud-music.ts`),
+  playing "black lover, instrumental only" by Tiny Ghost Studios, credited in
+  the menu footer. SoundCloud lets a track play on another site only through
+  its player, so the audio is not in the repository. Browsers hold sound back
+  until the page is used, so it starts on the first click or key. It plays on
+  the landing page, the main menu and the post-game results; upstream had the
+  menu's music switched off. The editor's volume step keeps upstream's funk
+  track as its loudness reference, since every song was matched against it.
+- **Two e2e specs fail on `main` already**, found while checking the branding:
+  `more-languages.spec.ts` (the toolbar's volume slider covers what the spec
+  clicks) and `remote-mics-keyboard-mirror.spec.ts` (no `control-connection
+  type` on the phone). `remote-song-list.spec.ts`'s language filtering fails
+  now and then under load.
+
 - **`npm run test:db` and the e2e stack share one database.** The server's
   integration tests clear `users`, which takes every account, leaderboard row
   and session the e2e runs or a hand check left there.

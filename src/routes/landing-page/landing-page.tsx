@@ -10,12 +10,12 @@ import { useBackground } from '~/modules/elements/background-context';
 import Logo from '~/modules/elements/logo';
 import PageFrame from '~/modules/elements/page-frame';
 import SmoothLink from '~/modules/elements/smooth-link';
+import useBackgroundMusic from '~/modules/hooks/use-background-music';
 import useSmoothNavigate from '~/modules/hooks/use-smooth-navigate';
 import MenuFooter from '~/routes/welcome/menu-footer';
 import { MenuViewTransition } from '~/routes/welcome/menu-view-transitions';
 import { twx } from '~/utils/twx';
 
-import LogoIcon from './logo-icon';
 import RecentlyAddedSongs from './recently-added-songs';
 import screenshot1 from './screenshot1.webp';
 import screenshot2 from './screenshot2.webp';
@@ -32,16 +32,17 @@ const bullets = [
     Use either your SingStar/regular microphone or <strong>connect phones to sing</strong>.
   </>,
   <>
-    <strong>{songCount} songs</strong> across {languageCount} languages, updated weekly.
+    <strong>{songCount} songs</strong> across {languageCount} languages, and more from the community, checked by
+    moderators.
   </>,
   <>
     <strong>1–4 players</strong> — solo, duets or a full party.
   </>,
   <>
-    Compete with friends and with players <strong>across the globe</strong>.
+    Sign in with destiny.gg to put your scores on the <strong>leaderboard</strong> and sing online.
   </>,
   <>
-    <strong>100% free</strong> and open source.
+    <strong>100% free</strong>, built on the open-source AllKaraoke.
   </>,
 ];
 
@@ -49,8 +50,7 @@ const bullets = [
  * The landing page built from the main menu's own vocabulary — the same `Box` surfaces, the same
  * footer — so arriving at the menu reads as the next screen of one app rather than a different
  * product. The pitch keeps its place at the top; below it the entry point and the newest songs sit
- * in cards, with online play in a row of its own. The global board comes back with layer 3 of
- * docs/plans/dgg-karaoke.md.
+ * in cards, with online play in a row of its own.
  *
  * The call to action swaps by viewport rather than by copy: on a desktop the visitor is the one
  * hosting, so "Enter the game" is the primary and joining is a text link under it; on a phone they
@@ -61,6 +61,7 @@ function LandingPage() {
   const navigate = useSmoothNavigate();
 
   useBackground(true);
+  useBackgroundMusic(true);
 
   const nextPage = 'menu/';
   useHotkeys(
@@ -83,7 +84,6 @@ function LandingPage() {
         {/* The same scale the tiled menu gives its logo — the logo carries a view-transition name of
             its own (see `logo.tsx`), so matching sizes is what makes it hold still on the way in. */}
         <header className="flex shrink-0 items-center gap-4 text-[min(13vw,5.25rem)]">
-          <LogoIcon />
           <Logo />
         </header>
 

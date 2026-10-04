@@ -2,7 +2,8 @@ import { Slider } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import YouTube from 'react-youtube';
 
-import backgroundMusic from '~/assets/funk-cool-groove-(no-copyright-music)-by-anwar-amr.ogg';
+// Every song's volume was matched against this track, so it stays the reference after leaving the menus
+import referenceMusic from '~/assets/funk-cool-groove-(no-copyright-music)-by-anwar-amr.ogg';
 import { SongMetadataEntity } from '~/routes/convert/steps/song-metadata';
 import { msec } from '~/routes/convert/steps/sync-lyrics-to-video/helpers/format-ms';
 
@@ -130,11 +131,17 @@ export default function PreviewAndVolumeAdjustment({ data, onChange, videoId, vi
         <div className="flex flex-1 flex-col gap-2">
           <h5 className="text-md">Reference sound</h5>
           <p>Use the slider below to make the video volume roughly the same as this music.</p>
+          <p className="text-xs">
+            Funk Cool Groove by Anwar Amr ·{' '}
+            <a href="https://youtu.be/FGzzBbYRjFY" target="_blank" rel="noreferrer">
+              video
+            </a>
+          </p>
           <br />
           <audio
             ref={reference}
             controls
-            src={backgroundMusic}
+            src={referenceMusic}
             loop
             onLoad={(e) => (e.currentTarget.currentTime = 35)}
             onPlay={(e) => {

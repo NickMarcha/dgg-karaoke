@@ -83,7 +83,7 @@ function Welcome() {
     navigate('game/', undefined, { smooth: false });
   };
 
-  useBackgroundMusic(/* true */ false);
+  useBackgroundMusic(true);
   // Tiles sit in a grid, so all four arrows navigate by position — see `handleSpatialNavigation`.
   const { register } = useKeyboardNav({
     // An open dialog owns the keyboard — the tiles behind it must not answer the arrows as well.

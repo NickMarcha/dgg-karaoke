@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { useEffect, useState } from 'react';
 
-import LogoIcon from '~/routes/landing-page/logo-icon';
+import Amazin from '~/modules/elements/amazin';
 
 export default function PageLoader() {
   const [visible, setVisible] = useState(false);
@@ -20,9 +20,7 @@ export default function PageLoader() {
         'fixed inset-0 flex items-center justify-center transition-opacity duration-500',
         visible ? 'opacity-100' : 'opacity-0',
       )}>
-      <div className="[&_svg]:animate-logo-pulse -translate-x-4 -translate-y-2 scale-200 transform [&_svg:first-of-type]:[animation-delay:1000ms]">
-        <LogoIcon />
-      </div>
+      <Amazin className="text-6xl" />
     </div>
   );
 }

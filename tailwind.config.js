@@ -126,20 +126,6 @@ module.exports = {
             transform: 'scale(1.030)',
           },
         },
-        logoPulse: {
-          '0%': {
-            transform: 'scale(1)',
-          },
-          '33%': {
-            transform: 'scale(1.05)',
-          },
-          '66%': {
-            transform: 'scale(1)',
-          },
-          '100%': {
-            transform: 'scale(1)',
-          },
-        },
         calibrationPulse: {
           '0%': {
             transform: 'scale(1)',
@@ -191,7 +177,6 @@ module.exports = {
         gradient: 'gradient 15s ease infinite',
         focused: 'focused 1000ms ease-in-out infinite both',
         'button-focused': 'buttonFocused 600ms ease-in-out infinite both',
-        'logo-pulse': 'logoPulse 1.25s infinite',
         'lyrics-pop': 'lyrics-pop 500ms ease-in-out 0s 1 both',
         'lyrics-shake': 'lyrics-shake 0.92s cubic-bezier(0.36, 0.07, 0.19, 0.97) 0s infinite both',
       },

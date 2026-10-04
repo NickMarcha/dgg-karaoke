@@ -54,6 +54,23 @@
   animation: new-song-group-header 1s ease-in-out infinite;
 }
 
+/* destiny.gg's AMAZIN emote (see amazin.tsx): 45 frames of 53 by 32 in one strip, a frame 1.65625em wide */
+@utility animate-amazin {
+  background-size: 74.53125em 1em;
+  background-repeat: no-repeat;
+  animation: amazin-frames 2200ms steps(45) infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes amazin-frames {
+  to {
+    background-position-x: -74.53125em;
+  }
+}
+
 @keyframes stroke {
   100% {
     stroke-dashoffset: 0;
