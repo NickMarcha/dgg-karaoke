@@ -84,6 +84,13 @@ export const sessions = pgTable(
 );
 
 /**
+ * How far a run on the board is backed: `score` alone, `recorded` with the singer's voice anyone can
+ * play back, `verified` once a moderator has listened to that recording and confirmed it.
+ */
+export const runStatus = pgEnum('run_status', ['score', 'recorded', 'verified']);
+export type RunStatus = (typeof runStatus.enumValues)[number];
+
+/**
  * One singer's best run of one song at one difficulty. Rows are kept for good: the main menu's
  * board looks back a fortnight, but a song's own board is all-time.
  */
@@ -105,6 +112,7 @@ export const leaderboardRecords = pgTable(
     trackIndex: smallint('track_index').notNull(),
     inputLag: integer('input_lag').notNull(),
     notesHash: text('notes_hash').notNull(),
+    status: runStatus('status').notNull().default('score'),
     /** When the run was sung: a better run replaces the row and its date. */
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -187,4 +195,36 @@ export const dailyRuns = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [primaryKey({ columns: [table.day, table.songId, table.userId] })],
+);
+
+/**
+ * The singer's voice through a run, as their browser recorded it. Apart from the rows so no board
+ * query loads it; `offsetMs` is the song's time when the recording began, to play it against the video.
+ */
+export const leaderboardRecordings = pgTable('leaderboard_recordings', {
+  recordId: uuid('record_id')
+    .primaryKey()
+    .references(() => leaderboardRecords.id, { onDelete: 'cascade' }),
+  audio: bytea('audio').notNull(),
+  type: text('type').notNull(),
+  offsetMs: integer('offset_ms').notNull(),
+});
+
+export const runFlagKind = pgEnum('run_flag_kind', ['vouch', 'report']);
+export type RunFlagKind = (typeof runFlagKind.enumValues)[number];
+
+/** Another player vouching for a recorded run, or reporting it, for the moderators to weigh. One each. */
+export const runFlags = pgTable(
+  'run_flags',
+  {
+    recordId: uuid('record_id')
+      .notNull()
+      .references(() => leaderboardRecords.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    kind: runFlagKind('kind').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.recordId, table.userId] })],
 );

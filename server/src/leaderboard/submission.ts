@@ -5,7 +5,9 @@ import { z } from 'zod';
 
 import {
   MAX_ID_LENGTH,
+  MAX_NOTES_BYTES,
   MAX_NOTES_RECORDS,
+  MAX_RECORDING_BYTES,
   MAX_POINTS,
   MAX_SONG_TEXT_LENGTH,
   MAX_SUBMITTED_TOLERANCE,
@@ -26,7 +28,18 @@ const schema = z.object({
   trackIndex: z.number().int().min(0).max(1),
   inputLag: z.number().int().min(-10_000).max(10_000),
   notesHash: z.string().regex(/^[0-9a-f]{64}$/),
-  notes: z.instanceof(Uint8Array),
+  notes: z.instanceof(Uint8Array).refine((notes) => notes.byteLength <= MAX_NOTES_BYTES),
+  /** The singer's voice through the run, when they chose to send it; see `leaderboard_recordings`. */
+  recording: z
+    .instanceof(Uint8Array)
+    .refine((audio) => audio.byteLength > 0 && audio.byteLength <= MAX_RECORDING_BYTES)
+    .optional(),
+  recordingType: z
+    .string()
+    .regex(/^audio\/(webm|ogg|mp4)(;\s*codecs=[a-z0-9.]+)?$/i)
+    .optional(),
+  /** The song's time, in milliseconds, when the recording began. */
+  recordingOffsetMs: z.number().int().min(-600_000).max(600_000).optional(),
 });
 
 export type Submission = z.infer<typeof schema>;
@@ -48,6 +61,9 @@ export function readSubmission(body: Uint8Array): Submission {
   const result = schema.safeParse(parsed);
   if (!result.success) throw new SubmissionRefused('That run is missing something, or has an impossible value.');
   const run = result.data;
+  if (run.recording && (run.recordingType === undefined || run.recordingOffsetMs === undefined)) {
+    throw new SubmissionRefused('A recording needs its type and where it starts in the song.');
+  }
 
   const expected = createHash('sha256').update(run.notes).update(String(run.score)).digest('hex');
   if (expected !== run.notesHash) throw new SubmissionRefused('The score does not match the run.');

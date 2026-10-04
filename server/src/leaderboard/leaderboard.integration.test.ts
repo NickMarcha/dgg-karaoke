@@ -147,12 +147,14 @@ describe.skipIf(!url)('leaderboard routes', () => {
     expect((await board()).map((entry) => entry.name)).toEqual(['Hard', 'Medium']);
   });
 
-  it('refuses a run larger than any song produces', async () => {
+  it('refuses notes or a request larger than any song produces', async () => {
     const cookie = await account('Singer');
     const huge = new Uint8Array(300 * 1024);
-    expect(
-      (await submit(cookie, submission({ notes: huge, notesHash: hash(huge, QUALIFYING_SCORE + 100) }))).status,
-    ).toBe(413);
+    const hugeNotes = submission({ notes: huge, notesHash: hash(huge, QUALIFYING_SCORE + 100) });
+    expect((await submit(cookie, hugeNotes)).status).toBe(400);
+
+    const hugeRequest = submission({ recording: new Uint8Array(11 * 1024 * 1024) });
+    expect((await submit(cookie, hugeRequest)).status).toBe(413);
   });
 
   it("ranks a song's board by difficulty, all time, around the score asked about", async () => {

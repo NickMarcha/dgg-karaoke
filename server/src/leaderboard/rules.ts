@@ -24,7 +24,11 @@ export const SONG_BOARD_SIZE = 20;
 /** A song's board around a score: this many rows either side of where it lands. */
 export const SONG_BOARD_NEIGHBOURS = 25;
 
-export const MAX_SUBMISSION_BYTES = 256 * 1024;
+/** A whole submission: the run, and the recording that may come with it. */
+export const MAX_SUBMISSION_BYTES = 10 * 1024 * 1024;
+export const MAX_NOTES_BYTES = 256 * 1024;
+/** Opus voice runs to well under a megabyte for a long song. */
+export const MAX_RECORDING_BYTES = 8 * 1024 * 1024;
 /** No song length to check against, so these only rule out an empty or absurd run. */
 export const MIN_NOTES_RECORDS = 100;
 export const MAX_NOTES_RECORDS = 200_000;
