@@ -74,8 +74,8 @@ function HighScoresView({ onNextStep, highScores, singSetup, song }: Props) {
                 position={index + 1}
                 score={score.score}
                 highlighted={isCurrentRun}
-                // The score just sung and its date are the only rows that change between runs — named
-                // so the visual baselines can mask them and keep the seeded rows visible
+                // The score just sung and its date change between runs: named so the visual baselines
+                // can mask them
                 data-test={isCurrentRun ? 'highscore-current-row' : undefined}
                 name={
                   isCurrentRun ? (

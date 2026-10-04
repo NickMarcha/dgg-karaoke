@@ -8,6 +8,7 @@ import { PlayerNumber } from '~/modules/players/player-number';
 /**
  * One player's run of the song just sung, as the board takes it. Built on the computer that ran the
  * game, which holds every singer's notes, phones' included: a phone gets its own run handed over.
+ * The score is the singer's own, from their own notes: co-op shows a team average, which is not.
  */
 export function buildRun(song: Song, singSetup: SingSetup, playerNumber: PlayerNumber): SubmitScoreInput {
   const playerState = GameState.getPlayer(playerNumber);
@@ -17,7 +18,7 @@ export function buildRun(song: Song, singSetup: SingSetup, playerNumber: PlayerN
     artist: song.artist,
     title: song.title,
     songLastUpdate: song.lastUpdate ?? null,
-    score: Math.round(GameState.getPlayerScore(playerNumber)),
+    score: Math.round(playerState?.getScore() ?? 0),
     tolerance: GameState.getTolerance(),
     mode: singSetup.mode,
     trackIndex: playerState?.getTrackIndex() ?? 0,

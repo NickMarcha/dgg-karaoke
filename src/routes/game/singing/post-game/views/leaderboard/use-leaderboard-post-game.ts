@@ -16,9 +16,10 @@ import PlayersManager from '~/modules/players/players-manager';
  * - `sign-in` — a score is good enough, but nobody is signed in to put it up as.
  * - `declined` — the player said not this time; a way back into the prompt.
  * - `shared` — a score went up, or is going up, or failed to.
- * - `null` — the prompt is up, or no score qualifies.
+ * - `below` — no score here reaches a board; says what would.
+ * - `null` — the prompt is up, or the difficulty has no board.
  */
-export type LeaderboardPanelState = 'sign-in' | 'declined' | 'shared' | null;
+export type LeaderboardPanelState = 'sign-in' | 'declined' | 'shared' | 'below' | null;
 
 export interface Singer {
   number: PlayerNumber;
@@ -38,7 +39,8 @@ export default function useLeaderboardPostGame({ song, singSetup }: Params) {
     const players = PlayersManager.getPlayers().map((player) => ({
       number: player.number,
       name: player.getName(),
-      score: GameState.getPlayerScore(player.number),
+      // Their own, not co-op's team average: that is what a run on the board is (see `buildRun`)
+      score: GameState.getPlayer(player.number)?.getScore() ?? 0,
       // A phone's singer is signed in on the phone, and puts their own run up from there
       onThisComputer: player.input.source !== 'Remote Microphone',
     }));
@@ -73,7 +75,8 @@ export default function useLeaderboardPostGame({ song, singSetup }: Params) {
   const reopen = () => setIsPromptAnswered(false);
 
   const panel: LeaderboardPanelState = (() => {
-    if (!qualifies || isModalOpen) return null;
+    if (!hasLeaderboard(singSetup.tolerance) || isModalOpen) return null;
+    if (!qualifies) return 'below';
     if (!account) return account === null ? 'sign-in' : null;
     return shared ? 'shared' : 'declined';
   })();

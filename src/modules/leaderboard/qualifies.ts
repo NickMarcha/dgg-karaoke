@@ -1,10 +1,7 @@
 import { MAX_GLOBAL_BOARD_TOLERANCE, MAX_SUBMITTED_TOLERANCE, QUALIFYING_SCORE } from '~/modules/leaderboard/consts';
 import isE2E from '~/modules/utils/is-e2-e';
 
-/**
- * The threshold is scaled down under e2e exactly the way `use-high-scores.ts` scales its seeded
- * scores, so the e2e run exercises the real qualifying branch instead of a stubbed one.
- */
+/** Scaled down under e2e so the stubbed microphone's runs reach the prompt; the API keeps the real one. */
 export const getQualifyingScore = () => (isE2E() ? QUALIFYING_SCORE / 1000 : QUALIFYING_SCORE);
 
 /**

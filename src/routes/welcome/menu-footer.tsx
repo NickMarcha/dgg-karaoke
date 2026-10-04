@@ -13,7 +13,11 @@ function MenuFooter() {
           of the menu. */}
       <div className="flex flex-col items-end gap-1 text-right [view-transition-name:background-music-credit]">
         <span data-test="fork-credit">
-          DGG Karaoke is a fork of AllKaraoke by Asvarox, under the MIT licence, run for the destiny.gg community.
+          DGG Karaoke is a fork of{' '}
+          <a href="https://github.com/Asvarox/allkaraoke" target="_blank" rel="noreferrer">
+            AllKaraoke by Asvarox
+          </a>
+          , under the MIT licence, run for the destiny.gg community.
         </span>
         <span>
           Bpm data and release year provided by{' '}

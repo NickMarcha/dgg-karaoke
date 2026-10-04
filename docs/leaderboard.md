@@ -108,13 +108,23 @@ A phone's singer is not offered here: they are signed in on the phone, and their
 there. Putting a score up sends it at once; the panel then says whether it went on, and "Not this
 time" leaves a way back into the prompt.
 
+A run is always the singer's own score, from their own notes (`buildRun`). Co-op shows the team's
+average on screen, but that is nobody's run: putting it up would credit one singer with the others'
+singing, behind notes that do not add up to it. Below the qualifying score, the panel says what
+would reach the board.
+
+## Online rooms
+
+Each browser in a room sings one part, so the results screen offers that singer their own run, with
+the same prompt a phone uses (`run-share-modal.tsx`), when it qualifies and they are signed in.
+
 ## Phones
 
 The computer that ran the game holds every singer's notes, phones' included. When the results open
 (`sendPhoneRuns`, local games only), it builds each phone singer's run the same way as its own
 (`buildRun`) and, if the score qualifies, hands it to that phone over the remote-mic relay as the
 `leaderboardRun` client call. The phone (`leaderboard-run-modal.tsx`) asks its own signed-in account
-and submits through its own `/api` session; signed out, it says to sign in on the phone. The run
+and submits through its own `/api` session. Nothing is asked of a phone nobody is signed in on. The run
 passes through the game, so the phone trusts it as far as the API trusts any client: it is checked
 the same way when it arrives.
 

@@ -1,6 +1,7 @@
 import { Menu } from '~/modules/elements/akui/menu';
 import Box from '~/modules/elements/akui/primitives/box';
 import { RegisterFunc } from '~/modules/hooks/use-keyboard-nav';
+import { QUALIFYING_SCORE } from '~/modules/leaderboard/consts';
 import { LeaderboardPostGame } from '~/routes/game/singing/post-game/views/leaderboard/use-leaderboard-post-game';
 
 interface Props {
@@ -24,6 +25,17 @@ function LeaderboardSharePanel({ register, leaderboard }: Props) {
   const board = reachesGlobalBoard ? 'the global leaderboard' : `this song's ${difficulty} leaderboard`;
 
   if (panel === null) return null;
+
+  if (panel === 'below') {
+    return (
+      <Box className={panelClassName} data-test="leaderboard-below-panel">
+        <Menu.HelpText>
+          Scores of {QUALIFYING_SCORE.toLocaleString()} points or more can go on {board}
+          {accountName ? '' : ', once you sign in with destiny.gg'}.
+        </Menu.HelpText>
+      </Box>
+    );
+  }
 
   if (panel === 'shared') {
     return (
