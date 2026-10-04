@@ -42,7 +42,7 @@ function AccountControl({ size }: Props) {
       <Typography className={cn('hidden px-2 font-bold md:inline', flairClass(account))} data-test="signed-in-as">
         {account.username}
       </Typography>
-      {account.role === 'admin' && (
+      {(account.role === 'admin' || account.role === 'moderator') && (
         <Tooltip title="Admin" place="bottom-end">
           <Button
             size={size}

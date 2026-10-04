@@ -50,6 +50,10 @@ All through the site's `/api` proxy, so a submission carries the session cookie.
   or harder. A plain query; there is no cache, since there is no free-tier quota to protect.
 - `GET /api/leaderboard/song?songId&tolerance&score`: one song at one difficulty,
   `{ entries, total, startPosition, position }`.
+- `GET /api/moderation/leaderboard?query` and `DELETE /api/moderation/leaderboard/:id`, for moderators
+  and admins: the newest rows, or those whose singer, artist or title contains the query, and
+  removing one with its run. The Leaderboard tab of `/admin/` uses them. A removal leaves no trace;
+  an audit log is for when there is more than one moderator to tell apart.
 
 ## Checking a run
 

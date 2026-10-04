@@ -6,25 +6,12 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { pack } from 'msgpackr';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { createApp } from '../app.js';
-import { Auth } from '../auth.js';
-import { parseEnv } from '../env.js';
-import { OnlineDirectory } from '../online/directory.js';
-import { PostgresRoomStore } from '../online/room-store.js';
-import { leaderboardNotes, leaderboardRecords, sessions, users } from '../schema.js';
-import { SocketTickets } from '../socket-tickets.js';
+import { leaderboardNotes, leaderboardRecords, users } from '../schema.js';
+import { createTestApp, signedInAccount } from '../test-support.js';
 import { QUALIFYING_SCORE } from './rules.js';
 
 // Runs against a real Postgres: `npm run stack:test` starts one, and `.env.example` has its URL.
 const url = process.env.DATABASE_URL;
-
-const env = parseEnv({
-  DATABASE_URL: 'postgresql://unused',
-  APP_ORIGIN: 'http://localhost:3000',
-  DGG_CLIENT_ID: 'client',
-  DGG_CLIENT_SECRET: 'secret',
-  DGG_REDIRECT_URI: 'http://localhost:3000/auth/callback',
-});
 
 const site = { origin: 'http://localhost:3000', 'content-type': 'application/msgpack' };
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -68,29 +55,9 @@ interface SongBoard {
 
 describe.skipIf(!url)('leaderboard routes', () => {
   const database = drizzle({ connection: url! });
-  const app = createApp({
-    appOrigins: ['http://localhost:3000'],
-    auth: new Auth({ database, env }),
-    secureCookies: false,
-    signInRequired: true,
-    tickets: new SocketTickets(),
-    database,
-    directory: new OnlineDirectory(new PostgresRoomStore(database)),
-  });
-
-  async function account(username: string, flair: string | null = null) {
-    const [user] = await database
-      .insert(users)
-      .values({ dggUserId: username, username, flair, dggStatus: 'Active' })
-      .returning({ id: users.id });
-    const token = `token-${username}`;
-    await database.insert(sessions).values({
-      tokenHash: createHash('sha256').update(token).digest('hex'),
-      userId: user!.id,
-      expiresAt: new Date(Date.now() + 60_000),
-    });
-    return `dgg_karaoke_session=${token}`;
-  }
+  const app = createTestApp(database);
+  const account = async (username: string, flair: string | null = null) =>
+    (await signedInAccount(database, username, { flair })).cookie;
 
   const submit = (cookie: string | null, body: unknown) =>
     app.request('/api/leaderboard', {

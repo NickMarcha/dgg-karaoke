@@ -1,6 +1,7 @@
-import { and, asc, count, desc, eq, gt, gte, lte, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, gte, ilike, lte, or, sql } from 'drizzle-orm';
 
 import type { Database } from '../db.js';
+import { containing } from '../like.js';
 import { leaderboardNotes, leaderboardRecords, users } from '../schema.js';
 import {
   GLOBAL_BOARD_SIZE,
@@ -22,6 +23,8 @@ const entry = {
   tolerance: leaderboardRecords.tolerance,
   createdAt: sql<number>`(extract(epoch from ${leaderboardRecords.createdAt}) * 1000)::bigint`.mapWith(Number),
 };
+
+const MODERATION_PAGE_SIZE = 50;
 
 /** Best first; a tie goes to whoever got there first. */
 const ranking = [desc(leaderboardRecords.score), asc(leaderboardRecords.createdAt)];
@@ -50,6 +53,35 @@ export class Leaderboard {
         .onConflictDoUpdate({ target: leaderboardNotes.recordId, set: { notes: Buffer.from(notes) } });
       return true;
     });
+  }
+
+  /** For moderators: the newest rows, or those whose singer, artist or title contains `query`. */
+  public recent(query?: string) {
+    const pattern = query ? containing(query) : null;
+    return this.database
+      .select({ id: leaderboardRecords.id, ...entry })
+      .from(leaderboardRecords)
+      .innerJoin(users, eq(leaderboardRecords.userId, users.id))
+      .where(
+        pattern
+          ? or(
+              ilike(users.username, pattern),
+              ilike(leaderboardRecords.artist, pattern),
+              ilike(leaderboardRecords.title, pattern),
+            )
+          : undefined,
+      )
+      .orderBy(desc(leaderboardRecords.createdAt))
+      .limit(MODERATION_PAGE_SIZE);
+  }
+
+  /** Removes a row and the run behind it. Says whether there was one. */
+  public async remove(id: string) {
+    const removed = await this.database
+      .delete(leaderboardRecords)
+      .where(eq(leaderboardRecords.id, id))
+      .returning({ id: leaderboardRecords.id });
+    return removed.length > 0;
   }
 
   /** The main menu's board: every song, the last fortnight, Medium and harder. */

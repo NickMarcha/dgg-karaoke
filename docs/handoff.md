@@ -111,6 +111,10 @@ documentation and diagnostic output.
 
 ## True but not visible in the code
 
+- **`npm run test:db` and the e2e stack share one database.** The server's
+  integration tests clear `users`, which takes every account, leaderboard row
+  and session the e2e runs or a hand check left there.
+
 - **The server never sees this repository.** Komodo has no shallow clone and
   this fork carries upstream's ~2.5 GB of history, so the API is built by
   GitHub Actions and the server only pulls the image. The Komodo stack's
@@ -227,10 +231,12 @@ microphone clears the real threshold. Not built yet: moderators removing rows.
 
 Next:
 
-1. **Moderators removing leaderboard rows**, the last of layer 3. Phones
-   already put their own runs up: the game hands each phone singer's
-   qualifying run to the phone (`leaderboardRun`), which asks its own account.
-2. **What moderators can do.** The admin page (`/admin/`, `src/routes/admin-panel`) appoints them:
+1. **Layer 3 is built**: the boards, the computer's scores, phones putting
+   their own runs up (the game hands each phone singer's qualifying run to
+   the phone as `leaderboardRun`), and moderators removing rows on the
+   Leaderboard tab of `/admin/`, which moderators can now open. Not tried on
+   the live site with real accounts yet.
+2. **What else moderators can do.** The admin page (`/admin/`, `src/routes/admin-panel`) appoints them:
    an admin searches signed-in accounts and makes them moderators or singers again. Admins still
    come only from `ADMIN_DGG_USERNAMES`, and the page refuses to change one; somebody must sign in
    once before they can be found. The role is read on every request, so a change applies at once.

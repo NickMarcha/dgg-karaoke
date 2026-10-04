@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, ilike, ne } from 'drizzle-orm';
 
 import type { Database } from './db.js';
+import { containing } from './like.js';
 import { users } from './schema.js';
 
 const LIMIT = 50;
@@ -32,13 +33,12 @@ export class Users {
       .limit(LIMIT);
   }
 
-  /** Everyone whose name contains `query`, as typed: `%` and `_` are not wildcards here. */
+  /** Everyone whose name contains `query`, as typed. */
   public search(query: string) {
-    const literal = query.replace(/[\\%_]/g, (character) => `\\${character}`);
     return this.database
       .select(columns)
       .from(users)
-      .where(ilike(users.username, `%${literal}%`))
+      .where(ilike(users.username, containing(query)))
       .orderBy(asc(users.username))
       .limit(LIMIT);
   }

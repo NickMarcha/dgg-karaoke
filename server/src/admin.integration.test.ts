@@ -1,56 +1,17 @@
-import { createHash } from 'node:crypto';
-
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { createApp } from './app.js';
-import { Auth } from './auth.js';
-import { parseEnv } from './env.js';
-import { OnlineDirectory } from './online/directory.js';
-import { PostgresRoomStore } from './online/room-store.js';
-import { sessions, type UserRole, users } from './schema.js';
-import { SocketTickets } from './socket-tickets.js';
+import { type UserRole, users } from './schema.js';
+import { createTestApp, signedInAccount, site } from './test-support.js';
 
 // Runs against a real Postgres: `npm run stack:test` starts one, and `.env.example` has its URL.
 const url = process.env.DATABASE_URL;
 
-const env = parseEnv({
-  DATABASE_URL: 'postgresql://unused',
-  APP_ORIGIN: 'http://localhost:3000',
-  DGG_CLIENT_ID: 'client',
-  DGG_CLIENT_SECRET: 'secret',
-  DGG_REDIRECT_URI: 'http://localhost:3000/auth/callback',
-});
-
-const site = { origin: 'http://localhost:3000', 'content-type': 'application/json' };
-
 describe.skipIf(!url)('admin routes', () => {
   const database = drizzle({ connection: url! });
-  const app = createApp({
-    appOrigins: ['http://localhost:3000'],
-    auth: new Auth({ database, env }),
-    secureCookies: false,
-    signInRequired: true,
-    tickets: new SocketTickets(),
-    database,
-    directory: new OnlineDirectory(new PostgresRoomStore(database)),
-  });
-
-  /** A user who has signed in, and the cookie their browser holds. */
-  async function account(username: string, role: UserRole = 'singer') {
-    const [user] = await database
-      .insert(users)
-      .values({ dggUserId: username, username, role, dggStatus: 'Active' })
-      .returning({ id: users.id });
-    const token = `token-${username}`;
-    await database.insert(sessions).values({
-      tokenHash: createHash('sha256').update(token).digest('hex'),
-      userId: user!.id,
-      expiresAt: new Date(Date.now() + 60_000),
-    });
-    return { id: user!.id, cookie: `dgg_karaoke_session=${token}` };
-  }
+  const app = createTestApp(database);
+  const account = (username: string, role: UserRole = 'singer') => signedInAccount(database, username, { role });
 
   const setRole = (cookie: string, id: string, role: string) =>
     app.request(`/api/admin/users/${id}/role`, {

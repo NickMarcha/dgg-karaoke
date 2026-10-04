@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { type Context, Hono } from 'hono';
+import { type Context, Hono, type MiddlewareHandler } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
@@ -7,9 +7,10 @@ import { z } from 'zod';
 
 import { type Auth, AuthenticationError } from './auth.js';
 import type { Database } from './db.js';
-import { leaderboardRoutes } from './leaderboard/routes.js';
+import { leaderboardModerationRoutes, leaderboardRoutes } from './leaderboard/routes.js';
 import { type OnlineDirectory, ROOM_CODE_PATTERN } from './online/directory.js';
 import { fetchThroughProxy, ProxyRefused, proxyTarget } from './proxy.js';
+import type { UserRole } from './schema.js';
 import type { SocketTickets } from './socket-tickets.js';
 import { RoleChangeRefused, Users } from './users.js';
 
@@ -100,12 +101,19 @@ export function createApp({
   app.route('/api/leaderboard', leaderboardRoutes({ database, signedInUser }));
 
   // The admin page: appointing moderators. Admins themselves come from ADMIN_DGG_USERNAMES.
-  app.use('/api/admin/*', async (context, next) => {
-    const user = await signedInUser(context);
-    if (!user) return context.json({ error: 'Sign in with destiny.gg first.' }, 401);
-    if (user.role !== 'admin') return context.json({ error: 'This is for admins.' }, 403);
-    await next();
-  });
+  const requireRole =
+    (...roles: UserRole[]): MiddlewareHandler =>
+    async (context, next) => {
+      const user = await signedInUser(context);
+      if (!user) return context.json({ error: 'Sign in with destiny.gg first.' }, 401);
+      if (!roles.includes(user.role)) return context.json({ error: 'This is not for your account.' }, 403);
+      await next();
+    };
+
+  app.use('/api/admin/*', requireRole('admin'));
+  // Looking after what the community puts up: the leaderboard now, the songs with layer 4
+  app.use('/api/moderation/*', requireRole('moderator', 'admin'));
+  app.route('/api/moderation/leaderboard', leaderboardModerationRoutes(database));
 
   app.get('/api/admin/users', async (context) => {
     const query = context.req.query('query')?.trim();

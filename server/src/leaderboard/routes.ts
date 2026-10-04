@@ -62,3 +62,21 @@ export function leaderboardRoutes({ database, signedInUser }: Deps) {
 
   return routes;
 }
+
+/** `/api/moderation/leaderboard`, behind the moderator check in `app.ts`: finding and removing rows. */
+export function leaderboardModerationRoutes(database: Database) {
+  const leaderboard = new Leaderboard(database);
+  const routes = new Hono();
+
+  routes.get('/', async (context) =>
+    context.json({ rows: await leaderboard.recent(context.req.query('query')?.trim()) }),
+  );
+
+  routes.delete('/:id', async (context) => {
+    const id = z.uuid().safeParse(context.req.param('id'));
+    if (!id.success || !(await leaderboard.remove(id.data))) return context.json({ error: 'No such row.' }, 404);
+    return context.body(null, 204);
+  });
+
+  return routes;
+}
