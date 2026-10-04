@@ -5,6 +5,7 @@ import { SongPreview } from '~/interfaces';
 import useSongIndex from '~/modules/songs/hooks/use-song-index';
 import useRecommendedSongs from '~/routes/sing-a-song/song-selection/hooks/use-recommended-songs';
 import { useSongListFilter } from '~/routes/sing-a-song/song-selection/hooks/use-song-list-filter';
+import useUnverifiedSongsSearch from '~/routes/sing-a-song/song-selection/hooks/use-unverified-songs-search';
 
 export interface SongGroup {
   name: string;
@@ -18,11 +19,6 @@ export interface SongGroup {
   songs: Array<{ index: number; song: SongPreview; isPopular: boolean }>;
   isNew?: boolean;
 }
-
-// Upstream searched songs players had shared, stored on its Cloudflare Worker. Community songs come
-// back from our own API in layer 4 of docs/plans/dgg-karaoke.md. One array, not a fresh `[]` per
-// render: it is a memo dependency below.
-const NO_UNVERIFIED_SONGS: SongPreview[] = [];
 
 const groupSongsByLetter = (song: SongPreview): Pick<SongGroup, 'name'> => {
   const nonAlphaRegex = /[^a-zA-Z]/;
@@ -47,8 +43,13 @@ export default function useSongList(additionalSong: string | null) {
   const { filters, filteredList, setFilters, selectedPlaylist, setSelectedPlaylist, playlists, playlist } =
     useSongListFilter(songList.data, popular, isLoading, additionalSong);
 
-  const unverifiedSongs = NO_UNVERIFIED_SONGS;
-  const unverifiedSongsLoading = false;
+  const existingSongIds = useMemo(() => new Set(songList.data.map((song) => song.id)), [songList.data]);
+  const { unverifiedSongs, isLoading: unverifiedSongsLoading } = useUnverifiedSongsSearch({
+    searchText: filters.search ?? '',
+    regularResultsCount: filteredList.length,
+    fallbackThreshold: 8,
+    existingSongIds,
+  });
 
   const mergedSearchList = useMemo(
     () => (filters.search ? [...filteredList, ...unverifiedSongs] : filteredList),

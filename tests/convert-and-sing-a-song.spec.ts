@@ -61,7 +61,6 @@ test('Convert and sing a song', async ({ page }) => {
 
   await test.step('Go back to main menu', async () => {
     await pages.songEditMetadataPage.saveAndGoToEditSongsPage();
-    await pages.editSongsPage.disagreeToShareAddSongs();
     await pages.editSongsPage.goToMainMenu();
   });
 

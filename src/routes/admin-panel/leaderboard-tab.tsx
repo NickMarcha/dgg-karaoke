@@ -6,13 +6,13 @@ import useSWR from 'swr';
 import { flairClass } from '~/modules/account/account';
 
 import '~/modules/account/flairs.css';
+import { readJson } from '~/modules/api';
 import { Button } from '~/modules/elements/akui/button';
 import { Menu } from '~/modules/elements/akui/menu';
 import Typography from '~/modules/elements/akui/primitives/typography';
 import { Input } from '~/modules/elements/input';
 import { difficultyName } from '~/modules/leaderboard/difficulty';
 import { BoardEntry } from '~/modules/leaderboard/types';
-import { readJson } from '~/routes/admin-panel/read-json';
 import ScoreText from '~/routes/game/singing/game-overlay/components/score-text';
 import { cn } from '~/utils/cn';
 

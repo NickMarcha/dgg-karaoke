@@ -51,6 +51,8 @@ const DELETED_SONGS_KEY = 'DELETED_SONGS_V2';
 
 class SongsService {
   private defaultIndexIds: Set<string> | null = null;
+  /** Songs the community submitted and a moderator published, served by our API rather than `/songs`. */
+  private communityIds = new Set<string>();
   private finalIndex: SongPreview[] | null = null;
   private indexWithDeletedSongs: SongPreview[] | null = null;
   // Bumped at the start of every reloadIndex() call and checked when its fetch resolves, so a
@@ -91,7 +93,12 @@ class SongsService {
     const localSong = await this.getLocal(songId);
 
     if (!localSong) {
-      return await fetch(`/songs/${songId}.txt`)
+      // The index is what says a song is the community's, so a page opened straight on one loads it first
+      if (this.finalIndex === null) await this.reloadIndex();
+      const url = this.communityIds.has(songId)
+        ? `/api/songs/published/${encodeURIComponent(songId)}`
+        : `/songs/${songId}.txt`;
+      return await fetch(url)
         .then((response) => response.text())
         .then(convertTxtToSong)
         .then((song) => ({ ...song, local: false }));
@@ -120,8 +127,12 @@ class SongsService {
 
   public reloadIndex = async () => {
     const seq = ++this.reloadSeq;
-    const [defaultIndex, storageIndex, deletedSongs] = await Promise.all([
+    const [builtInIndex, communityIndex, storageIndex, deletedSongs] = await Promise.all([
       fetch(`/songs/index.json`).then((response) => response.json() as Promise<SongPreview[]>),
+      // The built-in songs still work when the API does not answer
+      fetch('/api/songs/index')
+        .then((response) => (response.ok ? (response.json() as Promise<SongPreview[]>) : []))
+        .catch(() => []),
       this.getLocalIndex(),
       this.getDeletedSongsList(),
     ]);
@@ -134,8 +145,12 @@ class SongsService {
 
     // A Set lookup, not `defaultIndex.some(...)` per song below: with ~6000 built-in songs, doing that
     // scan once per song in the merged list was an O(n^2) pass and the main cost of this method.
-    const defaultIndexIds = new Set(defaultIndex.map((song) => song.id));
+    const defaultIndexIds = new Set(builtInIndex.map((song) => song.id));
     this.defaultIndexIds = defaultIndexIds;
+    // A built-in song keeps its id: a published one by the same artist and title stays out
+    const publishedSongs = communityIndex.filter((song) => !defaultIndexIds.has(song.id));
+    this.communityIds = new Set(publishedSongs.map((song) => song.id));
+    const defaultIndex = [...builtInIndex, ...publishedSongs];
     const lastVisitDate = dayjs(lastVisit);
 
     // Filter out local songs that were updated to default index

@@ -1,6 +1,5 @@
 import styled from '@emotion/styled';
-import { Button, FormControlLabel, IconButton, Switch } from '@mui/material';
-import posthog from 'posthog-js';
+import { Button, IconButton } from '@mui/material';
 import { Helmet } from 'react-helmet';
 import { Link } from 'wouter';
 
@@ -14,15 +13,15 @@ import useSongIndex from '~/modules/songs/hooks/use-song-index';
 import SongDao from '~/modules/songs/songs-service';
 import convertSongToTxt from '~/modules/songs/utils/convert-song-to-txt';
 import SongsTable from '~/routes/edit/components/songs-table';
-import ShareSongsModal, { useShareSongs } from '~/routes/edit/share-songs-modal';
+import MySubmissions from '~/routes/edit/my-submissions';
+import SubmitSongModal from '~/routes/edit/submit-song-modal';
 
 export default function SongList() {
   useBackground(false);
   useBackgroundMusic(false);
   const { data, reload } = useSongIndex(true);
-  const [shareSongs, setShareSongs] = useShareSongs(null);
-
-  const created = useQueryParam('created');
+  // Set by the editor on the way here after a save: the song to offer for submission
+  const submit = useQueryParam('submit');
   const songId = useQueryParam('id');
 
   if (!data) return <>Loading</>;
@@ -34,7 +33,7 @@ export default function SongList() {
       </Helmet>
       <NoPrerender>
         <Container>
-          {created && <ShareSongsModal id={songId} />}
+          {submit && <SubmitSongModal songId={submit} />}
 
           <div className="grid grid-cols-12 items-center gap-y-4">
             <div className="col-span-3 flex items-center justify-start">
@@ -43,16 +42,7 @@ export default function SongList() {
               </Link>
             </div>
             <div className="col-span-6 flex items-center justify-center">
-              <h4 className="text-lg">
-                <span
-                  onClick={() => {
-                    window.__exposeSingletons();
-                    window.__singletons.importSongs();
-                  }}>
-                  {data.length}
-                </span>{' '}
-                songs
-              </h4>
+              <h4 className="text-lg">{data.length} songs</h4>
             </div>
             <div className="col-span-3 flex items-center justify-end">
               <Link to="convert/" asChild>
@@ -121,11 +111,6 @@ export default function SongList() {
 
                         if (proceed) {
                           await SongDao.deleteSong(row.original.id);
-
-                          if (shareSongs && data.some((song) => song.id === row.original.id)) {
-                            posthog.capture('unshare-song', { songId: row.original.id });
-                          }
-
                           reload();
                         }
                       }}
@@ -137,21 +122,9 @@ export default function SongList() {
                 )}
               />
             </div>
-            {shareSongs !== null && (
-              <div className="col-span-12">
-                <FormControlLabel
-                  control={
-                    <Switch
-                      defaultChecked
-                      checked={shareSongs}
-                      onChange={(e) => setShareSongs(e.target.checked)}
-                      data-test="share-songs-switch"
-                    />
-                  }
-                  label="Share added songs (so they can be played by others)"
-                />
-              </div>
-            )}
+            <div className="col-span-12">
+              <MySubmissions />
+            </div>
           </div>
         </Container>
       </NoPrerender>

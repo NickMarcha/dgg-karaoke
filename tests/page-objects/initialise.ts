@@ -1,6 +1,7 @@
 import { Browser, BrowserContext, Page } from '@playwright/test';
 
 import { Calibration } from '../components/calibration';
+import { AdminPagePO } from './admin-page';
 import { AdvancedConnectionPagePO } from './advanced-connection-page';
 import { ComputersMicConnectionPagePO } from './computers-mic-connection-page';
 import { EditSongsPagePO } from './edit-songs-page';
@@ -63,5 +64,6 @@ export default function initialise(page: Page, context: BrowserContext, browser:
     onlineLobbyPage: new OnlineLobbyPagePO(page, context, browser),
     onlineSingingPage: new OnlineSingingPagePO(page, context, browser),
     leaderboardPage: new LeaderboardPagePO(page, context, browser),
+    adminPage: new AdminPagePO(page, context, browser),
   };
 }

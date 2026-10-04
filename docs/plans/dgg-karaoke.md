@@ -195,6 +195,12 @@ Published songs live in Postgres and are served by the API next to the static
 ones. Whether published songs are later written back into `public/songs` is a
 question for when there are some.
 
+Built (`docs/community-songs.md`): submitting after each save in the editor,
+the unverified group in the song list, published songs in everyone's list,
+and the review queue on `/admin/` where moderators open a song in the editor,
+correct it, and publish or reject it. Upstream's PostHog sharing, its CI
+scripts and its password admin page are removed.
+
 ### 5. Verified leaderboards
 
 The idea: a score on the board is one somebody else can watch being sung.

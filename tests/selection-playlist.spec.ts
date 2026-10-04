@@ -202,7 +202,6 @@ test('Selection playlist contain songs marked as new and popular as well', async
   });
 
   await test.step('Go to the Song List', async () => {
-    await pages.editSongsPage.disagreeToShareAddSongs();
     await pages.editSongsPage.goToMainMenu();
     await pages.mainMenuPage.goToSingSong();
   });

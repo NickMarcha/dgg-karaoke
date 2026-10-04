@@ -22,6 +22,8 @@ export const mockSongs = async ({ page }: { page: Page; context: BrowserContext 
   await page.route('/songs/index.json', (route) => route.fulfill({ status: 200, body: JSON.stringify(index) }));
 
   await page.route('/most-popular-songs.json', (route) => route.fulfill({ status: 200, body: JSON.stringify({}) }));
+  // Songs published in the e2e database by earlier runs would join every list; the community spec lifts this
+  await page.route('/api/songs/index', (route) => route.fulfill({ status: 200, body: '[]' }));
 
   for (const song of songs) {
     await page.route(`/songs/${song.song.id}.txt`, (route) =>
@@ -191,12 +193,16 @@ export const stubUserMedia = async ({ context, page }: { page: Page; context: Br
  * The sign-in stand-in sends the browser back to port 3000, where the e2e site is not, so the specs
  * skip it; the stand-in itself was checked by hand.
  */
-export const signIn = async ({ context }: { context: BrowserContext }, username: string) => {
+export const signIn = async (
+  { context }: { context: BrowserContext },
+  username: string,
+  role: 'singer' | 'moderator' | 'admin' = 'singer',
+) => {
   const token = randomUUID();
   const tokenHash = createHash('sha256').update(token).digest('hex');
   const sql = `
-    insert into users (dgg_user_id, username, dgg_status) values ('${username}', '${username}', 'Active')
-      on conflict (dgg_user_id) do nothing;
+    insert into users (dgg_user_id, username, dgg_status, role) values ('${username}', '${username}', 'Active', '${role}')
+      on conflict (dgg_user_id) do update set role = excluded.role;
     insert into sessions (token_hash, user_id, expires_at)
       select '${tokenHash}', id, now() + interval '1 hour' from users where dgg_user_id = '${username}';`;
   execFileSync('docker', ['exec', '-i', 'dgg-karaoke-db-1', 'psql', '-U', 'dgg_karaoke', '-d', 'dgg_karaoke'], {

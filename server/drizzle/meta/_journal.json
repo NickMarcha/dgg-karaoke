@@ -29,6 +29,13 @@
       "when": 1791067227042,
       "tag": "0003_leaderboard",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791074255014,
+      "tag": "0004_community_songs",
+      "breakpoints": true
     }
   ]
 }

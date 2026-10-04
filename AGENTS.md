@@ -49,9 +49,8 @@ a Realtime SFU. It has been removed. Our own API lives in `server/` (Hono,
 Drizzle, Postgres) and is its own npm package with its own lockfile, so the
 image never installs the frontend's toolchain. **Nothing may be deployed that
 talks to allkaraoke's infrastructure**: our users must not run on somebody
-else's servers or quota. Features that upstream ran on Cloudflare and we have
-not rebuilt yet (the global leaderboard, shared songs and their admin page)
-are hidden, not deleted; the plan says which layer brings each back.
+else's servers or quota. Everything upstream ran on Cloudflare (online mode, the leaderboard, shared
+songs and their admin page) has been rebuilt on our API.
 `docs/deployment.md` says how the API and the site are deployed.
 
 ## Working in the codebase

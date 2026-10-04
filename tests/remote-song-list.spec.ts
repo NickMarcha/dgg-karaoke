@@ -113,7 +113,6 @@ test('Remote mic song list', async ({ page, context, browser, browserName }) => 
     await pages.songEditAuthorAndVideoPage.goToSyncLyricsStep();
     await pages.songEditSyncLyricsToVideoPage.goToMetadataStep();
     await pages.songEditMetadataPage.saveAndGoToEditSongsPage();
-    await pages.editSongsPage.disagreeToShareAddSongs();
     await pages.editSongsPage.expectSongToBeVisible(convertedSongID);
     await remoteMic.remoteMicMainPage.remoteTabBar.goToSongList();
     await remoteMic.remoteMicSongListPage.expectSongToBeVisible(convertedSongID);

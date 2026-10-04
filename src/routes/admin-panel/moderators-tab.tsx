@@ -4,12 +4,12 @@ import useSWR, { mutate } from 'swr';
 import { Account, flairClass } from '~/modules/account/account';
 
 import '~/modules/account/flairs.css';
+import { readJson } from '~/modules/api';
 import { Button } from '~/modules/elements/akui/button';
 import { Chip } from '~/modules/elements/akui/chip';
 import { Menu } from '~/modules/elements/akui/menu';
 import Typography from '~/modules/elements/akui/primitives/typography';
 import { Input } from '~/modules/elements/input';
-import { readJson } from '~/routes/admin-panel/read-json';
 import { cn } from '~/utils/cn';
 
 interface Person extends Pick<Account, 'id' | 'username' | 'role' | 'flair'> {

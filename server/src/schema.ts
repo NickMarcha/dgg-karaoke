@@ -123,3 +123,41 @@ export const leaderboardNotes = pgTable('leaderboard_notes', {
     .references(() => leaderboardRecords.id, { onDelete: 'cascade' }),
   notes: bytea('notes').notNull(),
 });
+
+/**
+ * Where a community song stands: `submitted` (playable as unverified, waiting for a moderator),
+ * `published` (in everyone's song list), `rejected` (with a reason the submitter sees), `archived`
+ * (a published version a newer one replaced).
+ */
+export const songStatus = pgEnum('song_status', ['submitted', 'published', 'rejected', 'archived']);
+export type SongStatus = (typeof songStatus.enumValues)[number];
+
+/**
+ * A song somebody signed in submitted from the editor. `txt` is the UltraStar file the game reads;
+ * `preview` is what the song list shows, worked out by the browser that last saved the song.
+ */
+export const communitySongs = pgTable(
+  'community_songs',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    /** The game's id for the song, from its artist and title. */
+    songId: text('song_id').notNull(),
+    artist: text('artist').notNull(),
+    title: text('title').notNull(),
+    txt: text('txt').notNull(),
+    preview: jsonb('preview').notNull(),
+    status: songStatus('status').notNull().default('submitted'),
+    rejectionReason: text('rejection_reason'),
+    submittedBy: uuid('submitted_by').references(() => users.id, { onDelete: 'set null' }),
+    reviewedBy: uuid('reviewed_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    // One published version of a song at a time
+    uniqueIndex('community_songs_published_unique')
+      .on(table.songId)
+      .where(sql`${table.status} = 'published'`),
+    index('community_songs_status_index').on(table.status, table.updatedAt),
+  ],
+);

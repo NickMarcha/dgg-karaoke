@@ -19,14 +19,6 @@ export class SongEditSyncLyricsToVideoPagePO {
     return this.videoPlayerSource.getAttribute('src');
   }
 
-  public get deleteAdminUnverifiedSongButton() {
-    return this.page.getByTestId('delete-admin-unverified-song');
-  }
-
-  public async deleteAdminUnverifiedSong() {
-    await this.deleteAdminUnverifiedSongButton.click();
-  }
-
   public get previousButton() {
     return this.page.getByTestId('previous-button');
   }

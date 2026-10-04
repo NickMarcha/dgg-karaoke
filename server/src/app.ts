@@ -12,6 +12,7 @@ import { type OnlineDirectory, ROOM_CODE_PATTERN } from './online/directory.js';
 import { fetchThroughProxy, ProxyRefused, proxyTarget } from './proxy.js';
 import type { UserRole } from './schema.js';
 import type { SocketTickets } from './socket-tickets.js';
+import { songModerationRoutes, songRoutes } from './songs/routes.js';
 import { RoleChangeRefused, Users } from './users.js';
 
 const SESSION_COOKIE = 'dgg_karaoke_session';
@@ -99,6 +100,7 @@ export function createApp({
   });
 
   app.route('/api/leaderboard', leaderboardRoutes({ database, signedInUser }));
+  app.route('/api/songs', songRoutes({ database, signedInUser }));
 
   // The admin page: appointing moderators. Admins themselves come from ADMIN_DGG_USERNAMES.
   const requireRole =
@@ -114,6 +116,7 @@ export function createApp({
   // Looking after what the community puts up: the leaderboard now, the songs with layer 4
   app.use('/api/moderation/*', requireRole('moderator', 'admin'));
   app.route('/api/moderation/leaderboard', leaderboardModerationRoutes(database));
+  app.route('/api/moderation/songs', songModerationRoutes({ database, signedInUser }));
 
   app.get('/api/admin/users', async (context) => {
     const query = context.req.query('query')?.trim();

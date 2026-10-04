@@ -3,7 +3,6 @@ import Stepper from '@mui/material/Stepper';
 import { StyledEngineProvider } from '@mui/material/styles';
 import { useEffect, useMemo, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
-import useSWR from 'swr';
 import { ValuesType } from 'utility-types';
 import { Link } from 'wouter';
 
@@ -12,24 +11,21 @@ import { useBackground } from '~/modules/elements/background-context';
 import useBackgroundMusic from '~/modules/hooks/use-background-music';
 import useQueryParam from '~/modules/hooks/use-query-param';
 import useSmoothNavigate from '~/modules/hooks/use-smooth-navigate';
+import { correctSubmission } from '~/modules/songs/community';
 import useSongIndex from '~/modules/songs/hooks/use-song-index';
 import SongDao from '~/modules/songs/songs-service';
 import convertTxtToSong, { getVideoId } from '~/modules/songs/utils/convert-txt-to-song';
 import getSongId from '~/modules/songs/utils/get-song-id';
 import setQueryParam from '~/modules/utils/set-query-param';
-import { getAdminPassword } from '~/routes/admin/admin-password';
-import { saveAdminUnverifiedSongInBackground } from '~/routes/admin/background-song-save';
-import { getNextAdminUnverifiedSongProcessingUrl } from '~/routes/admin/unverified-song-processing-queue';
-import { listAdminUnverifiedSongs, updateAdminUnverifiedSong } from '~/routes/admin/unverified-songs-admin-api';
 import AuthorAndVideo, { AuthorAndVidEntity } from '~/routes/convert/steps/author-and-video';
 import BasicData, { BasicDataEntity } from '~/routes/convert/steps/basic-data';
 import SongMetadata, { SongMetadataEntity } from '~/routes/convert/steps/song-metadata';
 import SyncLyricsToVideo from '~/routes/convert/steps/sync-lyrics-to-video';
-import { shareSong } from '~/routes/edit/share-songs-modal';
 
 interface Props {
   song?: Song;
-  adminUnverifiedSongId?: string;
+  /** A moderator is correcting this community submission: saving updates it rather than a local copy. */
+  submissionId?: string;
 }
 
 function isEmptyValue<T>(v: T | T[] | undefined) {
@@ -63,7 +59,7 @@ const getMetadataEntityFromSong = (song?: Song): SongMetadataEntity => ({
   artistOrigin: song?.artistOrigin,
 });
 
-export default function ConvertView({ song, adminUnverifiedSongId }: Props) {
+export default function ConvertView({ song, submissionId }: Props) {
   const isEdit = !!song;
   const { data: songs } = useSongIndex(true);
   useBackground(false);
@@ -74,14 +70,6 @@ export default function ConvertView({ song, adminUnverifiedSongId }: Props) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const redirect = useQueryParam('redirect');
-  const isAdminProcessingQueue = useQueryParam('processQueue') === 'true';
-
-  // Prefetch the queue so saving can redirect to the next song without waiting for a request.
-  const { data: prefetchedUnverifiedSongs } = useSWR(
-    adminUnverifiedSongId && isAdminProcessingQueue ? (['admin-unverified-songs', getAdminPassword()] as const) : null,
-    ([, password]) => listAdminUnverifiedSongs(password),
-    { keepPreviousData: true },
-  );
 
   useEffect(() => {
     if (steps[currentStep]) {
@@ -226,45 +214,33 @@ export default function ConvertView({ song, adminUnverifiedSongId }: Props) {
     id: getSongId(metadataEntity),
   };
 
-  const getAdminProcessingQueueRedirect = async () => {
-    const songs = prefetchedUnverifiedSongs ?? (await listAdminUnverifiedSongs(getAdminPassword()));
-
-    return getNextAdminUnverifiedSongProcessingUrl(songs, adminUnverifiedSongId!);
-  };
-
   const saveSong = async () => {
     setIsSaving(true);
     setSaveError(null);
 
     try {
-      if (adminUnverifiedSongId) {
-        if (isAdminProcessingQueue) {
-          // Save in the background so the next song can be processed right away.
-          void saveAdminUnverifiedSongInBackground(adminUnverifiedSongId, finalSong!);
-          const nextUrl = await getAdminProcessingQueueRedirect();
-          navigate(nextUrl);
-          return;
-        }
-
-        await SongDao.store(finalSong!);
-        await shareSong(finalSong!.id);
-        await updateAdminUnverifiedSong(adminUnverifiedSongId, finalSong!);
+      if (submissionId) {
+        await correctSubmission(submissionId, finalSong!);
         navigate('admin/');
         return;
       }
 
-      if (redirect && !adminUnverifiedSongId) {
-        // dont wait for the share to finish if redirect is set
+      if (redirect) {
+        // dont wait for the save to finish if redirect is set
         SongDao.store(finalSong!);
-        shareSong(finalSong!.id);
         navigate(`${redirect}?previousSongId=${finalSong!.id}`);
         return;
       }
 
       await SongDao.store(finalSong!);
-      await shareSong(finalSong!.id);
 
-      navigate(`edit/list/`, { id: finalSong!.id, created: !isEdit ? 'true' : null, song: null });
+      // `submit` asks the list to offer the song to DGG Karaoke
+      navigate(`edit/list/`, {
+        id: finalSong!.id,
+        created: !isEdit ? 'true' : null,
+        song: null,
+        submit: finalSong!.id,
+      });
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Failed to save song');
     } finally {

@@ -260,11 +260,10 @@ test('Convert song', async ({ page }) => {
     await pages.songEditMetadataPage.setTheVolumeOfTheSong(FINAL_VOLUME);
   });
 
-  await test.step('Disagree to share added song with other players', async () => {
+  await test.step('Saving while signed out keeps the song here, with no offer to submit it', async () => {
     await expect(pages.songEditMetadataPage.saveButton).toBeVisible();
     await pages.songEditMetadataPage.saveAndGoToEditSongsPage();
-    await pages.editSongsPage.disagreeToShareAddSongs();
-    await expect(pages.editSongsPage.shareSongSwitch).not.toBeChecked();
+    await expect(pages.editSongsPage.submitPrompt).toHaveCount(0);
   });
 
   // download converted song - settings

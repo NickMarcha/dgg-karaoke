@@ -9,8 +9,9 @@ import NoPrerender from '~/modules/elements/no-prerender';
 import useSmoothNavigate from '~/modules/hooks/use-smooth-navigate';
 import LeaderboardTab from '~/routes/admin-panel/leaderboard-tab';
 import ModeratorsTab from '~/routes/admin-panel/moderators-tab';
+import SongsTab from '~/routes/admin-panel/songs-tab';
 
-type Tab = 'leaderboard' | 'moderators';
+type Tab = 'songs' | 'leaderboard' | 'moderators';
 
 /**
  * Where moderators look after what the community puts up, and admins appoint moderators. Admins
@@ -19,10 +20,11 @@ type Tab = 'leaderboard' | 'moderators';
 function AdminPanel() {
   const { account } = useAccount();
   const navigate = useSmoothNavigate();
-  const [tab, setTab] = useState<Tab>('leaderboard');
+  const [tab, setTab] = useState<Tab>('songs');
 
   const isStaff = account?.role === 'moderator' || account?.role === 'admin';
   const tabs: { id: Tab; label: string }[] = [
+    { id: 'songs', label: 'Songs' },
     { id: 'leaderboard', label: 'Leaderboard' },
     ...(account?.role === 'admin' ? [{ id: 'moderators' as const, label: 'Moderators' }] : []),
   ];
@@ -43,20 +45,14 @@ function AdminPanel() {
         {account && !isStaff && <Menu.HelpText>This page is for moderators.</Menu.HelpText>}
         {isStaff && (
           <>
-            {tabs.length > 1 && (
-              <Selector value={tab} onChange={(id) => setTab(id as Tab)}>
-                {tabs.map(({ id, label }) => (
-                  <Selector.Item
-                    key={id}
-                    value={id}
-                    size="small"
-                    aria-pressed={tab === id}
-                    data-test={`admin-tab-${id}`}>
-                    {label}
-                  </Selector.Item>
-                ))}
-              </Selector>
-            )}
+            <Selector value={tab} onChange={(id) => setTab(id as Tab)}>
+              {tabs.map(({ id, label }) => (
+                <Selector.Item key={id} value={id} size="small" aria-pressed={tab === id} data-test={`admin-tab-${id}`}>
+                  {label}
+                </Selector.Item>
+              ))}
+            </Selector>
+            {tab === 'songs' && <SongsTab />}
             {tab === 'leaderboard' && <LeaderboardTab />}
             {tab === 'moderators' && <ModeratorsTab />}
           </>

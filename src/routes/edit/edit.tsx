@@ -1,126 +1,71 @@
 import { IconButton, Paper } from '@mui/material';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import posthog from 'posthog-js';
 import { Helmet } from 'react-helmet';
+import useSWR from 'swr';
 import { Link } from 'wouter';
 
+import { Song } from '~/interfaces';
 import { Icon } from '~/modules/elements/akui/icon';
 import useBackgroundMusic from '~/modules/hooks/use-background-music';
 import useQueryParam from '~/modules/hooks/use-query-param';
-import useSmoothNavigate from '~/modules/hooks/use-smooth-navigate';
+import { fetchSubmission } from '~/modules/songs/community';
 import useSong from '~/modules/songs/hooks/use-song';
-import useSongIndex from '~/modules/songs/hooks/use-song-index';
 import SongDao from '~/modules/songs/songs-service';
-import { getAdminPassword } from '~/routes/admin/admin-password';
-import { BackgroundSavesIndicator } from '~/routes/admin/background-saves-indicator';
-import { getNextAdminUnverifiedSongProcessingUrl } from '~/routes/admin/unverified-song-processing-queue';
-import { deleteAdminUnverifiedSong, listAdminUnverifiedSongs } from '~/routes/admin/unverified-songs-admin-api';
+import convertTxtToSong from '~/modules/songs/utils/convert-txt-to-song';
+import { processSong } from '~/modules/songs/utils/process-song/process-song';
 import { LazyConvert } from '~/routes/convert/convert';
-import { useShareSongs } from '~/routes/edit/share-songs-modal';
 
 dayjs.extend(relativeTime);
 
+/** A community submission, as a moderator opens it from the admin page's queue. */
+const useSubmission = (id: string | null) =>
+  useSWR(id ? ['submission', id] : null, async ([, submissionId]) =>
+    processSong({ ...convertTxtToSong((await fetchSubmission(submissionId)).txt), local: false }),
+  );
+
 export default function Edit() {
-  const { data } = useSongIndex(true);
-  const [shareSongs] = useShareSongs(null);
   const songId = useQueryParam('song');
-  const sharedSongId = useQueryParam('externalSong');
-  const isAdminEdit = useQueryParam('admin') === 'true';
-  const isAdminProcessingQueue = useQueryParam('processQueue') === 'true';
-  const navigate = useSmoothNavigate();
+  const submissionId = useQueryParam('submission');
   useBackgroundMusic(false);
-  const song = useSong(songId ?? '', {
-    sourceType: sharedSongId ? 'unverified' : 'library',
-    sharedSongId: sharedSongId ?? undefined,
-  });
+  const librarySong = useSong(submissionId ? '' : (songId ?? ''));
+  const submission = useSubmission(submissionId);
+  const song: Song | null | undefined = submissionId ? submission.data : librarySong.data;
 
-  if (!song.data) return <>Loading</>;
-
-  const adminUnverifiedSongId = isAdminEdit && sharedSongId ? sharedSongId : undefined;
-  const returnLink = adminUnverifiedSongId ? 'admin/' : 'edit/list/';
-  const returnLinkLabel = adminUnverifiedSongId ? 'Return to the unverified songs list' : 'Return to the song list';
-
-  const getAdminProcessingQueueRedirect = async (password: string) => {
-    const songs = await listAdminUnverifiedSongs(password);
-
-    return getNextAdminUnverifiedSongProcessingUrl(songs, adminUnverifiedSongId!);
-  };
-
-  const deleteAdminSong = async () => {
-    if (!adminUnverifiedSongId) return;
-    const proceed = global.confirm('Remove this unverified song from Cloudflare KV?');
-
-    if (!proceed) return;
-
-    try {
-      const password = getAdminPassword();
-
-      if (isAdminProcessingQueue) {
-        await deleteAdminUnverifiedSong(password, adminUnverifiedSongId);
-        const nextUrl = await getAdminProcessingQueueRedirect(password);
-        navigate(nextUrl);
-        return;
-      }
-
-      await deleteAdminUnverifiedSong(password, adminUnverifiedSongId);
-      navigate('admin/');
-    } catch (error) {
-      global.alert(error instanceof Error ? error.message : 'Failed to delete unverified song');
-    }
-  };
+  if (submission.error) return <>{(submission.error as Error).message}</>;
+  if (!song) return <>Loading</>;
 
   return (
     <Paper elevation={2} sx={{ minHeight: '100vh', maxWidth: '1260px', margin: '0 auto' }} className="pt-4 md:pt-8">
       <Helmet>
         <title>Edit Song | DGG Karaoke</title>
       </Helmet>
-      {adminUnverifiedSongId && <BackgroundSavesIndicator />}
       <div className="flex items-center justify-between gap-1 px-2 text-[14px]">
-        <Link to={returnLink} asChild>
-          <a>{returnLinkLabel}</a>
+        <Link to={submissionId ? 'admin/' : 'edit/list/'} asChild>
+          <a>{submissionId ? 'Return to the review queue' : 'Return to the song list'}</a>
         </Link>
         <span data-test="edit-song-heading">
           <b>
-            {song.data.artist} - {song.data.title}
+            {song.artist} - {song.title}
           </b>
-          {adminUnverifiedSongId && (
-            <IconButton
-              title="Delete unverified song"
-              aria-label="Delete unverified song"
-              onClick={() => void deleteAdminSong()}
-              data-test="delete-admin-unverified-song">
-              <Icon icon="ic:baseline-delete" />
-            </IconButton>
-          )}
-          {!adminUnverifiedSongId && song.data.local && (
+          {!submissionId && song.local && (
             <IconButton
               title="Delete the song"
               onClick={async () => {
                 const proceed = global.confirm(`Are you sure you want to delete this song?`);
 
-                if (proceed) {
-                  await SongDao.deleteSong(song.data!.id);
-
-                  if (shareSongs && data.some((songInIndex) => songInIndex.id === song.data!.id)) {
-                    posthog.capture('unshare-song', { songId: song.data!.id });
-                  }
-                }
+                if (proceed) await SongDao.deleteSong(song.id);
               }}
               data-test="delete-song">
               <Icon icon="ic:baseline-delete" />
             </IconButton>
           )}
         </span>
-        <abbr title={song.data.lastUpdate}>
-          Updated: <b>{song.data.lastUpdate ? dayjs(song.data.lastUpdate).fromNow() : '-'}</b>
+        <abbr title={song.lastUpdate}>
+          Updated: <b>{song.lastUpdate ? dayjs(song.lastUpdate).fromNow() : '-'}</b>
         </abbr>
       </div>
-      <LazyConvert
-        key={adminUnverifiedSongId ?? song.data.id}
-        song={song.data}
-        adminUnverifiedSongId={adminUnverifiedSongId}
-      />
+      <LazyConvert key={submissionId ?? song.id} song={song} submissionId={submissionId ?? undefined} />
     </Paper>
   );
 }

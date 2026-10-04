@@ -1,22 +1,14 @@
 import { UnverifiedSongPayload, UnverifiedSongSearchResult } from '~/modules/songs/unverified-songs/types';
 
-const UNVERIFIED_SONGS_LIMIT = 10;
-
-export const getUnverifiedSongsSearch = async (
-  query: string,
-  limit = UNVERIFIED_SONGS_LIMIT,
-): Promise<UnverifiedSongSearchResult[]> => {
+/** Songs submitted to our API and still waiting for a moderator, which anyone may play as unverified. */
+export const getUnverifiedSongsSearch = async (query: string): Promise<UnverifiedSongSearchResult[]> => {
   const trimmedQuery = query.trim();
   if (!trimmedQuery) {
     return [];
   }
 
-  const url = new URL('/unverified-songs', global.location?.origin ?? 'https://allkaraoke.party');
-  url.searchParams.set('query', trimmedQuery);
-  url.searchParams.set('limit', `${limit}`);
-
   try {
-    const response = await fetch(url.toString());
+    const response = await fetch(`/api/songs/unverified?${new URLSearchParams({ query: trimmedQuery })}`);
     if (!response.ok) {
       return [];
     }
@@ -34,10 +26,7 @@ export const getUnverifiedSongById = async (sharedSongId: string): Promise<Unver
     throw new Error('Missing shared song id');
   }
 
-  const url = new URL('/unverified-song', global.location?.origin ?? 'https://allkaraoke.party');
-  url.searchParams.set('id', trimmedSongId);
-
-  const response = await fetch(url.toString());
+  const response = await fetch(`/api/songs/unverified/${encodeURIComponent(trimmedSongId)}`);
   if (!response.ok) {
     throw new Error(`Failed to fetch unverified song: ${response.status}`);
   }

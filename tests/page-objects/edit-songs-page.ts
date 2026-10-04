@@ -62,11 +62,18 @@ export class EditSongsPagePO {
     await this.importUltrastarButton.click();
   }
 
-  public async disagreeToShareAddSongs() {
-    await this.page.getByTestId('share-songs-disagree').click();
+  /** Offered after a save while signed in: send the song to DGG Karaoke for review. */
+  public get submitPrompt() {
+    return this.page.getByTestId('submit-song-prompt');
   }
 
-  public get shareSongSwitch() {
-    return this.page.getByRole('switch', { name: 'Share added songs (so they can be played by others)' });
+  public async submitSong() {
+    await this.submitPrompt.getByTestId('submit-song').click();
+    await this.submitPrompt.getByTestId('submit-song-sent').waitFor();
+    await this.submitPrompt.getByTestId('submit-song-close').click();
+  }
+
+  public get mySubmissions() {
+    return this.page.getByTestId('my-submission');
   }
 }

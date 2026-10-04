@@ -229,29 +229,38 @@ standing share decision are gone, and so is its leaderboard admin tab.
 database (`signIn` in `tests/helpers.ts`) and sings on Easy, where the stubbed
 microphone clears the real threshold. Not built yet: moderators removing rows.
 
+Built since layer 2, none of it tried on the live site with real accounts:
+
+- **Layer 3, leaderboards** (`docs/leaderboard.md`): the boards, the
+  computer's scores, phones putting their own runs up (`leaderboardRun`), and
+  moderators removing rows on the Leaderboard tab of `/admin/`.
+- **Layer 4, community songs** (`docs/community-songs.md`): signed-in users
+  submit songs after saving in the editor, waiting songs are playable as
+  unverified, moderators review them on the Songs tab of `/admin/` (open in
+  the editor, correct, publish, or reject with a reason), and published songs
+  join everyone's song list. Upstream's PostHog sharing,
+  `scripts/get-shared-songs.ts` and `src/routes/admin` are gone. The e2e specs
+  stub `/api/songs/index` as empty except `community-songs.spec.ts`.
+- **Moderators** are appointed by admins on the Moderators tab of `/admin/`;
+  admins come only from `ADMIN_DGG_USERNAMES`.
+
 Next:
 
-1. **Layer 3 is built**: the boards, the computer's scores, phones putting
-   their own runs up (the game hands each phone singer's qualifying run to
-   the phone as `leaderboardRun`), and moderators removing rows on the
-   Leaderboard tab of `/admin/`, which moderators can now open. Not tried on
-   the live site with real accounts yet.
-2. **What else moderators can do.** The admin page (`/admin/`, `src/routes/admin-panel`) appoints them:
-   an admin searches signed-in accounts and makes them moderators or singers again. Admins still
-   come only from `ADMIN_DGG_USERNAMES`, and the page refuses to change one; somebody must sign in
-   once before they can be found. The role is read on every request, so a change applies at once.
-   Moderators can do nothing yet: managing songs (create, edit, review) is layer 4, which moves
-   community songs into Postgres and should add its tabs to this page. Upstream's password admin page
-   (`src/routes/admin`) is still unrouted and goes when layer 4 replaces it.
-3. On the live site: sign in and out (Safari too), sing without an account,
-   a phone microphone, and joining an online room from a phone with "Join with
-   code".
-4. **Refresh the visual baselines.** All 291 (`tests/visual-regression`,
+1. **Try it on the live site** with real accounts: sign in and out (Safari
+   too), sing without an account, a phone microphone, joining an online room
+   from a phone, putting a score up from the computer and from a phone,
+   submitting a song, and reviewing it as a moderator.
+2. **Layer 5, verified leaderboards**, or **layer 6, OBS sources**: the plan
+   lists them in that order; layer 5's design has real choices in it
+   (`grill-me` first), including the user's verified entries with a voice
+   recording.
+3. **Refresh the visual baselines.** All 291 (`tests/visual-regression`,
    `tests/storybook`) are Linux renders of the old look, and upstream's CI
    that produced them is gone. Regenerating on Windows only adds `-win32`
    copies, so it needs a Linux Playwright container (or `sage-dev`) with the
-   API stack reachable.
-5. Left as they were: the toolbar covers the right end of the song list's
+   API stack reachable. The leaderboard and community-song screens have no
+   shots yet.
+4. Left as they were: the toolbar covers the right end of the song list's
    filter row on wide screens (it did before; the account button adds a
    little), the Beta badge sits under the toolbar on a phone, the menu
    footer's "Get in touch" links and the GitHub ribbon are still upstream's,
