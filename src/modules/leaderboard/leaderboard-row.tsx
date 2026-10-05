@@ -20,6 +20,8 @@ interface Props {
   withSongDetails?: boolean;
   highlighted?: boolean;
   scrollIntoView?: boolean;
+  /** In place of the date, for a row that is not on the board. */
+  meta?: string;
   'data-test'?: string;
 }
 
@@ -30,6 +32,7 @@ function LeaderboardRow({
   withSongDetails = true,
   highlighted,
   scrollIntoView,
+  meta,
   'data-test': dataTest = 'leaderboard-row',
 }: Props) {
   return (
@@ -54,9 +57,12 @@ function LeaderboardRow({
         </>
       }
       subtitle={withSongDetails ? `${entry.artist} — ${entry.title}` : undefined}
-      meta={[withSongDetails ? difficultyName(entry.tolerance) : null, dayjs(entry.createdAt).fromNow()]
-        .filter(Boolean)
-        .join(' · ')}
+      meta={
+        meta ??
+        [withSongDetails ? difficultyName(entry.tolerance) : null, dayjs(entry.createdAt).fromNow()]
+          .filter(Boolean)
+          .join(' · ')
+      }
     />
   );
 }

@@ -20,7 +20,7 @@ and a device id. This is the same design on our API; what changed is who a row b
 | `src/modules/leaderboard/client.ts`                    | Submitting and fetching                                                  |
 | `src/modules/leaderboard/notes-payload.ts`             | Delta encoder/decoder for the sung frequency records                     |
 | `src/modules/leaderboard/notes-hash.ts`                | sha-256 over `notes ++ score`, recomputed by the API                     |
-| `src/routes/game/singing/post-game/views/leaderboard/` | The prompt, the panel under the scores, and the hook holding their state |
+| `src/routes/game/singing/post-game/views/leaderboard/` | The prompt, the panel above the boards, and the hook holding their state |
 | `src/modules/leaderboard/leaderboard-row.tsx`          | One row, shared by the main-menu board and the song boards               |
 | `src/routes/welcome/leaderboard-panel.tsx`             | The board on the main menu                                               |
 
@@ -78,7 +78,8 @@ the order the board gives it. `entries` is a window of 25 rows either side of th
 people you will never catch says nothing; your neighbours do.
 
 The panel slots the run just sung into that window as a row of its own, ringed like a focused
-control. The row is synthetic: nothing refetches after a submission, and the ranks still come out
+control. It is "This run", not the account's name, until it is up, with "not put up" or "under
+1,000,000" where the date would be: a name there read as a score already on the board. The row is synthetic: nothing refetches after a submission, and the ranks still come out
 right, since the rows below are pushed down by exactly the one that joined them. It shows whether or
 not the score qualifies, and not at all for the dev-only difficulties that are never stored.
 
@@ -98,7 +99,7 @@ never told their score is on the main menu.
 
 Every game with a qualifying score asks; there is no standing answer.
 
-- **Signed out:** no prompt. The panel under the scores says the score is good enough and asks for a
+- **Signed out:** no prompt. The panel above the boards says the score is good enough and asks for a
   sign-in before the next song. Signing in there and then would leave the page and the result.
 - **One singer on this computer:** "Put it up as <name>?" — put it up, or not this time.
 - **Several singers on this computer:** "Which singer were you?", one button per singer whose score

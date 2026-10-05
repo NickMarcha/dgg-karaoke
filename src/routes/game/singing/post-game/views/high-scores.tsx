@@ -56,6 +56,8 @@ function HighScoresView({ onNextStep, highScores, singSetup, song }: Props) {
 
   return (
     <>
+      {/* Above the boards, so a short phone screen shows what became of the score without scrolling */}
+      <LeaderboardSharePanel register={register} leaderboard={leaderboard} />
       {/* Side by side from tablet up, stacked on a phone. Full width, so the pair lines up with the
           share panel and the tip under them rather than stopping short of both. */}
       <div className="flex flex-col items-start gap-3 md:flex-row md:items-stretch md:gap-6 [@media(min-width:768px)_and_(min-height:720px)]:min-h-0 [@media(min-width:768px)_and_(min-height:720px)]:flex-1">
@@ -107,7 +109,6 @@ function HighScoresView({ onNextStep, highScores, singSetup, song }: Props) {
           listClassName={SCOREBOARD_LIST_CLASS}
         />
       </div>
-      <LeaderboardSharePanel register={register} leaderboard={leaderboard} />
       <div className="mt-auto">
         <SelectSongButton
           register={register}

@@ -3,6 +3,7 @@ import useSWR from 'swr';
 
 import { SingSetup, Song } from '~/interfaces';
 import { fetchSongBoard, songBoardUrl } from '~/modules/leaderboard/client';
+import { QUALIFYING_SCORE } from '~/modules/leaderboard/consts';
 import LeaderboardRow from '~/modules/leaderboard/leaderboard-row';
 import { BoardEntry } from '~/modules/leaderboard/types';
 import ScoreboardPanel from '~/modules/scoreboard/scoreboard-panel';
@@ -29,7 +30,14 @@ interface Props {
  * gets told where they would have landed, which is the only reason to show it to them at all.
  */
 function SongLeaderboardPanel({ song, singSetup, leaderboard, className, listClassName }: Props) {
-  const { hasLeaderboard, difficulty, score, accountName } = leaderboard;
+  const { hasLeaderboard, difficulty, score, accountName, singers, shared, status } = leaderboard;
+  // Named only once it is up: before that, a name on this board reads as a score already on it
+  const isUp = shared !== null && status === 'submitted';
+  const playerMeta = isUp
+    ? undefined
+    : singers.length > 0
+      ? 'not put up'
+      : `under ${QUALIFYING_SCORE.toLocaleString()}: not on the board`;
 
   const shouldFetch = hasLeaderboard;
 
@@ -55,7 +63,7 @@ function SongLeaderboardPanel({ song, singSetup, leaderboard, className, listCla
     if (data.position === null) return listed;
 
     const player: Omit<BoardEntry, 'id' | 'status'> = {
-      name: accountName ?? 'You',
+      name: isUp && accountName ? accountName : 'This run',
       flair: null,
       score,
       artist: song.artist,
@@ -69,7 +77,7 @@ function SongLeaderboardPanel({ song, singSetup, leaderboard, className, listCla
     listed.splice(index, 0, { entry: player, isPlayer: true });
 
     return listed;
-  }, [data, accountName, score, song, singSetup.tolerance]);
+  }, [data, accountName, isUp, score, song, singSetup.tolerance]);
 
   // Away entirely for the dev-only debug widths above Easy — those are never stored, so the list
   // would be permanently empty.
@@ -79,7 +87,7 @@ function SongLeaderboardPanel({ song, singSetup, leaderboard, className, listCla
     <ScoreboardPanel
       className={className}
       listClassName={listClassName}
-      title="Global scoreboard"
+      title="Song leaderboard"
       // The count the removed "of N" sentence used to carry — the player's own row says the rest
       subtitle={`This song · ${difficulty} · all time${data ? ` · ${data.total + 1} scores` : ''}`}
       isLoading={isLoading}
@@ -95,6 +103,7 @@ function SongLeaderboardPanel({ song, singSetup, leaderboard, className, listCla
           withSongDetails={false}
           highlighted={isPlayer}
           scrollIntoView={isPlayer}
+          meta={isPlayer ? playerMeta : undefined}
           data-test={isPlayer ? 'song-leaderboard-own-row' : 'song-leaderboard-row'}
         />
       ))}

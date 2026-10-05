@@ -12,13 +12,12 @@ interface Props {
 /** `Box` centres its children; the panel stacks them full width instead. The border is what reads as
  * an edge against this screen — `Box`'s own fill is faint here on purpose, matching the score rows
  * above it. */
-const panelClassName = 'mt-2 w-full items-stretch justify-start gap-2 border border-white/10 p-3';
+const panelClassName = 'w-full shrink-0 items-stretch justify-start gap-2 border border-white/10 p-3';
 const rowClassName = 'flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between';
 
 /**
- * Under the local high scores once the prompt is out of the way: what became of this score, or the
- * way back to the prompt. Registers into the high-scores navigation, between the score renames and
- * the button that moves on, matching where it is on screen.
+ * Above the boards once the prompt is out of the way: what became of this score, or the way back to
+ * the prompt. Registers into the high-scores navigation first, matching where it is on screen.
  */
 function LeaderboardSharePanel({ register, leaderboard }: Props) {
   const { panel, reachesGlobalBoard, difficulty, accountName, status, reopen } = leaderboard;
