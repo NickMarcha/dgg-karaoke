@@ -15,14 +15,20 @@ export class SignInRequiredError extends Error {
  * they carry none of the site's cookies; the ticket comes through the site's `/api` proxy, which does.
  */
 export const apiSocketUrl = async (path: string) => {
-  const url = new URL(path, API_URL);
-  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  const url = new URL(apiBareSocketUrl(path));
 
   const response = await fetch('/api/socket-ticket', { method: 'POST' });
   if (response.status === 401) throw new SignInRequiredError();
   const { ticket } = response.ok ? ((await response.json()) as { ticket: string | null }) : { ticket: null };
   if (ticket) url.searchParams.set('ticket', ticket);
 
+  return url.toString();
+};
+
+/** A socket's address with no ticket, for a page that brings its own key: an OBS source has no cookie. */
+export const apiBareSocketUrl = (path: string) => {
+  const url = new URL(path, API_URL);
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
   return url.toString();
 };
 

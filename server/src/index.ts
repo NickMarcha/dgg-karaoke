@@ -9,8 +9,9 @@ import { Auth } from './auth.js';
 import { getDatabase } from './db.js';
 import { getEnv, isDeployed } from './env.js';
 import { OnlineDirectory } from './online/directory.js';
-import { type OnlinePeer, OnlineRelay } from './online/relay.js';
+import { type OnlinePeer, OnlineRelay, type StreamWatcher } from './online/relay.js';
 import { PostgresRoomStore } from './online/room-store.js';
+import { StreamKeys } from './online/stream-keys.js';
 import { type Peer, Relay } from './relay.js';
 import { SocketTickets } from './socket-tickets.js';
 
@@ -43,22 +44,51 @@ const online = new OnlineRelay(directory);
 const sockets = new WebSocketServer({ noServer: true, maxPayload: 16 * 1024 * 1024 });
 const alive = new WeakSet<WebSocket>();
 
-server.on('upgrade', (request, socket, head) => {
+const streamKeys = new StreamKeys(database);
+
+server.on('upgrade', async (request, socket, head) => {
   const { pathname, searchParams } = new URL(request.url ?? '/', 'http://localhost');
-  const known = pathname === '/remote-mic' || pathname === '/online';
+  const known = pathname === '/remote-mic' || pathname === '/online' || pathname === '/stream';
   // A complete response, ended rather than destroyed: the tunnel reports a socket cut off
   // mid-response as a 502 from the origin.
   const refuse = (status: string) => socket.end(`HTTP/1.1 ${status}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
   if (!known || !env.APP_ORIGIN.includes(request.headers.origin ?? '')) return refuse('403 Forbidden');
-  if (env.SIGN_IN_REQUIRED && !tickets.redeem(searchParams.get('ticket'))) return refuse('401 Unauthorized');
+
+  // An OBS source carries no cookie: its key in the link says whose stream it is
+  if (pathname === '/stream') {
+    const streamer = await streamKeys.streamerFor(searchParams.get('key') ?? '').catch(() => null);
+    if (!streamer) return refuse('401 Unauthorized');
+    return sockets.handleUpgrade(request, socket, head, (client) => {
+      accept(client);
+      connectWatcher(client, streamer);
+    });
+  }
+
+  const user = tickets.redeem(searchParams.get('ticket'));
+  if (env.SIGN_IN_REQUIRED && !user) return refuse('401 Unauthorized');
   sockets.handleUpgrade(request, socket, head, (client) => {
-    alive.add(client);
-    client.on('pong', () => alive.add(client));
-    client.on('error', (error) => console.warn('Socket error', error.message));
-    if (pathname === '/online') connectOnline(client);
+    accept(client);
+    if (pathname === '/online') connectOnline(client, user && { id: user.id, username: user.username });
     else connectRemoteMic(client);
   });
 });
+
+function accept(client: WebSocket) {
+  alive.add(client);
+  client.on('pong', () => alive.add(client));
+  client.on('error', (error) => console.warn('Socket error', error.message));
+}
+
+function connectWatcher(client: WebSocket, streamer: StreamWatcher['streamer']) {
+  const watcher: StreamWatcher = {
+    streamer,
+    send: (message) => {
+      if (client.readyState === WebSocket.OPEN) client.send(JSON.stringify(message));
+    },
+  };
+  online.watch(watcher);
+  client.on('close', () => online.unwatch(watcher));
+}
 
 function connectRemoteMic(client: WebSocket) {
   const peer: Peer = {
@@ -74,9 +104,10 @@ function connectRemoteMic(client: WebSocket) {
   client.on('close', () => remoteMics.disconnect(peer));
 }
 
-function connectOnline(client: WebSocket) {
+function connectOnline(client: WebSocket, user: OnlinePeer['user']) {
   const peer: OnlinePeer = {
     sessionId: randomUUID(),
+    user,
     send: (message) => {
       if (client.readyState === WebSocket.OPEN) client.send(JSON.stringify(message));
     },

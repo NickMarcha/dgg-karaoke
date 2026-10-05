@@ -12,6 +12,7 @@ import type { Database } from './db.js';
 import { Charts } from './leaderboard/charts.js';
 import { leaderboardModerationRoutes, leaderboardRoutes } from './leaderboard/routes.js';
 import { type OnlineDirectory, ROOM_CODE_PATTERN } from './online/directory.js';
+import { StreamKeys, streamKeyRoutes } from './online/stream-keys.js';
 import { fetchThroughProxy, ProxyRefused, proxyTarget } from './proxy.js';
 import type { UserRole } from './schema.js';
 import type { SocketTickets } from './socket-tickets.js';
@@ -133,6 +134,7 @@ export function createApp({
   app.route('/api/moderation/leaderboard', leaderboardModerationRoutes(database));
   app.route('/api/moderation/songs', songModerationRoutes({ database, signedInUser }));
   app.route('/api/moderation/daily', dailyModerationRoutes(daily, signedInUser));
+  app.route('/api/moderation/stream-key', streamKeyRoutes(new StreamKeys(database), signedInUser));
 
   app.get('/api/admin/users', async (context) => {
     const query = context.req.query('query')?.trim();

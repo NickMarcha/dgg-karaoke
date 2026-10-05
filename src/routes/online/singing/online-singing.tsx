@@ -13,6 +13,7 @@ import { trackOnlineDriftSeek, trackOnlineSongStarted } from '~/modules/online/c
 import OnlineClient from '~/modules/online/client/online-client';
 import { ONLINE_DRIFT_THRESHOLD_MS, ONLINE_SEEK_SETTLE_MS } from '~/modules/online/protocol/consts';
 import { OnlinePlaybackStatus, OnlineRoomState, WireDetailedScore } from '~/modules/online/protocol/types';
+import useStreamSinging from '~/modules/online/streaming/use-stream-singing';
 import Player, { PlayerRef } from '~/routes/game/singing/player';
 import LayoutGame from '~/routes/layout-game';
 import LeaderboardOverlay from '~/routes/online/singing/leaderboard-overlay';
@@ -183,6 +184,15 @@ function OnlineSinging({ roomState, song }: Props) {
     }, 2_000);
     return () => clearInterval(interval);
   }, [anchorServerTimeMs, anchorVideoTimeMs, isPaused, hasFinished, videoGapMs, roomState.roomCode, song.id]);
+
+  // On a stream following the room, this singer's lane goes to it as they sing
+  useStreamSinging({
+    songId: song.id,
+    playerNumber: selfNumber,
+    name: self?.name ?? '',
+    getVideoTimeMs: () => player.current?.getCurrentTime(),
+    active: anchorServerTimeMs !== null && !hasFinished,
+  });
 
   // Publish score snapshots — the locally computed score is authoritative
   useEffect(() => {

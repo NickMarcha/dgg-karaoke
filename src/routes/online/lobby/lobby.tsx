@@ -30,6 +30,7 @@ import { LobbyPanel, lobbyPanelSurface } from '~/routes/online/lobby/lobby-panel
 import LobbySongCard from '~/routes/online/lobby/lobby-song-card';
 import RoomCodePanel from '~/routes/online/lobby/room-code-panel';
 import StandingsPanel from '~/routes/online/lobby/standings-panel';
+import StreamPanel from '~/routes/online/lobby/stream-panel';
 import { cn } from '~/utils/cn';
 
 interface Props {
@@ -220,6 +221,7 @@ function Lobby({ roomCode, roomState, song, songError, upload, onChooseSong }: P
                   )}
 
                   <div className="flex w-full min-w-0 flex-col gap-3 sm:gap-4 [&_hr]:opacity-25">
+                    <StreamPanel participants={roomState.participants} register={register} />
                     {(!roomState.chart || !song || songError) && (
                       <Menu.HelpText data-test="online-selected-song">
                         {!roomState.chart

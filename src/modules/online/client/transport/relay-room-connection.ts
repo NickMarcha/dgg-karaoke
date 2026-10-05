@@ -3,6 +3,7 @@ import { OnlineJoinOutcome, OnlineRoomConnection, RoomMembership } from '~/modul
 import { OnlineMessages } from '~/modules/online/protocol/types';
 import { getMembershipSecret, setMembershipSecret } from '~/modules/online/signaling/membership-secret';
 import { JoinRoomResponse, PromoteHostResponse } from '~/modules/online/signaling/protocol';
+import { RoomStream, StreamPacket } from '~/modules/online/streaming/types';
 
 /** A directory call the relay has not answered in this long has failed; the caller retries or reconnects. */
 const REQUEST_TIMEOUT_MS = 10_000;
@@ -11,7 +12,8 @@ type RelayFrame =
   | { t: 'welcome'; sessionId: string }
   | { t: 'reply'; id: number; result?: unknown; error?: string }
   | { t: 'message'; slot: number | null; payload: OnlineMessages }
-  | { t: 'slot-closed'; slot: number };
+  | { t: 'slot-closed'; slot: number }
+  | { t: 'stream-state'; streams: RoomStream[] };
 
 /**
  * This browser's connection to a room, over one WebSocket to the API's online relay
@@ -35,6 +37,7 @@ export class RelayRoomConnection implements OnlineRoomConnection {
   private messageListeners = new Set<(message: OnlineMessages, slot: number | null) => void>();
   private slotClosedListeners = new Set<(slot: number) => void>();
   private lostListeners = new Set<() => void>();
+  private streamListeners = new Set<(streams: RoomStream[]) => void>();
 
   public constructor(
     private readonly roomCode: string,
@@ -115,6 +118,19 @@ export class RelayRoomConnection implements OnlineRoomConnection {
     return () => this.slotClosedListeners.delete(listener);
   };
 
+  /** Who streams the room, from the relay: it sends the whole list on every change. */
+  public onStreamState = (listener: (streams: RoomStream[]) => void) => {
+    this.streamListeners.add(listener);
+    return () => this.streamListeners.delete(listener);
+  };
+
+  public requestStream = (streamerId: string, ask: boolean) => this.send({ t: 'stream-request', streamerId, ask });
+
+  public answerStream = (participantId: string, accept: boolean) =>
+    this.send({ t: 'stream-answer', participantId, accept });
+
+  public sendStreamData = (payload: StreamPacket) => this.send({ t: 'stream-data', payload });
+
   public close = () => {
     this.closedOnPurpose = true;
     this.socket?.close();
@@ -123,6 +139,7 @@ export class RelayRoomConnection implements OnlineRoomConnection {
     this.messageListeners.clear();
     this.slotClosedListeners.clear();
     this.lostListeners.clear();
+    this.streamListeners.clear();
     this.failPending('Connection closed');
   };
 
@@ -155,6 +172,8 @@ export class RelayRoomConnection implements OnlineRoomConnection {
           this.messageListeners.forEach((listener) => listener(frame.payload, frame.slot));
         } else if (frame.t === 'slot-closed') {
           this.slotClosedListeners.forEach((listener) => listener(frame.slot));
+        } else if (frame.t === 'stream-state') {
+          this.streamListeners.forEach((listener) => listener(frame.streams));
         }
       });
 

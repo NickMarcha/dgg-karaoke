@@ -108,6 +108,25 @@ participant the room has not placed yet, and no participant it has placed somewh
 host's own id included, which is the case the slot map cannot cover, since the host joins over the
 loopback and never occupies a slot.
 
+## Streaming a room
+
+A moderator's OBS link (`/stream/?key=`, made on the admin page's Stream tab) follows the room they
+sing in; `docs/plans/stream-view.md` is the design. The relay carries it alongside the room: every
+online socket now remembers the destiny.gg account its ticket was for, so the relay knows which
+room a moderator is in, and the OBS source connects to `/stream` with its key instead of a ticket.
+
+- Members hear `stream-state`: who streams the room, who is on each stream and who asks to be,
+  with each asker's destiny.gg name from their sign-in. The lobby's stream panel
+  (`lobby/stream-panel.tsx`) asks, and lets the streamer accept, decline and remove.
+- While a singer is on a stream, `use-stream-singing.ts` sends ten `stream-data` packets a second:
+  the pitch readings since the last, the score, and the singer's video time. The relay passes them
+  only to the streams that accepted that singer; a streamer is always on their own.
+- The view (`routes/stream/`) plays the song a delay behind the freshest packet (600 ms, or
+  `&delay=`), feeds every singer's readings into the game's state by its own video time, and draws
+  a lane each with the game's renderer.
+
+Acceptance lives in the relay's memory, per room and streamer: an API restart forgets it.
+
 ## Room standings
 
 A room keeps two different scoreboards, and they answer different questions.

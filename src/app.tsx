@@ -32,6 +32,7 @@ const LazySongList = lazy(() =>
 const LazyOnline = lazy(() => import('~/routes/online/online'));
 const LazyAdminPanel = lazy(() => import('~/routes/admin-panel/admin-panel'));
 const LazyRunPage = lazy(() => import('~/routes/run/run-page'));
+const LazyStreamView = lazy(() => import('~/routes/stream/stream-view'));
 const LazyHistory = lazy(() => import('~/routes/history/history-page'));
 const LazySetlist = lazy(() => import('~/routes/edit/setlists').then((modules) => ({ default: modules.default })));
 // import.meta.env.DEV is statically replaced at build time, so this whole branch (and the dev-screenshots
@@ -113,6 +114,12 @@ function App() {
                 <Route path="run">
                   <Suspense fallback={<PageLoader />}>
                     <LazyRunPage />
+                  </Suspense>
+                </Route>
+                {/* A moderator's OBS browser source, opened with their key */}
+                <Route path="stream">
+                  <Suspense fallback={null}>
+                    <LazyStreamView />
                   </Suspense>
                 </Route>
                 {LazyDevScreenshots && (

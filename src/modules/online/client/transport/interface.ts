@@ -1,5 +1,6 @@
 import { OnlineMessages } from '~/modules/online/protocol/types';
 import { JoinRejectedReason } from '~/modules/online/signaling/protocol';
+import { RoomStream, StreamPacket } from '~/modules/online/streaming/types';
 
 /** Where this browser sits in a room: which side of the wiring it is on, whose channels it should
  * be subscribed to, and which slot is its own. */
@@ -53,6 +54,12 @@ export interface OnlineRoomConnection extends OnlineRoomChannels {
   /** Fires when the connection is unrecoverable — the caller re-joins from scratch. */
   onLost(listener: () => void): () => void;
   close(): void;
+  /** Streaming the room (docs/plans/stream-view.md): the relay's word on who streams it, and asking,
+   * answering and sending this singer's singing to the streams that accepted them. */
+  onStreamState(listener: (streams: RoomStream[]) => void): () => void;
+  requestStream(streamerId: string, ask: boolean): void;
+  answerStream(participantId: string, accept: boolean): void;
+  sendStreamData(payload: StreamPacket): void;
 }
 
 /** One connected participant, from the host's side. Structurally satisfies the RPC core's

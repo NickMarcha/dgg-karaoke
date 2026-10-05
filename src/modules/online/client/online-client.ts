@@ -22,6 +22,7 @@ import { OnlineServerRpc } from '~/modules/online/protocol/room-logic';
 import { OnlineMessages, OnlineRoomState, OnlineSubscriptionChannels } from '~/modules/online/protocol/types';
 import { fetchRoomInfo } from '~/modules/online/signaling/directory-client';
 import { clearMembershipSecret } from '~/modules/online/signaling/membership-secret';
+import { RoomStream, StreamPacket } from '~/modules/online/streaming/types';
 import Listener from '~/modules/utils/listener';
 import storage from '~/modules/utils/storage';
 
@@ -159,6 +160,25 @@ export class OnlineClient extends Listener<[OnlineConnectionStatus, string?]> {
   };
 
   public getStatus = () => this.status;
+
+  private streams: RoomStream[] = [];
+  private streamListeners = new Set<() => void>();
+  /** Who streams this room through their OBS link, and who is on each stream or asking to be. */
+  public getStreams = () => this.streams;
+  public onStreams = (listener: () => void) => {
+    this.streamListeners.add(listener);
+    return () => {
+      this.streamListeners.delete(listener);
+    };
+  };
+  private setStreams = (streams: RoomStream[]) => {
+    this.streams = streams;
+    this.streamListeners.forEach((listener) => listener());
+  };
+  public requestStream = (streamerId: string, ask: boolean) => this.connection?.requestStream(streamerId, ask);
+  public answerStream = (participantId: string, accept: boolean) =>
+    this.connection?.answerStream(participantId, accept);
+  public sendStreamData = (packet: StreamPacket) => this.connection?.sendStreamData(packet);
   public getRoomCode = () => this.roomCode;
   public getName = () => this.name;
   /** True while the room's authority is running in this tab. */
@@ -220,6 +240,8 @@ export class OnlineClient extends Listener<[OnlineConnectionStatus, string?]> {
         return;
       }
       this.connection = connection;
+      // The relay says who streams the room before it answers the join
+      connection.onStreamState(this.setStreams);
       outcome = await connection.join({ create: this.createRoom });
     } catch {
       connection?.close();
@@ -531,6 +553,7 @@ export class OnlineClient extends Listener<[OnlineConnectionStatus, string?]> {
       this.connection = null;
     }
     this.lastHostSnapshot = null;
+    this.setStreams([]);
     // The secret deliberately outlives this. `disconnect` runs on every unmount, and the game is
     // not a single-page app — moving from the lobby to the song is a real page load, so the next
     // page has to be able to prove the membership is still ours. `leave` above is fire-and-forget

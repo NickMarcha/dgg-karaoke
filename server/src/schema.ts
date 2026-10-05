@@ -85,6 +85,18 @@ export const sessions = pgTable(
 );
 
 /**
+ * A moderator's OBS link: the key in `/stream/?key=` that lets a browser source follow the online
+ * room they sing in. Kept as it is, so they can copy the link again; making a new one replaces it.
+ */
+export const streamKeys = pgTable('stream_keys', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  key: text('key').notNull().unique(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
  * How far a run on the board is backed: `score` alone, `recorded` with the singer's voice anyone can
  * play back, `verified` once a moderator has listened to that recording and confirmed it.
  */

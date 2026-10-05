@@ -11,8 +11,9 @@ import DailyTab from '~/routes/admin-panel/daily-tab';
 import LeaderboardTab from '~/routes/admin-panel/leaderboard-tab';
 import ModeratorsTab from '~/routes/admin-panel/moderators-tab';
 import SongsTab from '~/routes/admin-panel/songs-tab';
+import StreamTab from '~/routes/admin-panel/stream-tab';
 
-type Tab = 'songs' | 'daily' | 'leaderboard' | 'moderators';
+type Tab = 'songs' | 'daily' | 'leaderboard' | 'stream' | 'moderators';
 
 /**
  * Where moderators look after what the community puts up, and admins appoint moderators. Admins
@@ -28,6 +29,7 @@ function AdminPanel() {
     { id: 'songs', label: 'Songs' },
     { id: 'daily', label: 'Song of the day' },
     { id: 'leaderboard', label: 'Leaderboard' },
+    { id: 'stream', label: 'Stream' },
     ...(account?.role === 'admin' ? [{ id: 'moderators' as const, label: 'Moderators' }] : []),
   ];
 
@@ -57,6 +59,7 @@ function AdminPanel() {
             {tab === 'songs' && <SongsTab />}
             {tab === 'daily' && <DailyTab />}
             {tab === 'leaderboard' && <LeaderboardTab />}
+            {tab === 'stream' && <StreamTab />}
             {tab === 'moderators' && <ModeratorsTab />}
           </>
         )}

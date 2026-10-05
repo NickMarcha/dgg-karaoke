@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { Song } from '~/interfaces';
 import { LoadSongOptions, loadSongById } from '~/modules/songs/load-song';
 
-export default function useSong(songId: string, options?: LoadSongOptions) {
+/** The song, loaded and processed for playing; nothing while there is no id to load. */
+export default function useSong(songId: string | null, options?: LoadSongOptions) {
   const [song, setSong] = useState<Song | null>(null);
   const sourceType = options?.sourceType;
   const sharedSongId = options?.sharedSongId;
@@ -11,6 +12,7 @@ export default function useSong(songId: string, options?: LoadSongOptions) {
   useEffect(() => {
     let active = true;
     setSong(null);
+    if (!songId) return;
 
     loadSongById(songId, { sourceType, sharedSongId })
       .then((loaded) => {

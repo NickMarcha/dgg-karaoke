@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
 import InputManager from '~/modules/game-engine/input/input-manager';
 import { createSubscriptionHook } from '~/modules/network/rpc/use-subscription-factory';
@@ -192,3 +192,6 @@ export const useIsOnlineHost = () => {
   const roomState = useOnlineRoomState();
   return roomState !== undefined && roomState.hostId === OnlineClient.getParticipantId();
 };
+
+/** Who streams this room through their OBS link, and who is on each stream or asking to be. */
+export const useOnlineStreams = () => useSyncExternalStore(OnlineClient.onStreams, OnlineClient.getStreams);
