@@ -146,10 +146,19 @@ its own offset plus half the phone's measured round trip, the time the start cal
 the pause and resume calls take as long, so they cancel out. The offset comes with the run the phone
 is handed, and the phone keeps the take for its prompt even once the next song starts.
 
-**Playing back.** A run's name on any board links to its page (`/run/?id=`, `run-page.tsx`), which
-plays the song's video with the singer's voice kept within 150 ms of where the video says it should
-be. The recording is fetched whole into memory first, because the browser seeks a recording only
-where it can request any part of it, and the API serves it in one piece.
+**Replays.** A run's name on any board links to its page (`/run/?id=`), which replays it over the
+song's video, recorded or not (`run-replay.tsx`). The run's stored readings
+(`GET /api/leaderboard/runs/:id/notes`) are fed into the game's own state as the video reaches them,
+so the game's renderer draws the notes, the sung line and the lyrics, and the game's scoring counts
+them up to the board's score. A run sung on one track of a duet is replayed on that track alone.
+Going back in the video starts the run over; when the video ends, the rest of the run counts, so a
+replay always ends on the run's whole score. The renderer draws whichever singers it is given
+(`CanvasDrawing`'s last argument), this computer's players unless a replay says otherwise.
+
+**Playing back.** A recorded run's page plays the singer's voice with the replay, kept within 150 ms
+of where the video says it should be. The recording is fetched whole into memory first, because the
+browser seeks a recording only where it can request any part of it, and the API serves it in one
+piece.
 
 **Vouching and reporting.** Other signed-in players can vouch for a recorded run or report it, once
 each, never their own (`run_flags`). Moderators get a "Recorded, to listen to" view on the admin
@@ -194,6 +203,8 @@ the same way when it arrives.
 
 - `server/src/leaderboard/leaderboard.integration.test.ts`: the routes against a real Postgres.
 - `src/modules/leaderboard/rules-in-sync.test.ts`: the site's and the API's numbers agree.
+- `src/modules/leaderboard/score-run.test.ts`: the API's scoring of packed notes matches the game's.
+- `tests/run-replay.spec.ts`: a run put up through the API, replayed on its page to the board's score.
 - `tests/leaderboard.spec.ts`: signed out, signed in (choosing a singer, then finding the row on the
   song's board in the next run), declining, and a signed-in phone putting its own run up. Signed-in specs open a session straight in the e2e
   stack's database (`signIn` in `tests/helpers.ts`), since the sign-in stand-in redirects to port

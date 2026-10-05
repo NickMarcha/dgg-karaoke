@@ -82,6 +82,16 @@ export function leaderboardRoutes({ database, signedInUser, daily, charts }: Dep
     return run ? context.json(run) : noSuchRun(context);
   });
 
+  routes.get('/runs/:id/notes', async (context) => {
+    const id = runId(context);
+    const notes = id.success ? await leaderboard.notes(id.data) : null;
+    if (!notes) return noSuchRun(context);
+    return context.body(new Uint8Array(notes), 200, {
+      'content-type': 'application/msgpack',
+      'cache-control': 'public, max-age=3600',
+    });
+  });
+
   routes.get('/runs/:id/recording', async (context) => {
     const id = runId(context);
     const recording = id.success ? await leaderboard.recording(id.data) : null;

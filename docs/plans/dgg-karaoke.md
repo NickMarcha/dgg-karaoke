@@ -233,7 +233,7 @@ Built (`docs/leaderboard.md`, Score / Recorded / Verified): recordings from the 
 singers' and phones' microphones, the run page that plays them against the video, vouching and
 reporting, and moderators verifying. Recomputing scores from the notes (step 1 above) is built too: the
 API scores every run with the game's own code, bundled from `src/`. Drawing the replay (step 2) is
-still to come.
+built too: a run's page replays it over the video with the game's renderer, recorded or not.
 
 The user wants that third tier: **verified entries**, where a singer chooses to
 submit a recording with the run. Only the voice, from the microphone, never the

@@ -97,6 +97,8 @@ export class Leaderboard {
         userId: leaderboardRecords.userId,
         recordingType: leaderboardRecordings.type,
         recordingOffsetMs: leaderboardRecordings.offsetMs,
+        trackIndex: leaderboardRecords.trackIndex,
+        mergedTrack: leaderboardRecords.mergedTrack,
         vouches: flagCount('vouch'),
         reports: flagCount('report'),
       })
@@ -119,6 +121,15 @@ export class Leaderboard {
       myFlag: own?.kind ?? null,
       isOwn: userId === viewerId,
     };
+  }
+
+  /** The pitch readings behind a run, packed as the game sent them, for drawing its replay. */
+  public async notes(id: string) {
+    const [row] = await this.database
+      .select({ notes: leaderboardNotes.notes })
+      .from(leaderboardNotes)
+      .where(eq(leaderboardNotes.recordId, id));
+    return row?.notes ?? null;
   }
 
   public async recording(id: string) {

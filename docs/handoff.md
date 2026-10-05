@@ -284,8 +284,8 @@ Next:
    submitting a song, and reviewing it as a moderator. Send a recording
    from a phone and play it back on its run page: whether half the round
    trip places a real phone's voice in step has only been checked in e2e.
-2. **Replays** (the rest of layer 5: drawing a run from its stored notes over the song, with the
-   game's renderer) or **layer 6, OBS sources**: the plan lists them in that order.
+2. **Layer 6, OBS sources** (the plan's section has what DGG Radio learned). Layer 5 is built:
+   recorded and verified runs, scores the API works out, and replays on each run's page.
 3. **Refresh the visual baselines.** All 291 (`tests/visual-regression`,
    `tests/storybook`) are Linux renders of the old look, and upstream's CI
    that produced them is gone. Regenerating on Windows only adds `-win32`

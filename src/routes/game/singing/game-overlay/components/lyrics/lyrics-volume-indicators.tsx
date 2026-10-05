@@ -4,6 +4,7 @@ import { ComponentProps, memo } from 'react';
 import { PlayerMicCheck } from '~/modules/elements/volume-indicator';
 import GameState from '~/modules/game-engine/game-state/game-state';
 import usePlayerMicStatus from '~/modules/hooks/players/use-player-mic-status';
+import { PlayerNumber } from '~/modules/players/player-number';
 import PlayersManager, { PlayerEntity } from '~/modules/players/players-manager';
 import { MobilePhoneModeSetting, useSettingValue } from '~/routes/settings/settings-state';
 import PlayerStatus from '~/routes/sing-a-song/song-selection/components/song-settings/mic-check/status';
@@ -13,12 +14,13 @@ export default function LyricsVolumeIndicators({
   effectsEnabled,
   showStatusForAllPlayers,
 }: {
-  player: PlayerEntity;
+  player: { number: PlayerNumber };
   effectsEnabled: boolean;
   showStatusForAllPlayers: boolean;
 }) {
   const [mobilePhoneMode] = useSettingValue(MobilePhoneModeSetting);
-  if (mobilePhoneMode || !effectsEnabled) return null;
+  const entity = PlayersManager.getPlayer(player.number);
+  if (mobilePhoneMode || !effectsEnabled || !entity) return null;
 
   return (
     <div className="absolute inset-y-0 right-0 flex h-full flex-col items-center justify-center">
@@ -27,7 +29,7 @@ export default function LyricsVolumeIndicators({
           <VolumeIndicator key={p.getNumber()} className="flex-1" player={PlayersManager.getPlayer(p.getNumber())!} />
         ))
       ) : (
-        <VolumeIndicator className="flex-1" player={player} />
+        <VolumeIndicator className="flex-1" player={entity} />
       )}
     </div>
   );

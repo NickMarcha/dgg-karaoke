@@ -1,6 +1,7 @@
 import { pack } from 'msgpackr';
 
 import { readJson } from '~/modules/api';
+import { decodeNotesPayload } from '~/modules/leaderboard/notes-payload';
 import { RunRecording } from '~/modules/leaderboard/recording-take';
 import { BoardEntry, BoardResponse, LeaderboardSubmission, SongBoardResponse } from '~/modules/leaderboard/types';
 
@@ -76,6 +77,9 @@ export const fetchSongBoard = async (url: string): Promise<SongBoardResponse> =>
 /** One run on the board in full, for its page. */
 export interface RunDetails extends BoardEntry {
   recording: { type: string; offsetMs: number } | null;
+  trackIndex: number;
+  /** Sung against both tracks merged into one, as every game but a two-singer one is. */
+  mergedTrack: boolean;
   vouches: number;
   reports: number;
   /** How the signed-in viewer flagged it, if they did. */
@@ -86,6 +90,13 @@ export interface RunDetails extends BoardEntry {
 export const runUrl = (id: string) => `/api/leaderboard/runs/${id}`;
 
 export const fetchRun = async (url: string) => readJson<RunDetails>(await fetch(url));
+
+/** A run's pitch readings, for its replay. */
+export const fetchRunNotes = async (url: string) => {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Failed to load the run's notes: ${response.status}`);
+  return decodeNotesPayload(new Uint8Array(await response.arrayBuffer()));
+};
 
 /** The signed-in player vouching for someone else's recorded run, reporting it, or neither. */
 export const flagRun = async (id: string, kind: 'vouch' | 'report' | null) =>

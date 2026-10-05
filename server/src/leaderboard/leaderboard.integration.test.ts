@@ -101,6 +101,18 @@ describe.skipIf(!url)('leaderboard routes', () => {
     expect(new Uint8Array(stored!.notes)).toEqual(new Uint8Array(run.notes));
   });
 
+  it("serves a run's notes and how it was sung, for its replay", async () => {
+    const run = submission();
+    await submit(await account('Singer'), run);
+    const id = (await database.select().from(leaderboardRecords))[0]!.id;
+
+    const details = await (await app.request(`/api/leaderboard/runs/${id}`)).json();
+    expect(details).toEqual(expect.objectContaining({ trackIndex: 0, mergedTrack: true, tolerance: 2 }));
+    const notes = await app.request(`/api/leaderboard/runs/${id}/notes`);
+    expect(new Uint8Array(await notes.arrayBuffer())).toEqual(new Uint8Array(run.notes));
+    expect((await app.request(`/api/leaderboard/runs/${crypto.randomUUID()}/notes`)).status).toBe(404);
+  });
+
   it('takes no score from somebody who is not signed in', async () => {
     expect((await submit(null, submission())).status).toBe(401);
   });

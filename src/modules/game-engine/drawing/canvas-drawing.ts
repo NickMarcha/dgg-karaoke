@@ -44,6 +44,8 @@ export default class CanvasDrawing {
     private canvas: HTMLCanvasElement,
     private verticalMargin: number = 0,
     private scaleFactor: number = 1,
+    /** The singers drawn, one lane each: this computer's, unless a replay says whose. */
+    private playerNumbers: () => PlayerNumber[] = () => PlayersManager.getPlayers().map(({ number }) => number),
   ) {}
 
   private shaders: Shaders | null = null;
@@ -90,10 +92,7 @@ export default class CanvasDrawing {
     if (GameState.isPlaying()) {
       ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-      const players = PlayersManager.getPlayers();
-      players.forEach((player) => {
-        this.drawPlayer(player.number, ctx);
-      });
+      this.playerNumbers().forEach((playerNumber) => this.drawPlayer(playerNumber, ctx));
 
       ParticleManager.tick(ctx, this.canvas, this.pauseTime);
     }
@@ -342,8 +341,8 @@ export default class CanvasDrawing {
   };
 
   private getDrawingData = (playerNumber: PlayerNumber, sectionShift = 0): DrawingData => {
-    const players = PlayersManager.getPlayers();
-    const playerIndex = players.findIndex((player) => player.number === playerNumber);
+    const players = this.playerNumbers();
+    const playerIndex = players.indexOf(playerNumber);
     const playerCount = players.length;
 
     const playerState = GameState.getPlayer(playerNumber)!;

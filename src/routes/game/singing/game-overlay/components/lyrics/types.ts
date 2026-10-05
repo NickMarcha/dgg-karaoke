@@ -1,8 +1,9 @@
 import { GAME_MODE, songBeat } from '~/interfaces';
-import { PlayerEntity } from '~/modules/players/players-manager';
+import { PlayerNumber } from '~/modules/players/player-number';
 
 export interface LyricsProps {
-  player: PlayerEntity;
+  /** Only the number: a replay has no player on this computer behind it. */
+  player: { number: PlayerNumber };
   bottom?: boolean;
   effectsEnabled: boolean;
   showStatusForAllPlayers: boolean;
