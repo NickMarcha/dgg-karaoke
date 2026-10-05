@@ -31,6 +31,7 @@ const LazySongList = lazy(() =>
 );
 const LazyOnline = lazy(() => import('~/routes/online/online'));
 const LazyAdminPanel = lazy(() => import('~/routes/admin-panel/admin-panel'));
+const LazyRunPage = lazy(() => import('~/routes/run/run-page'));
 const LazyHistory = lazy(() => import('~/routes/history/history-page'));
 const LazySetlist = lazy(() => import('~/routes/edit/setlists').then((modules) => ({ default: modules.default })));
 // import.meta.env.DEV is statically replaced at build time, so this whole branch (and the dev-screenshots
@@ -108,6 +109,12 @@ function App() {
                 <Route path={routePaths.MANAGE_SONGS} component={ManageSongs} />
                 {/* Not in `routePaths`: a prerendered copy would be a page with no code to finish */}
                 <Route path="auth/callback" component={AuthCallback} />
+                {/* Not in `routePaths` either: every run is its own page, read from the API */}
+                <Route path="run">
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyRunPage />
+                  </Suspense>
+                </Route>
                 {LazyDevScreenshots && (
                   <Route
                     path="dev/screenshots"

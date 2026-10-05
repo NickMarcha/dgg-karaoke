@@ -1,22 +1,30 @@
 import { pack } from 'msgpackr';
 
+import { readJson } from '~/modules/api';
 import { computeNotesHash } from '~/modules/leaderboard/notes-hash';
-import { BoardResponse, LeaderboardSubmission, SongBoardResponse } from '~/modules/leaderboard/types';
+import { RunRecording } from '~/modules/leaderboard/run-recorder';
+import { BoardEntry, BoardResponse, LeaderboardSubmission, SongBoardResponse } from '~/modules/leaderboard/types';
 
 /** Through the site's `/api` proxy, so a submission carries the session cookie. */
 export const LEADERBOARD_URL = '/api/leaderboard';
 const SONG_LEADERBOARD_URL = '/api/leaderboard/song';
 
-export type SubmitScoreInput = Omit<LeaderboardSubmission, 'notesHash'>;
+export type SubmitScoreInput = Omit<
+  LeaderboardSubmission,
+  'notesHash' | 'recording' | 'recordingType' | 'recordingOffsetMs'
+>;
 
-/** Puts a run on the board as the signed-in account. Says whether the API took it. */
-export async function submitScore(input: SubmitScoreInput): Promise<boolean> {
+/** Puts a run on the board as the signed-in account, with the singer's recording if given. Says whether the API took it. */
+export async function submitScore(input: SubmitScoreInput, recording?: RunRecording | null): Promise<boolean> {
   try {
     const score = Math.round(input.score);
     const submission: LeaderboardSubmission = {
       ...input,
       score,
       notesHash: await computeNotesHash(input.notes, score),
+      ...(recording
+        ? { recording: recording.data, recordingType: recording.type, recordingOffsetMs: recording.offsetMs }
+        : {}),
     };
 
     const response = await fetch(LEADERBOARD_URL, {
@@ -31,8 +39,9 @@ export async function submitScore(input: SubmitScoreInput): Promise<boolean> {
   }
 }
 
-export const fetchBoard = async (): Promise<BoardResponse> => {
-  const response = await fetch(LEADERBOARD_URL);
+/** The SWR key is the URL, so the verified-only board is a fetch of its own. */
+export const fetchBoard = async (url: string = LEADERBOARD_URL): Promise<BoardResponse> => {
+  const response = await fetch(url);
 
   if (!response.ok) throw new Error(`Failed to load the leaderboard: ${response.status}`);
 
@@ -64,3 +73,27 @@ export const fetchSongBoard = async (url: string): Promise<SongBoardResponse> =>
 
   return response.json();
 };
+
+/** One run on the board in full, for its page. */
+export interface RunDetails extends BoardEntry {
+  recording: { type: string; offsetMs: number } | null;
+  vouches: number;
+  reports: number;
+  /** How the signed-in viewer flagged it, if they did. */
+  myFlag: 'vouch' | 'report' | null;
+  isOwn: boolean;
+}
+
+export const runUrl = (id: string) => `/api/leaderboard/runs/${id}`;
+
+export const fetchRun = async (url: string) => readJson<RunDetails>(await fetch(url));
+
+/** The signed-in player vouching for someone else's recorded run, reporting it, or neither. */
+export const flagRun = async (id: string, kind: 'vouch' | 'report' | null) =>
+  readJson(
+    await fetch(`${runUrl(id)}/flag`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ kind }),
+    }),
+  );

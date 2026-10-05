@@ -50,10 +50,11 @@ function SongLeaderboardPanel({ song, singSetup, leaderboard, className, listCla
   const rows = useMemo(() => {
     if (!data) return [];
 
-    const listed = data.entries.map((entry) => ({ entry, isPlayer: false }));
+    const listed: { entry: Omit<BoardEntry, 'id' | 'status'> & Partial<BoardEntry>; isPlayer: boolean }[] =
+      data.entries.map((entry) => ({ entry, isPlayer: false }));
     if (data.position === null) return listed;
 
-    const player: BoardEntry = {
+    const player: Omit<BoardEntry, 'id' | 'status'> = {
       name: accountName ?? 'You',
       flair: null,
       score,

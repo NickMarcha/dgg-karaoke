@@ -1,16 +1,20 @@
 import { useState } from 'react';
 
 import { useAccount } from '~/modules/account/account';
+import { Checkbox } from '~/modules/elements/akui/checkbox';
 import { Menu } from '~/modules/elements/akui/menu';
 import Modal from '~/modules/elements/modal';
 import { submitScore, SubmitScoreInput } from '~/modules/leaderboard/client';
 import { difficultyName } from '~/modules/leaderboard/difficulty';
 import { reachesGlobalBoard } from '~/modules/leaderboard/qualifies';
+import { RunRecording } from '~/modules/leaderboard/run-recorder';
 import ScoreText from '~/routes/game/singing/game-overlay/components/score-text';
 
 interface Props {
   /** A run good enough for a board, sung by whoever is signed in on this browser. */
   run: SubmitScoreInput | null;
+  /** The singer's voice through the run, when this browser recorded it. */
+  recording?: () => Promise<RunRecording | null>;
   onClose: () => void;
 }
 
@@ -18,14 +22,16 @@ interface Props {
  * Asks to put one singer's own run up, where that singer has the browser to themselves: a phone used
  * as a microphone, or an online room. Only for a signed-in account, which is who the run goes up as.
  */
-export default function RunShareModal({ run, onClose }: Props) {
+export default function RunShareModal({ run, recording, onClose }: Props) {
   const { account } = useAccount();
   const [status, setStatus] = useState<'asking' | 'submitting' | 'submitted' | 'failed'>('asking');
+  const [withRecording, setWithRecording] = useState(false);
 
   const share = async () => {
     if (!run) return;
     setStatus('submitting');
-    setStatus((await submitScore(run)) ? 'submitted' : 'failed');
+    const voice = withRecording && recording ? await recording() : null;
+    setStatus((await submitScore(run, voice)) ? 'submitted' : 'failed');
   };
 
   const board = run
@@ -51,6 +57,16 @@ export default function RunShareModal({ run, onClose }: Props) {
             <Menu.HelpText>
               Put it up as <strong className="text-active">{account.username}</strong>?
             </Menu.HelpText>
+            {recording && (
+              <Checkbox
+                focused={false}
+                size="small"
+                checked={withRecording}
+                onClick={() => setWithRecording(!withRecording)}
+                data-test="run-share-with-recording">
+                Send my recording too: anyone can play it back
+              </Checkbox>
+            )}
             <Menu.Button size="small" onClick={share} data-test="run-share-submit">
               Put it up
             </Menu.Button>

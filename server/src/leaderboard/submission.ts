@@ -38,7 +38,7 @@ const schema = z.object({
     .string()
     .regex(/^audio\/(webm|ogg|mp4)(;\s*codecs=[a-z0-9.]+)?$/i)
     .optional(),
-  /** The song's time, in milliseconds, when the recording began. */
+  /** The video's time, in milliseconds, when the recording began: where playback starts the video. */
   recordingOffsetMs: z.number().int().min(-600_000).max(600_000).optional(),
 });
 

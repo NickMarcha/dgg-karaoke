@@ -4,6 +4,7 @@ import { DetailedScore, GAME_MODE, SingSetup, Song } from '~/interfaces';
 import useViewportSize from '~/modules/hooks/use-viewport-size';
 import { qualifiesForLeaderboard } from '~/modules/leaderboard/qualifies';
 import { buildRun } from '~/modules/leaderboard/run';
+import RunRecorder from '~/modules/leaderboard/run-recorder';
 import RunShareModal from '~/modules/leaderboard/run-share-modal';
 import { useIsOnlineHost } from '~/modules/online/client/hooks';
 import { trackOnlineSongEnded } from '~/modules/online/client/online-analytics';
@@ -44,12 +45,14 @@ function OnlineResults({ roomState, song }: Props) {
   );
 
   // This browser sang one part of the room, under its room player number; the run is its own
+  const self = roomState.participants.find((participant) => participant.id === OnlineClient.getParticipantId());
   const [run, setRun] = useState(() => {
-    const self = roomState.participants.find((participant) => participant.id === OnlineClient.getParticipantId());
     if (!self) return null;
     const ownRun = buildRun(song, singSetup, self.playerNumber);
     return qualifiesForLeaderboard(ownRun.score, roomState.tolerance) ? ownRun : null;
   });
+  const recording =
+    self && RunRecorder.hasRecording(self.playerNumber) ? () => RunRecorder.recordingOf(self.playerNumber) : undefined;
 
   const players = useMemo<PlayerScore[]>(
     () =>
@@ -75,7 +78,7 @@ function OnlineResults({ roomState, song }: Props) {
         cameraEnabled={false}
         data-test="online-results"
       />
-      <RunShareModal run={run} onClose={() => setRun(null)} />
+      <RunShareModal run={run} recording={recording} onClose={() => setRun(null)} />
     </LayoutGame>
   );
 }

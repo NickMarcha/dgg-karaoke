@@ -7,6 +7,7 @@ import { submitScore } from '~/modules/leaderboard/client';
 import { difficultyName } from '~/modules/leaderboard/difficulty';
 import { hasLeaderboard, qualifiesForLeaderboard, reachesGlobalBoard } from '~/modules/leaderboard/qualifies';
 import { buildRun } from '~/modules/leaderboard/run';
+import RunRecorder from '~/modules/leaderboard/run-recorder';
 import { PlayerNumber } from '~/modules/players/player-number';
 import PlayersManager from '~/modules/players/players-manager';
 
@@ -63,12 +64,17 @@ export default function useLeaderboardPostGame({ song, singSetup }: Params) {
   const [status, setStatus] = useState<'submitting' | 'submitted' | 'failed'>('submitting');
 
   /** Puts the chosen singer's run up as the signed-in account, there and then. */
+  /** Whether the singer chose to send their voice with the run, which makes it Recorded. */
+  const [withRecording, setWithRecording] = useState(false);
+  const canSendRecording = singers.some((singer) => RunRecorder.hasRecording(singer.number));
+
   const share = async (singer: Singer) => {
     setIsPromptAnswered(true);
     setShared(singer);
     setStatus('submitting');
 
-    setStatus((await submitScore(buildRun(song, singSetup, singer.number))) ? 'submitted' : 'failed');
+    const recording = withRecording ? await RunRecorder.recordingOf(singer.number) : null;
+    setStatus((await submitScore(buildRun(song, singSetup, singer.number), recording)) ? 'submitted' : 'failed');
   };
 
   const decline = () => setIsPromptAnswered(true);
@@ -104,6 +110,9 @@ export default function useLeaderboardPostGame({ song, singSetup }: Params) {
     panel,
     isModalOpen,
     share,
+    canSendRecording,
+    withRecording,
+    setWithRecording,
     decline,
     reopen,
   };

@@ -15,6 +15,7 @@ import VideoPlayer, { VideoPlayerRef, VideoState } from '~/modules/elements/vide
 import useKeyboard from '~/modules/hooks/use-keyboard';
 import useKeyboardHelp from '~/modules/hooks/use-keyboard-help';
 import usePrevious from '~/modules/hooks/use-previous';
+import RunRecorder from '~/modules/leaderboard/run-recorder';
 import { PlayerNumber } from '~/modules/players/player-number';
 import { useVideoPlayer } from '~/routes/game/singing/hooks/use-video-player';
 import { cn } from '~/utils/cn';
@@ -98,6 +99,7 @@ function Player({
       onCurrentTimeUpdate?.(time);
       GameState.setCurrentTime(time);
       GameState.update();
+      RunRecorder.tick(time);
     },
     [onCurrentTimeUpdate],
   );
@@ -107,8 +109,11 @@ function Player({
   useEffect(() => {
     GameState.setSong(song);
     GameState.setSingSetup(singSetup);
+    // Each singer's voice, kept here until they choose to send it with their run
+    RunRecorder.begin(singSetup, song.gap);
 
     return () => {
+      RunRecorder.stop();
       GameState.resetSingSetup();
     };
   }, [song, singSetup]);

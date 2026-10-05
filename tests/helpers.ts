@@ -65,6 +65,8 @@ const BOARD_SONGS = [
  */
 export const mockLeaderboard = async ({ page }: { page: Page; context: BrowserContext }, count = 50) => {
   const entries: BoardEntry[] = Array.from({ length: count }, (_, index) => ({
+    id: `e2e-board-${index}`,
+    status: 'score',
     name: `E2E Player ${String(index + 1).padStart(2, '0')}`,
     flair: index % 3 === 0 ? 'flair13' : null,
     score: 1_200_000 - index * 7_531,

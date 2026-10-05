@@ -113,6 +113,34 @@ average on screen, but that is nobody's run: putting it up would credit one sing
 singing, behind notes that do not add up to it. Below the qualifying score, the panel says what
 would reach the board.
 
+## Score, Recorded, Verified
+
+A run on the board is a **Score**, **Recorded** when the singer sent their voice with it, or
+**Verified** once a moderator has listened to that recording and confirmed it. One board shows all
+three, with badges, and the main menu's board has a "Verified only" switch (`?verified=1` on the
+board routes).
+
+**Recording.** `run-recorder.ts` records each local singer's microphone through every song, in the
+browser: it starts two seconds before the song's gap (after any skipped intro), pauses while the
+video does, and starts over if the song seeks. Its offset is the video's time when it began (the
+song's clock plus the calibrated lag), which is where playback starts the video. Nothing leaves the
+browser unless the singer ticks "Send my recording too" on the prompt. Two singers on one stereo
+SingStar device share that device's recording. Phones do not record yet.
+
+**Playing back.** A run's name on any board links to its page (`/run/?id=`, `run-page.tsx`), which
+plays the song's video with the singer's voice kept within 150 ms of where the video says it should
+be. The recording is fetched whole into memory first, because the browser seeks a recording only
+where it can request any part of it, and the API serves it in one piece.
+
+**Vouching and reporting.** Other signed-in players can vouch for a recorded run or report it, once
+each, never their own (`run_flags`). Moderators get a "Recorded, to listen to" view on the admin
+page's Leaderboard tab, the most vouched-for and reported first, with Verify and Remove. A better run
+replaces the row and takes the recording, vouches and reports with it.
+
+Storage: `leaderboard_recordings` holds the audio (Opus at 32 kbps, under a megabyte for most songs),
+apart from the rows like the notes. A submission may be 10 MB, with the notes capped at 256 KB and the
+recording at 8 MB.
+
 ## Song of the day
 
 One song a day (UTC), with its own board on the main menu: each singer's best run of it that day,

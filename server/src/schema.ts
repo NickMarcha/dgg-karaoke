@@ -199,7 +199,7 @@ export const dailyRuns = pgTable(
 
 /**
  * The singer's voice through a run, as their browser recorded it. Apart from the rows so no board
- * query loads it; `offsetMs` is the song's time when the recording began, to play it against the video.
+ * query loads it; `offsetMs` is the video's time when the recording began, to play it against the video.
  */
 export const leaderboardRecordings = pgTable('leaderboard_recordings', {
   recordId: uuid('record_id')

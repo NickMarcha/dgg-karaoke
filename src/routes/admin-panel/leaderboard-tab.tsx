@@ -10,6 +10,7 @@ import { readJson } from '~/modules/api';
 import { Button } from '~/modules/elements/akui/button';
 import { Menu } from '~/modules/elements/akui/menu';
 import Typography from '~/modules/elements/akui/primitives/typography';
+import { Selector } from '~/modules/elements/akui/selector';
 import { Input } from '~/modules/elements/input';
 import { difficultyName } from '~/modules/leaderboard/difficulty';
 import { BoardEntry } from '~/modules/leaderboard/types';
@@ -19,21 +20,24 @@ import { cn } from '~/utils/cn';
 dayjs.extend(relativeTime);
 
 interface Row extends BoardEntry {
-  id: string;
+  vouches: number;
+  reports: number;
 }
 
-const rowsUrl = (query: string) =>
-  query ? `/api/moderation/leaderboard?${new URLSearchParams({ query })}` : '/api/moderation/leaderboard';
+const rowsUrl = (query: string, toListen: boolean) =>
+  `/api/moderation/leaderboard?${new URLSearchParams({ ...(query ? { query } : {}), ...(toListen ? { status: 'recorded' } : {}) })}`;
 
 /** Moderators take down leaderboard rows that should not be there. Removing one also drops its run. */
 export default function LeaderboardTab() {
   const [query, setQuery] = useState('');
+  // Recorded runs waiting to be listened to, the most vouched for and reported first
+  const [toListen, setToListen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Removing cannot be undone, so it takes a second click on the same row
   const [confirming, setConfirming] = useState<string | null>(null);
   const trimmed = query.trim();
   const { data, mutate } = useSWR(
-    rowsUrl(trimmed),
+    rowsUrl(trimmed, toListen),
     async (url: string) => (await readJson<{ rows: Row[] }>(await fetch(url))).rows,
     { keepPreviousData: true, revalidateOnFocus: false },
   );
@@ -46,9 +50,28 @@ export default function LeaderboardTab() {
     await mutate();
   };
 
+  const verify = async (row: Row) => {
+    setError(null);
+    const response = await fetch(`/api/moderation/leaderboard/${row.id}/verify`, { method: 'POST' });
+    if (!response.ok) setError('The run could not be verified. Try again in a moment.');
+    await mutate();
+  };
+
   return (
     <>
-      <Menu.HelpText>The newest rows on the boards. Removing one takes the run behind it too.</Menu.HelpText>
+      <Selector value={toListen ? 'listen' : 'all'} onChange={(value) => setToListen(value === 'listen')}>
+        <Selector.Item value="all" size="small" aria-pressed={!toListen} data-test="admin-leaderboard-all">
+          Newest
+        </Selector.Item>
+        <Selector.Item value="listen" size="small" aria-pressed={toListen} data-test="admin-leaderboard-recorded">
+          Recorded, to listen to
+        </Selector.Item>
+      </Selector>
+      <Menu.HelpText>
+        {toListen
+          ? 'Open a run to hear it against the video, then verify it or remove it.'
+          : 'The newest rows on the boards. Removing one takes the run behind it too.'}
+      </Menu.HelpText>
       {/* A mouse page: keyboard navigation would rebuild its order with every search result */}
       <Input
         focused={false}
@@ -71,8 +94,19 @@ export default function LeaderboardTab() {
               <Typography className="truncate text-sm">
                 {row.artist} — {row.title} · {difficultyName(row.tolerance)} · <ScoreText score={row.score} /> ·{' '}
                 {dayjs(row.createdAt).fromNow()}
+                {row.status !== 'score' && ` · ${row.status} · ${row.vouches} vouched · ${row.reports} reported`}
               </Typography>
             </div>
+            {row.status !== 'score' && (
+              <a href={`/run/?id=${row.id}`} target="_blank" rel="noreferrer" data-test="admin-leaderboard-open">
+                Open
+              </a>
+            )}
+            {row.status === 'recorded' && (
+              <Button size="small" fullWidth={false} onClick={() => verify(row)} data-test="admin-leaderboard-verify">
+                Verify
+              </Button>
+            )}
             {confirming === row.id ? (
               <>
                 <Button size="small" fullWidth={false} onClick={() => setConfirming(null)}>

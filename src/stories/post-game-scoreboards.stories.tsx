@@ -52,6 +52,8 @@ const boardEntries = (count: number, tolerance: number, startPosition: number, s
     const rank = startPosition + index;
 
     return {
+      id: `story-${rank}`,
+      status: (['score', 'recorded', 'verified'] as const)[rank % 3],
       name: `${names[rank % names.length][0]} ${rank}`,
       flair: names[rank % names.length][1],
       // `- 1` so the row at the insertion point is strictly below the player, the way a

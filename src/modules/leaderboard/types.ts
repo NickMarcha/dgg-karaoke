@@ -14,10 +14,21 @@ export interface LeaderboardSubmission {
   /** sha-256 hex over the packed notes bytes concatenated with the score. */
   notesHash: string;
   notes: Uint8Array;
+  /** The singer's voice through the run, when they choose to send it: the run is then Recorded. */
+  recording?: Uint8Array;
+  recordingType?: string;
+  /** The video's time, in milliseconds, when the recording began. */
+  recordingOffsetMs?: number;
 }
+
+/** How far a run is backed: a score alone, a recording anyone can play, a moderator's confirmation. */
+export type RunStatus = 'score' | 'recorded' | 'verified';
 
 /** One public row of the board: the singer's destiny.gg name and the flair it is coloured by. */
 export interface BoardEntry {
+  /** The run, for its own page. */
+  id: string;
+  status: RunStatus;
   name: string;
   flair: string | null;
   score: number;

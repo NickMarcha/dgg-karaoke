@@ -18,6 +18,9 @@ class MultiMicInput implements InputInterface {
     }
   };
 
+  /** A device's stream while it is open, for recording the singer's voice. */
+  public getStream = (deviceId: string) => this.devices[deviceId]?.getStream() ?? null;
+
   /** Gives back the devices none of `inputs` sings through. */
   public releaseUnused = async (inputs: SelectedPlayerInput[]) => {
     const used = new Set(inputs.filter((input) => input.source === 'Microphone').map((input) => input.deviceId));

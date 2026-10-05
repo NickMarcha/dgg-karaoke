@@ -125,6 +125,9 @@ export class MicInput implements InputInterface {
     this.stream = null;
   };
 
+  /** The microphone's stream while it is open, for recording the singer's voice. */
+  public getStream = () => this.stream;
+
   public getInputLag = () => 180;
 
   private calculateVolume(input: Float32Array) {

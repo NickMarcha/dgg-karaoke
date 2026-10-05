@@ -1,3 +1,4 @@
+import { Checkbox } from '~/modules/elements/akui/checkbox';
 import { Menu } from '~/modules/elements/akui/menu';
 import Modal from '~/modules/elements/modal';
 import useKeyboardNav from '~/modules/hooks/use-keyboard-nav';
@@ -16,8 +17,19 @@ interface Props {
  * Online games never reach here — the high-scores step is not rendered for them.
  */
 function LeaderboardPrompt({ leaderboard }: Props) {
-  const { isModalOpen, singers, asksWhichSinger, accountName, share, decline, reachesGlobalBoard, difficulty } =
-    leaderboard;
+  const {
+    isModalOpen,
+    singers,
+    asksWhichSinger,
+    accountName,
+    share,
+    decline,
+    reachesGlobalBoard,
+    difficulty,
+    canSendRecording,
+    withRecording,
+    setWithRecording,
+  } = leaderboard;
 
   // The board the player is actually being offered. Naming the global one to somebody whose Easy
   // run will never appear there is the one thing this prompt must not do.
@@ -48,6 +60,15 @@ function LeaderboardPrompt({ leaderboard }: Props) {
           </Menu.HelpText>
         )}
 
+        {canSendRecording && (
+          <Checkbox
+            {...register('leaderboard-with-recording', () => setWithRecording(!withRecording))}
+            size="small"
+            checked={withRecording}
+            data-test="leaderboard-with-recording">
+            Send my recording too: anyone can play it back
+          </Checkbox>
+        )}
         <Menu.ButtonGroup className="flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
           <Menu.Button
             size="small"
