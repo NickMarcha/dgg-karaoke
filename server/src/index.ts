@@ -25,6 +25,7 @@ const directory = new OnlineDirectory(new PostgresRoomStore(database));
 const tickets = new SocketTickets();
 const app = createApp({
   appOrigins: env.APP_ORIGIN,
+  siteOrigin: env.SITE_ORIGIN,
   auth: new Auth({ database, env }),
   secureCookies: isDeployed(env),
   signInRequired: env.SIGN_IN_REQUIRED,

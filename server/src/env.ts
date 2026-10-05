@@ -20,6 +20,8 @@ const envSchema = z
       .string()
       .transform((value) => value.split(',').map((origin) => origin.trim()))
       .pipe(z.array(z.url()).min(1)),
+    /** Where the API reads the site's own files, the song charts runs are scored against; the first APP_ORIGIN unless set. */
+    SITE_ORIGIN: z.url().optional(),
     PORT: z.coerce.number().int().positive().default(8787),
     DGG_CLIENT_ID: z.string().min(1),
     DGG_CLIENT_SECRET: z.string().min(1),

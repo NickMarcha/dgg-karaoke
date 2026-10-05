@@ -1,33 +1,25 @@
-import { createHash } from 'node:crypto';
-
 import { unpack } from 'msgpackr';
 import { z } from 'zod';
+
+import { decodeNotesPayload, type DecodedFrequencyRecord } from '~/modules/leaderboard/notes-payload';
 
 import {
   MAX_ID_LENGTH,
   MAX_NOTES_BYTES,
   MAX_NOTES_RECORDS,
   MAX_RECORDING_BYTES,
-  MAX_POINTS,
-  MAX_SONG_TEXT_LENGTH,
   MAX_SUBMITTED_TOLERANCE,
   MIN_NOTES_RECORDS,
-  QUALIFYING_SCORE,
 } from './rules.js';
-
-const songText = z.string().min(1).max(MAX_SONG_TEXT_LENGTH);
 
 const schema = z.object({
   songId: z.string().min(1).max(MAX_ID_LENGTH),
-  artist: songText,
-  title: songText,
-  songLastUpdate: z.string().max(MAX_ID_LENGTH).nullable(),
-  score: z.number().int().min(Math.ceil(QUALIFYING_SCORE)).max(MAX_POINTS),
   tolerance: z.number().int().min(1).max(MAX_SUBMITTED_TOLERANCE),
   mode: z.string().min(1).max(32),
   trackIndex: z.number().int().min(0).max(1),
+  /** Sung against both tracks merged into one, as every game but a two-singer one is. */
+  mergedTrack: z.boolean(),
   inputLag: z.number().int().min(-10_000).max(10_000),
-  notesHash: z.string().regex(/^[0-9a-f]{64}$/),
   notes: z.instanceof(Uint8Array).refine((notes) => notes.byteLength <= MAX_NOTES_BYTES),
   /** The singer's voice through the run, when they chose to send it; see `leaderboard_recordings`. */
   recording: z
@@ -42,14 +34,21 @@ const schema = z.object({
   recordingOffsetMs: z.number().int().min(-600_000).max(600_000).optional(),
 });
 
-export type Submission = z.infer<typeof schema>;
+export type Submission = z.infer<typeof schema> & { records: DecodedFrequencyRecord[] };
+
+/** A run once the API has scored it against its song, with the song's own artist and title. */
+export type ScoredSubmission = Submission & {
+  score: number;
+  artist: string;
+  title: string;
+  songLastUpdate: string | null;
+};
 
 export class SubmissionRefused extends Error {}
 
 /**
- * A run as the game packs it: msgpack, with the sung frequency records packed again inside. The hash
- * over notes and score is integrity, not authenticity, since anyone reading the site can compute
- * it; recomputing scores from the notes (layer 5 of the plan) is what will make them trustworthy.
+ * A run as the game packs it: msgpack, with the sung frequency records packed again inside. It
+ * carries no score: the API scores the records against the song itself (`scoreRun`).
  */
 export function readSubmission(body: Uint8Array): Submission {
   let parsed: unknown;
@@ -65,17 +64,18 @@ export function readSubmission(body: Uint8Array): Submission {
     throw new SubmissionRefused('A recording needs its type and where it starts in the song.');
   }
 
-  const expected = createHash('sha256').update(run.notes).update(String(run.score)).digest('hex');
-  if (expected !== run.notesHash) throw new SubmissionRefused('The score does not match the run.');
-
-  let records: unknown;
+  let records: DecodedFrequencyRecord[];
   try {
-    records = unpack(run.notes);
+    records = decodeNotesPayload(run.notes);
   } catch {
     throw new SubmissionRefused('The run has no readable notes.');
   }
-  if (!Array.isArray(records) || records.length < MIN_NOTES_RECORDS || records.length > MAX_NOTES_RECORDS) {
+  const readable = records.every(
+    ({ timestamp, frequency }) => Number.isFinite(timestamp) && Number.isFinite(frequency),
+  );
+  if (!readable) throw new SubmissionRefused('The run has no readable notes.');
+  if (records.length < MIN_NOTES_RECORDS || records.length > MAX_NOTES_RECORDS) {
     throw new SubmissionRefused('The run has too few or too many notes to be sung.');
   }
-  return run;
+  return { ...run, records };
 }

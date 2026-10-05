@@ -1,18 +1,17 @@
 /** What the API's leaderboard routes (`server/src/leaderboard/`) take and answer. */
 
-/** Body of `POST /api/leaderboard`, msgpack-packed. Whose run it is comes from the session. */
+/**
+ * Body of `POST /api/leaderboard`, msgpack-packed. Whose run it is comes from the session, and the
+ * score from the API, which sings the notes against the song itself (`score-run.ts`).
+ */
 export interface LeaderboardSubmission {
   songId: string;
-  artist: string;
-  title: string;
-  songLastUpdate: string | null;
-  score: number;
   tolerance: number;
   mode: string;
   trackIndex: number;
+  /** Sung against both tracks merged into one, as every game but a two-singer one is. */
+  mergedTrack: boolean;
   inputLag: number;
-  /** sha-256 hex over the packed notes bytes concatenated with the score. */
-  notesHash: string;
   notes: Uint8Array;
   /** The singer's voice through the run, when they choose to send it: the run is then Recorded. */
   recording?: Uint8Array;

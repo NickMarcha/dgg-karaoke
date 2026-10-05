@@ -1,12 +1,15 @@
 {
   "compilerOptions": {
     "target": "es2023",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["node"]
+    "isolatedModules": true,
+    "types": ["node"],
+    // The game's scoring, bundled into the API from the frontend's sources
+    "paths": { "~/*": ["../src/*"] }
   },
   "include": ["src", "drizzle.config.ts", "vitest.config.ts"]
 }

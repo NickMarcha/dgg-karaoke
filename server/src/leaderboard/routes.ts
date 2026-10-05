@@ -2,12 +2,15 @@ import { type Context, Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { z } from 'zod';
 
+import { scoreRun } from '~/modules/leaderboard/score-run';
+
 import type { SessionUser } from '../auth.js';
 import type { Daily } from '../daily/daily.js';
 import type { Database } from '../db.js';
 import { runStatus } from '../schema.js';
+import type { Charts } from './charts.js';
 import { Leaderboard } from './leaderboard.js';
-import { MAX_ID_LENGTH, MAX_SUBMISSION_BYTES, MAX_SUBMITTED_TOLERANCE } from './rules.js';
+import { MAX_ID_LENGTH, MAX_SUBMISSION_BYTES, MAX_SUBMITTED_TOLERANCE, QUALIFYING_SCORE } from './rules.js';
 import { readSubmission, SubmissionRefused } from './submission.js';
 
 /** A song lasts minutes, so more runs than this in one from one account are not being sung. */
@@ -23,10 +26,11 @@ interface Deps {
   database: Database;
   signedInUser: (context: Context) => Promise<SessionUser | null>;
   daily: Daily;
+  charts: Charts;
 }
 
 /** `/api/leaderboard`: the boards are public, putting a run on one takes a signed-in account. */
-export function leaderboardRoutes({ database, signedInUser, daily }: Deps) {
+export function leaderboardRoutes({ database, signedInUser, daily, charts }: Deps) {
   const leaderboard = new Leaderboard(database);
   const recent = new Map<string, number[]>();
   const routes = new Hono();
@@ -47,10 +51,18 @@ export function leaderboardRoutes({ database, signedInUser, daily }: Deps) {
     try {
       const run = readSubmission(new Uint8Array(await context.req.arrayBuffer()));
       recent.set(user.id, [...times, now]);
-      const improved = await leaderboard.submit(user.id, run);
+      const song = await charts.get(run.songId).catch(() => undefined);
+      if (song === undefined) return context.json({ error: 'The song could not be read to score the run.' }, 503);
+      if (!song) throw new SubmissionRefused('There is no such song to score the run against.');
+
+      // The score is the API's own, from the notes against the song: what the game says counts for nothing
+      const score = scoreRun(song, run);
+      if (score < QUALIFYING_SCORE) throw new SubmissionRefused(`That run scores ${score}, short of the board.`);
+      const scored = { ...run, score, artist: song.artist, title: song.title, songLastUpdate: song.lastUpdate ?? null };
+      const improved = await leaderboard.submit(user.id, scored);
       // Today's board counts a run that is not the singer's best of all time too
-      await daily.record(user.id, run);
-      return context.json({ improved }, 201);
+      await daily.record(user.id, scored);
+      return context.json({ improved, score }, 201);
     } catch (error) {
       if (error instanceof SubmissionRefused) return context.json({ error: error.message }, 400);
       throw error;

@@ -1,6 +1,5 @@
 /**
- * The leaderboard's numbers. The site has its own copy in `src/modules/leaderboard/consts.ts` (the
- * API image holds only `server/`), and `src/modules/leaderboard/rules-in-sync.test.ts` fails if the
+ * The leaderboard's numbers. The site has its own copy in `src/modules/leaderboard/consts.ts`, and `src/modules/leaderboard/rules-in-sync.test.ts` fails if the
  * two drift apart.
  */
 

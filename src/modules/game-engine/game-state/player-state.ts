@@ -1,9 +1,13 @@
 import { FrequencyRecord, NotesSection, PlayerNote, songBeat } from '~/interfaces';
 import { GameStateClass } from '~/modules/game-engine/game-state/game-state';
-import { appendFrequencyToPlayerNotes } from '~/modules/game-engine/game-state/helpers/append-frequency-to-player-notes';
+import {
+  addFrequencyRecord,
+  getSectionIndexByBeat,
+} from '~/modules/game-engine/game-state/helpers/append-frequency-to-player-notes';
 import calculateScore, { calculateDetailedScoreData } from '~/modules/game-engine/game-state/helpers/calculate-score';
 import InputManager from '~/modules/game-engine/input/input-manager';
 import events from '~/modules/game-events/game-events';
+import { packedPrecision } from '~/modules/leaderboard/notes-payload';
 import { PlayerNumber } from '~/modules/players/player-number';
 import isNotesSection from '~/modules/songs/utils/is-notes-section';
 import { getNoteAtBeat } from '~/modules/songs/utils/notes-selectors';
@@ -86,30 +90,21 @@ class PlayerState {
   };
 
   public updatePlayerNotes = (timestamp: number, frequency: number) => {
-    const record = { timestamp, frequency };
+    const record = { timestamp: packedPrecision(timestamp), frequency: packedPrecision(frequency) };
     this.frequencyRecords.push(record);
-
-    const recordBeat = record.timestamp / this.gameState.getSongBeatLength();
-    const recordSection = this.getSectionByBeat(recordBeat);
-
-    if (isNotesSection(recordSection)) {
-      const note = getNoteAtBeat(recordSection, recordBeat, 0) ?? getNoteAtBeat(recordSection, recordBeat, 0.5);
-
-      if (note) appendFrequencyToPlayerNotes(this.playerNotes, record, note, this.gameState.getSongBeatLength());
-    }
+    addFrequencyRecord(
+      this.playerNotes,
+      this.getTrack(),
+      record,
+      this.gameState.getSongBeatLength(),
+      this.gameState.getTolerance(),
+    );
   };
 
   public getPlayerNotes = () => this.playerNotes;
   public getPlayerFrequencies = () => this.frequencyRecords;
 
-  public getSectionIndexByBeat = (beat: songBeat) => {
-    return this.getTrack().sections.findIndex((section, index, sections) => {
-      if (beat < 0) return true;
-      if (beat < section.start) return false;
-      if (index === sections.length - 1) return true;
-      return sections[index + 1].start > beat;
-    });
-  };
+  public getSectionIndexByBeat = (beat: songBeat) => getSectionIndexByBeat(this.getTrack(), beat);
 
   public getNoteAtBeat = (beat: songBeat) => {
     const section = this.getSectionByBeat(beat);

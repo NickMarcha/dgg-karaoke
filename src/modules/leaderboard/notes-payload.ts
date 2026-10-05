@@ -7,6 +7,9 @@ import type { PlayerNote } from '~/interfaces';
 // precision instead of accumulating rounding error over tens of thousands of records.
 const PRECISION_SCALE = 100;
 
+/** A reading at the precision a run is packed at, so the API scoring the packed run reaches the same score. */
+export const packedPrecision = (value: number) => Math.round(value * PRECISION_SCALE) / PRECISION_SCALE;
+
 export type PackedRecord = number | [number, number];
 
 export interface DecodedFrequencyRecord {

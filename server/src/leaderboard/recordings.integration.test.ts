@@ -1,34 +1,21 @@
-import { createHash } from 'node:crypto';
-
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { pack } from 'msgpackr';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { leaderboardRecordings, users } from '../schema.js';
-import { createTestApp, signedInAccount, site } from '../test-support.js';
-import { QUALIFYING_SCORE } from './rules.js';
+import { createTestApp, signedInAccount, site, sungRun } from '../test-support.js';
 
 // Runs against a real Postgres: `npm run stack:test` starts one, and `.env.example` has its URL.
 const url = process.env.DATABASE_URL;
 
-const notes = new Uint8Array(pack(Array.from({ length: 150 }, () => 1)));
 const audio = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1, 2, 3, 4]);
 
-function run({ score = QUALIFYING_SCORE + 100, recording = false } = {}) {
+/** `share` is how much of the song was sung on pitch: more scores more. */
+function run({ share = 0.75, recording = false } = {}) {
   return new Uint8Array(
     pack({
-      songId: 'artist-title',
-      artist: 'Artist',
-      title: 'Title',
-      songLastUpdate: null,
-      score,
-      tolerance: 2,
-      mode: 'REGULAR',
-      trackIndex: 0,
-      inputLag: 0,
-      notes,
-      notesHash: createHash('sha256').update(notes).update(String(score)).digest('hex'),
+      ...sungRun({ share }),
       ...(recording ? { recording: audio, recordingType: 'audio/webm;codecs=opus', recordingOffsetMs: 1500 } : {}),
     }),
   );
@@ -109,7 +96,7 @@ describe.skipIf(!url)('recorded and verified runs', () => {
   it('drops the recording of a run a better one replaces', async () => {
     const singer = await signedInAccount(database, 'Singer');
     await submit(singer.cookie, run({ recording: true }));
-    await submit(singer.cookie, run({ score: QUALIFYING_SCORE + 900 }));
+    await submit(singer.cookie, run({ share: 1 }));
 
     expect((await board())[0]!.status).toBe('score');
     expect(await database.select().from(leaderboardRecordings)).toEqual([]);
@@ -146,7 +133,7 @@ describe.skipIf(!url)('recorded and verified runs', () => {
     const recorded = await signedInAccount(database, 'Recorded');
     const plain = await signedInAccount(database, 'Plain');
     await submit(recorded.cookie, run({ recording: true }));
-    await submit(plain.cookie, run({ score: QUALIFYING_SCORE + 500 }));
+    await submit(plain.cookie, run({ share: 1 }));
 
     const queue = await json<{ rows: (Entry & { vouches: number; reports: number })[] }>(
       app.request('/api/moderation/leaderboard?status=recorded', { headers: { cookie: moderator.cookie } }),

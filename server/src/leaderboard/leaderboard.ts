@@ -18,7 +18,7 @@ import {
   SONG_BOARD_NEIGHBOURS,
   SONG_BOARD_SIZE,
 } from './rules.js';
-import type { Submission } from './submission.js';
+import type { ScoredSubmission } from './submission.js';
 
 /** A public row: who, what and when, nothing that identifies the account beyond its name. */
 const entry = {
@@ -56,8 +56,8 @@ export class Leaderboard {
    * with the singer's voice. Its recording, vouches and reports belonged to the run it replaced and go
    * with it. Says whether it was kept.
    */
-  public async submit(userId: string, run: Submission): Promise<boolean> {
-    const { notes, recording, recordingType, recordingOffsetMs, ...record } = run;
+  public async submit(userId: string, run: ScoredSubmission): Promise<boolean> {
+    const { notes, records, recording, recordingType, recordingOffsetMs, ...record } = run;
     const status: RunStatus = recording ? 'recorded' : 'score';
     return this.database.transaction(async (transaction) => {
       const [kept] = await transaction

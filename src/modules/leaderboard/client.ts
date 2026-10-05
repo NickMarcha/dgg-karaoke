@@ -1,7 +1,6 @@
 import { pack } from 'msgpackr';
 
 import { readJson } from '~/modules/api';
-import { computeNotesHash } from '~/modules/leaderboard/notes-hash';
 import { RunRecording } from '~/modules/leaderboard/recording-take';
 import { BoardEntry, BoardResponse, LeaderboardSubmission, SongBoardResponse } from '~/modules/leaderboard/types';
 
@@ -9,19 +8,19 @@ import { BoardEntry, BoardResponse, LeaderboardSubmission, SongBoardResponse } f
 export const LEADERBOARD_URL = '/api/leaderboard';
 const SONG_LEADERBOARD_URL = '/api/leaderboard/song';
 
-export type SubmitScoreInput = Omit<
-  LeaderboardSubmission,
-  'notesHash' | 'recording' | 'recordingType' | 'recordingOffsetMs'
->;
+/** A run as the game hands it round: what is sent, and the score and song it shows the singer. */
+export type SubmitScoreInput = Omit<LeaderboardSubmission, 'recording' | 'recordingType' | 'recordingOffsetMs'> & {
+  score: number;
+  artist: string;
+  title: string;
+};
 
 /** Puts a run on the board as the signed-in account, with the singer's recording if given. Says whether the API took it. */
 export async function submitScore(input: SubmitScoreInput, recording?: RunRecording | null): Promise<boolean> {
   try {
-    const score = Math.round(input.score);
+    const { score, artist, title, ...run } = input;
     const submission: LeaderboardSubmission = {
-      ...input,
-      score,
-      notesHash: await computeNotesHash(input.notes, score),
+      ...run,
       ...(recording
         ? { recording: recording.data, recordingType: recording.type, recordingOffsetMs: recording.offsetMs }
         : {}),

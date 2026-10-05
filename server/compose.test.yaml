@@ -9,7 +9,10 @@ services:
       - '127.0.0.1:54330:5432'
 
   api:
-    build: .
+    # From the repository root: the API bundles the game's scoring from `src/`
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
     pull_policy: build
     # The dev server, the e2e production preview and the e2e dev server. CORS and the relay compare
     # them byte for byte.
@@ -24,8 +27,12 @@ services:
       DGG_REDIRECT_URI: http://localhost:3000/auth/callback
       # The e2e specs drive the relays as anonymous browsers, the flag's off position.
       SIGN_IN_REQUIRED: ${SIGN_IN_REQUIRED:-false}
+      # The songs the e2e specs sing, which the API scores runs against
+      SITE_ORIGIN: http://song-files
     depends_on:
       dgg-oauth:
+        condition: service_started
+      song-files:
         condition: service_started
     ports:
       - '8788:8787'
@@ -45,3 +52,9 @@ services:
       - ./dev/dgg-oauth/server.mjs:/srv/server.mjs:ro
     ports:
       - '8789:8789'
+
+  # The e2e specs' songs, served as the site serves its own: `/songs/<id>.txt`, as plain text.
+  song-files:
+    image: nginx:alpine
+    volumes:
+      - ../tests/fixtures/songs:/usr/share/nginx/html/songs:ro

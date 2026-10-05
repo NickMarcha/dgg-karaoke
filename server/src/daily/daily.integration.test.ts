@@ -1,36 +1,19 @@
-import { createHash } from 'node:crypto';
-
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { pack } from 'msgpackr';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { QUALIFYING_SCORE } from '../leaderboard/rules.js';
 import { dailySongs, users } from '../schema.js';
-import { createTestApp, signedInAccount, site } from '../test-support.js';
+import { createTestApp, signedInAccount, site, sungRun } from '../test-support.js';
 
 // Runs against a real Postgres: `npm run stack:test` starts one, and `.env.example` has its URL.
 const url = process.env.DATABASE_URL;
 
-const pool = ['song-a', 'song-b', 'song-c'];
-const notes = new Uint8Array(pack(Array.from({ length: 150 }, () => 1)));
+const pool = ['e2e-single-english-1995', 'e2e-new-english-1995', 'e2e-christmas-english-1995'];
 
-function run(songId: string, score = QUALIFYING_SCORE + 100, tolerance = 2) {
-  return new Uint8Array(
-    pack({
-      songId,
-      artist: 'Artist',
-      title: 'Title',
-      songLastUpdate: null,
-      score,
-      tolerance,
-      mode: 'REGULAR',
-      trackIndex: 0,
-      inputLag: 0,
-      notes,
-      notesHash: createHash('sha256').update(notes).update(String(score)).digest('hex'),
-    }),
-  );
+/** `share` is how much of the song was sung on pitch: more scores more. */
+function run(songId: string, share = 0.75, tolerance = 2) {
+  return new Uint8Array(pack(sungRun({ songId, share, tolerance })));
 }
 
 interface Daily {
@@ -84,15 +67,17 @@ describe.skipIf(!url)('song of the day', () => {
     const second = await signedInAccount(database, 'Second');
     const easy = await signedInAccount(database, 'Easy');
 
-    await submit(first.cookie, run(songId!, QUALIFYING_SCORE + 500));
-    await submit(first.cookie, run(songId!, QUALIFYING_SCORE + 100));
-    await submit(second.cookie, run(songId!, QUALIFYING_SCORE + 300));
-    await submit(second.cookie, run(other, QUALIFYING_SCORE + 900));
-    await submit(easy.cookie, run(songId!, QUALIFYING_SCORE + 900, 3));
+    const scoreOf = async (response: Response | Promise<Response>) =>
+      ((await (await response).json()) as { score: number }).score;
+    const best = await scoreOf(submit(first.cookie, run(songId!, 1)));
+    await submit(first.cookie, run(songId!, 0.6));
+    const secondBest = await scoreOf(submit(second.cookie, run(songId!, 0.75)));
+    await submit(second.cookie, run(other, 1));
+    await submit(easy.cookie, run(songId!, 1, 3));
 
     expect((await daily()).entries.map(({ name, score }) => [name, score])).toEqual([
-      ['First', QUALIFYING_SCORE + 500],
-      ['Second', QUALIFYING_SCORE + 300],
+      ['First', best],
+      ['Second', secondBest],
     ]);
   });
 

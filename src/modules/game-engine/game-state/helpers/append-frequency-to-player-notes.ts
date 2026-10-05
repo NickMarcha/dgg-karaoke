@@ -1,21 +1,51 @@
 import { noDistanceNoteTypes } from '~/consts';
-import { FrequencyRecord, Note, PlayerNote } from '~/interfaces';
+import { FrequencyRecord, Note, PlayerNote, SongTrack } from '~/interfaces';
 import { calcDistance } from '~/modules/game-engine/game-state/helpers/calc-distance';
 import detectVibrato from '~/modules/game-engine/game-state/helpers/detect-vibrato';
+import isNotesSection from '~/modules/songs/utils/is-notes-section';
+import { getNoteAtBeat } from '~/modules/songs/utils/notes-selectors';
 
 const SINGING_BREAK_TOLERANCE_MS = 100;
+
+/** The section a beat falls in: the first one before the song starts, the last one after it ends. */
+export const getSectionIndexByBeat = (track: SongTrack, beat: number) =>
+  track.sections.findIndex((section, index, sections) => {
+    if (beat < 0) return true;
+    if (beat < section.start) return false;
+    if (index === sections.length - 1) return true;
+    return sections[index + 1].start > beat;
+  });
+
+/**
+ * One pitch reading added to a singer's notes, against the note it falls on, if any. The whole of
+ * scoring as the game does it while singing, and as the API does it again from a submitted run.
+ */
+export function addFrequencyRecord(
+  playerNotes: PlayerNote[],
+  track: SongTrack,
+  record: FrequencyRecord,
+  beatLength: number,
+  tolerance: number,
+) {
+  const recordBeat = record.timestamp / beatLength;
+  const section = track.sections[getSectionIndexByBeat(track, recordBeat)];
+  if (!isNotesSection(section)) return;
+  const note = getNoteAtBeat(section, recordBeat, 0) ?? getNoteAtBeat(section, recordBeat, 0.5);
+  if (note) appendFrequencyToPlayerNotes(playerNotes, record, note, beatLength, tolerance);
+}
 
 export function appendFrequencyToPlayerNotes(
   playerNotes: PlayerNote[],
   record: FrequencyRecord,
   note: Note,
   beatLength: number,
+  tolerance: number,
 ) {
   if (record.frequency === 0) return;
   const noteCandidate = {
     ...record,
     beat: Math.max(0, record.timestamp) / beatLength,
-    ...calcDistance(record.frequency, note.pitch),
+    ...calcDistance(record.frequency, note.pitch, tolerance),
   };
   const lastNote = playerNotes.at(-1);
 

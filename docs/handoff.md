@@ -270,6 +270,12 @@ video, vouching and reporting, moderators verifying), online rooms offering each
 run, a run being the singer's own score rather than co-op's team average, and pausing for buffering
 as a room setting.
 
+The API now scores every run itself from its notes (`docs/leaderboard.md`, Scoring a run), with the
+game's scoring bundled from `src/`; its image builds from the repository root. The migration that
+added it emptied the boards. One local e2e run of the signed-in leaderboard spec saw the API refuse
+a run, and four after it did not; the cause was not caught. If it comes back, the API's answer says
+why (the spec can log the POST response).
+
 Next:
 
 1. **Try it on the live site** with real accounts: sign in and out (Safari
@@ -278,10 +284,8 @@ Next:
    submitting a song, and reviewing it as a moderator. Send a recording
    from a phone and play it back on its run page: whether half the round
    trip places a real phone's voice in step has only been checked in e2e.
-2. **The rest of layer 5** (recomputing scores from the notes, drawing replays) or **layer 6, OBS sources**: the plan
-   lists them in that order; layer 5's design has real choices in it
-   (`grill-me` first), including the user's verified entries with a voice
-   recording.
+2. **Replays** (the rest of layer 5: drawing a run from its stored notes over the song, with the
+   game's renderer) or **layer 6, OBS sources**: the plan lists them in that order.
 3. **Refresh the visual baselines.** All 291 (`tests/visual-regression`,
    `tests/storybook`) are Linux renders of the old look, and upstream's CI
    that produced them is gone. Regenerating on Windows only adds `-win32`

@@ -1,0 +1,1 @@
+ALTER TABLE "leaderboard_records" DROP COLUMN "notes_hash";

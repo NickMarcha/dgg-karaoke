@@ -8,6 +8,16 @@ on:
     branches: [main]
     paths:
       - 'server/**'
+      # What the API bundles from the game to score runs (`src/modules/leaderboard/score-run.ts`)
+      - 'src/consts.ts'
+      - 'src/interfaces.ts'
+      - 'src/modules/game-engine/game-state/helpers/**'
+      - 'src/modules/game-engine/helpers/**'
+      - 'src/modules/leaderboard/score-run.ts'
+      - 'src/modules/leaderboard/notes-payload.ts'
+      - 'src/modules/songs/utils/**'
+      - 'src/modules/utils/**'
+      - 'src/modules/players/player-number.ts'
       - '.github/workflows/api-image.yml'
   workflow_dispatch:
 
@@ -35,7 +45,8 @@ jobs:
 
       - uses: docker/build-push-action@v6
         with:
-          context: server
+          context: .
+          file: server/Dockerfile
           push: true
           tags: |
             ghcr.io/nickmarcha/dgg-karaoke-api:main

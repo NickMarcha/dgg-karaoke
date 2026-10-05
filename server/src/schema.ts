@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  boolean,
   customType,
   date,
   index,
@@ -110,8 +111,8 @@ export const leaderboardRecords = pgTable(
     tolerance: smallint('tolerance').notNull(),
     mode: text('mode').notNull(),
     trackIndex: smallint('track_index').notNull(),
+    mergedTrack: boolean('merged_track').notNull(),
     inputLag: integer('input_lag').notNull(),
-    notesHash: text('notes_hash').notNull(),
     status: runStatus('status').notNull().default('score'),
     /** When the run was sung: a better run replaces the row and its date. */
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

@@ -21,7 +21,9 @@ DGG Radio's stack clones its repository and builds on the server. This one can't
 
 **Site.** Netlify runs `pnpm exec playwright install chromium && pnpm build` and publishes `build/`. The Chromium download is for the prerender step, which renders each route in a headless browser. `VITE_APP_API_URL` is set in `netlify.toml` and `VITE_APP_POSTHOG_KEY` in Netlify's environment; both are baked in at build time, so changing either takes a rebuild.
 
-**API.** If the push touches `server/`, the `API image` workflow builds `server/Dockerfile` and pushes two tags: `main` and the commit SHA. Publishing them makes GitHub send a `package` webhook to Komodo (`https://hooks.nickmarcha.com/listener/github/procedure/<id>/__ANY__`), which runs the `dgg-karaoke-deploy` procedure: `DeployStack dgg-karaoke`, which pulls `main` and recreates the API. A change is live about two minutes after the push, most of it the build. Each push fires the webhook once per published package event (three so far); the later runs find the image already current and change nothing.
+**API.** If the push touches `server/` or the game's scoring the API bundles from `src/` (the paths are
+listed in `.github/workflows/api-image.yml`), the `API image` workflow builds `server/Dockerfile` from
+the repository root (`Dockerfile.dockerignore` beside it lets in only `server/` and `src/`) and pushes two tags: `main` and the commit SHA. Publishing them makes GitHub send a `package` webhook to Komodo (`https://hooks.nickmarcha.com/listener/github/procedure/<id>/__ANY__`), which runs the `dgg-karaoke-deploy` procedure: `DeployStack dgg-karaoke`, which pulls `main` and recreates the API. A change is live about two minutes after the push, most of it the build. Each push fires the webhook once per published package event (three so far); the later runs find the image already current and change nothing.
 
 The procedure has its own webhook secret, shared only with this repository's webhook. `__ANY__` in the URL tells Komodo not to look for a branch, which a package event does not carry.
 

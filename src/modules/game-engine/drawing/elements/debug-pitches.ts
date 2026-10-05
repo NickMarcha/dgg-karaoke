@@ -1,3 +1,4 @@
+import GameState from '~/modules/game-engine/game-state/game-state';
 import { calcDistance } from '~/modules/game-engine/game-state/helpers/calc-distance';
 import isNotesSection from '~/modules/songs/utils/is-notes-section';
 
@@ -28,7 +29,11 @@ export default function debugPitches(ctx: CanvasRenderingContext2D, data: Drawin
     const entryX =
       playerCanvas.baseX + (entryRelativeTime / maxTime) * (canvas!.width - playerCanvas.baseX - playerCanvas.baseX);
 
-    const { distance: toleratedDistance } = calcDistance(entry.frequency, noteAtTheTime.pitch);
+    const { distance: toleratedDistance } = calcDistance(
+      entry.frequency,
+      noteAtTheTime.pitch,
+      GameState.getTolerance(),
+    );
     const final = maxPitch - (noteAtTheTime.pitch + toleratedDistance) + pitchPadding;
 
     ctx?.fillRect(entryX, 10 + regionPaddingTop + final * pitchStepHeight, 5, 10);

@@ -231,8 +231,9 @@ is a decision for when the first two exist.
 
 Built (`docs/leaderboard.md`, Score / Recorded / Verified): recordings from the computer's, online
 singers' and phones' microphones, the run page that plays them against the video, vouching and
-reporting, and moderators verifying. Recomputing scores from the notes (step 1 above) and drawing the
-replay (step 2) are still to come.
+reporting, and moderators verifying. Recomputing scores from the notes (step 1 above) is built too: the
+API scores every run with the game's own code, bundled from `src/`. Drawing the replay (step 2) is
+still to come.
 
 The user wants that third tier: **verified entries**, where a singer chooses to
 submit a recording with the run. Only the voice, from the microphone, never the

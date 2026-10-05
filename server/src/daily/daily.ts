@@ -4,7 +4,7 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm';
 
 import type { Database } from '../db.js';
 import { GLOBAL_BOARD_SIZE, MAX_GLOBAL_BOARD_TOLERANCE } from '../leaderboard/rules.js';
-import type { Submission } from '../leaderboard/submission.js';
+import type { ScoredSubmission } from '../leaderboard/submission.js';
 import { dailyRuns, dailySongs, users } from '../schema.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -62,7 +62,7 @@ export class Daily {
   }
 
   /** Counts a run toward today's board if it is today's song at a difficulty the board ranks. */
-  public async record(userId: string, run: Submission) {
+  public async record(userId: string, run: ScoredSubmission) {
     if (run.tolerance > MAX_GLOBAL_BOARD_TOLERANCE) return;
     const day = this.today();
     if (run.songId !== (await this.songFor(day))) return;

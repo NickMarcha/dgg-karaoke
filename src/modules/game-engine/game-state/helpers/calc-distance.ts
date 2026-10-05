@@ -1,5 +1,4 @@
 import { MIDDLEA, SEMITONE } from '~/consts';
-import GameState from '~/modules/game-engine/game-state/game-state';
 import pitchToFrequency from '~/modules/utils/pitch-to-frequency';
 
 export const pitchFromFrequency = (freq: number) =>
@@ -25,8 +24,7 @@ export const calcDistanceBetweenPitches = (note: number, targetNote: number, tol
   return Math.abs(noteDistance) <= tolerance ? 0 : noteDistance;
 };
 
-export const calcDistance = (frequency: number, targetNote: number) => {
-  const tolerance = GameState.getTolerance();
+export const calcDistance = (frequency: number, targetNote: number, tolerance: number) => {
   const note = pitchFromFrequency(frequency);
   let preciseDistance: number = -1;
   const distance = calcDistanceBetweenPitches(note, targetNote, tolerance);

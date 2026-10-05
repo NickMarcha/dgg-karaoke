@@ -20,6 +20,7 @@ vi.mock('~/modules/game-engine/input/input-manager', () => ({ default: { getPlay
 vi.mock('~/modules/game-engine/game-state/game-state', () => ({
   default: {
     getTolerance: () => 2,
+    isMergedTrack: () => true,
     // What co-op shows: the team's average, which is nobody's own run
     getPlayerScore: () => game.teamScore,
     getPlayer: (number: number) => {

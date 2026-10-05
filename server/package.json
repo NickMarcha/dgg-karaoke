@@ -19,7 +19,9 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.1.1",
+    "@sindresorhus/transliterate": "^2.3.1",
     "drizzle-orm": "^0.45.2",
+    "es-toolkit": "^1.52.0",
     "hono": "^4.13.5",
     "msgpackr": "^2.1.0",
     "pg": "^8.23.0",
@@ -34,6 +36,7 @@
     "tsup": "^8.5.1",
     "tsx": "^4.23.12",
     "typescript": "^6.0.3",
+    "utility-types": "^3.11.0",
     "vitest": "^4.1.11"
   },
   "allowScripts": {

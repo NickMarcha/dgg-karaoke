@@ -9,12 +9,14 @@ import { type Auth, AuthenticationError } from './auth.js';
 import { Daily, popularSongPool } from './daily/daily.js';
 import { dailyModerationRoutes, dailyRoutes } from './daily/routes.js';
 import type { Database } from './db.js';
+import { Charts } from './leaderboard/charts.js';
 import { leaderboardModerationRoutes, leaderboardRoutes } from './leaderboard/routes.js';
 import { type OnlineDirectory, ROOM_CODE_PATTERN } from './online/directory.js';
 import { fetchThroughProxy, ProxyRefused, proxyTarget } from './proxy.js';
 import type { UserRole } from './schema.js';
 import type { SocketTickets } from './socket-tickets.js';
 import { songModerationRoutes, songRoutes } from './songs/routes.js';
+import { Songs } from './songs/songs.js';
 import { RoleChangeRefused, Users } from './users.js';
 
 const SESSION_COOKIE = 'dgg_karaoke_session';
@@ -33,8 +35,12 @@ interface AppDeps {
   database: Database;
   directory: OnlineDirectory;
   fetchImpl?: typeof fetch;
+  /** Where the API reads the site's own files (song charts, the popular songs); the first app origin unless given. */
+  siteOrigin?: string;
   /** Song ids the song of the day is picked from; the site's popular songs unless given. */
   dailyPool?: () => Promise<string[]>;
+  /** The songs runs are scored against; the site's files and the published community songs unless given. */
+  charts?: Charts;
 }
 
 export function createApp({
@@ -46,7 +52,9 @@ export function createApp({
   database,
   directory,
   fetchImpl = fetch,
-  dailyPool = popularSongPool(appOrigins[0]!, fetchImpl),
+  siteOrigin = appOrigins[0]!,
+  dailyPool = popularSongPool(siteOrigin, fetchImpl),
+  charts = new Charts({ siteOrigin, fetchImpl, publishedTxt: (songId) => new Songs(database).publishedTxt(songId) }),
 }: AppDeps) {
   const app = new Hono();
   const people = new Users(database);
@@ -105,7 +113,7 @@ export function createApp({
     return context.json({ ticket: tickets.issue(user) });
   });
 
-  app.route('/api/leaderboard', leaderboardRoutes({ database, signedInUser, daily }));
+  app.route('/api/leaderboard', leaderboardRoutes({ database, signedInUser, daily, charts }));
   app.route('/api/daily', dailyRoutes(daily));
   app.route('/api/songs', songRoutes({ database, signedInUser }));
 

@@ -19,7 +19,8 @@ and a device id. This is the same design on our API; what changed is who a row b
 | `src/modules/leaderboard/consts.ts`                    | The site's copy of those numbers; `rules-in-sync.test.ts` compares them  |
 | `src/modules/leaderboard/client.ts`                    | Submitting and fetching                                                  |
 | `src/modules/leaderboard/notes-payload.ts`             | Delta encoder/decoder for the sung frequency records                     |
-| `src/modules/leaderboard/notes-hash.ts`                | sha-256 over `notes ++ score`, recomputed by the API                     |
+| `src/modules/leaderboard/score-run.ts`                 | A run's score from its notes and the song: the game's scoring, for the API |
+| `server/src/leaderboard/charts.ts`                     | The songs the API scores runs against                                    |
 | `src/routes/game/singing/post-game/views/leaderboard/` | The prompt, the panel above the boards, and the hook holding their state |
 | `src/modules/leaderboard/leaderboard-row.tsx`          | One row, shared by the main-menu board and the song boards               |
 | `src/routes/welcome/leaderboard-panel.tsx`             | The board on the main menu                                               |
@@ -44,8 +45,9 @@ Deleting an account deletes its rows and their notes.
 All through the site's `/api` proxy, so a submission carries the session cookie.
 
 - `POST /api/leaderboard`: a run, msgpack-packed, as the signed-in account. 401 when signed out; 400
-  for anything that cannot be a sung run (below); 413 over 256 KB; 429 past six accepted runs a
-  minute from one account. Answers `{ improved }`: whether the run beat the account's best.
+  for anything that cannot be a sung run, or scores short of the board (below); 413 over 10 MB; 429
+  past six accepted runs a minute from one account; 503 when the song cannot be read to score it.
+  Answers `{ improved, score }`: whether the run beat the account's best, and the score it was given.
 - `GET /api/leaderboard`: the global board, `{ entries }`, the top 50 of the last 14 days at Medium
   or harder. A plain query; there is no cache, since there is no free-tier quota to protect.
 - `GET /api/leaderboard/song?songId&tolerance&score`: one song at one difficulty,
@@ -55,16 +57,26 @@ All through the site's `/api` proxy, so a submission carries the session cookie.
   removing one with its run. The Leaderboard tab of `/admin/` uses them. A removal leaves no trace;
   an audit log is for when there is more than one moderator to tell apart.
 
-## Checking a run
+## Scoring a run
 
-`readSubmission` refuses, in order: a body that is not msgpack or is missing a field or has an
-impossible value (a score that is not an integer, below the qualifying 1,000,000 or above the
-3,500,000 maximum; a difficulty easier than Easy; song text over 200 characters), a hash that does
-not match `notes ++ score`, and notes that do not unpack to between 100 and 200,000 records.
+The API works out every score itself; a run carries no score. It reads the song as the game plays it
+(`charts.ts`: the site's own `/songs/<id>.txt`, else a published community song, processed by the
+game's own `processSong`), and sings the run's notes against it with the game's own scoring
+(`score-run.ts`, bundled into the API from `src/`). Artist and title come from the song too. Editing
+a request can change nothing but the notes, and notes are what a singer has to produce.
 
-The hash is integrity, not authenticity: it stops someone editing the score of a captured request,
-but anyone reading the site can compute a valid one. What a sign-in adds is accountability: every row
-is somebody's destiny.gg account. Recomputing the score from the notes is layer 5.
+The two agree to the point: the game rounds each pitch reading to the 0.01 ms and 0.01 Hz the run is
+packed at (`packedPrecision`), so the packed notes reproduce its score exactly
+(`score-run.test.ts`, alone, in a duet and in a group). A run says whether it was sung against the
+song's merged track, as every game but a two-singer one is, and which track it was.
+
+`readSubmission` refuses, before scoring: a body that is not msgpack or is missing a field or has
+an impossible value (a difficulty easier than Easy), and notes that do not unpack to between 100
+and 200,000 readings. After it, a song the API does not have, and a score under 1,000,000.
+
+What this does not prove is that a person sang it: readings can be made up. That is what a
+recording is for (below). A song changed after the run was sung is scored as it is now, and a song
+edited or imported on one computer only is not on the board at all.
 
 ## The song board
 

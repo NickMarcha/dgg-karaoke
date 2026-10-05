@@ -17,11 +17,11 @@ export function buildRun(song: Song, singSetup: SingSetup, playerNumber: PlayerN
     songId: song.id,
     artist: song.artist,
     title: song.title,
-    songLastUpdate: song.lastUpdate ?? null,
     score: Math.round(playerState?.getScore() ?? 0),
     tolerance: GameState.getTolerance(),
     mode: singSetup.mode,
     trackIndex: playerState?.getTrackIndex() ?? 0,
+    mergedTrack: GameState.isMergedTrack(),
     inputLag: InputManager.getPlayerInputLag(playerNumber),
     notes: encodeNotesPayload(playerState?.getPlayerNotes() ?? []),
   };

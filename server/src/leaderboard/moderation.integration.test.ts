@@ -31,8 +31,8 @@ describe.skipIf(!url)('leaderboard moderation', () => {
         tolerance: 2,
         mode: 'REGULAR',
         trackIndex: 0,
+        mergedTrack: true,
         inputLag: 0,
-        notesHash: 'hash',
       })
       .returning({ id: leaderboardRecords.id });
     await database.insert(leaderboardNotes).values({ recordId: record!.id, notes: Buffer.from([1]) });

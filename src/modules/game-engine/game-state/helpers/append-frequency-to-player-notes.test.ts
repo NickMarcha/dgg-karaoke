@@ -8,7 +8,7 @@ describe('appendFrequencyToPlayerNotes', () => {
     const record: FrequencyRecord = { timestamp: 0, frequency: 440 };
     const note: Note = generateNote(0, 3, { pitch: 69 });
 
-    appendFrequencyToPlayerNotes(playerNotes, record, note, 1);
+    appendFrequencyToPlayerNotes(playerNotes, record, note, 1, 2);
 
     expect(playerNotes).toContainEqual(expect.objectContaining({ length: 0, distance: 0 }));
   });
@@ -17,9 +17,9 @@ describe('appendFrequencyToPlayerNotes', () => {
     const playerNotes: PlayerNote[] = [];
     const note: Note = generateNote(0, 3, { pitch: 69 });
 
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 0, frequency: 440 }, note, 1);
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 1, frequency: 440 }, note, 1);
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 2, frequency: 440 }, note, 1);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 0, frequency: 440 }, note, 1, 2);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 1, frequency: 440 }, note, 1, 2);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 2, frequency: 440 }, note, 1, 2);
 
     expect(playerNotes).toContainEqual(expect.objectContaining({ length: 2, distance: 0 }));
   });
@@ -28,12 +28,12 @@ describe('appendFrequencyToPlayerNotes', () => {
     const playerNotes: PlayerNote[] = [];
     const note: Note = generateNote(0, 5, { pitch: 69 });
 
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 0, frequency: 440 }, note, 1);
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 1, frequency: 440 }, note, 1);
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 2, frequency: 380 }, note, 1);
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 3, frequency: 380 }, note, 1);
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 4, frequency: 440 }, note, 1);
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 5, frequency: 440 }, note, 1);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 0, frequency: 440 }, note, 1, 2);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 1, frequency: 440 }, note, 1, 2);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 2, frequency: 380 }, note, 1, 2);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 3, frequency: 380 }, note, 1, 2);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 4, frequency: 440 }, note, 1, 2);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 5, frequency: 440 }, note, 1, 2);
 
     expect(playerNotes).toContainEqual(expect.objectContaining({ length: 1, distance: 0 }));
     expect(playerNotes).toContainEqual(expect.objectContaining({ length: 1, distance: -3 }));
@@ -45,10 +45,10 @@ describe('appendFrequencyToPlayerNotes', () => {
     const note1: Note = generateNote(0, 2, { pitch: 69 });
     const note2: Note = generateNote(3, 5, { pitch: 69 });
 
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 0, frequency: 440 }, note1, 100);
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 100, frequency: 440 }, note1, 100);
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 400, frequency: 440 }, note2, 100);
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 500, frequency: 440 }, note2, 100);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 0, frequency: 440 }, note1, 100, 2);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 100, frequency: 440 }, note1, 100, 2);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 400, frequency: 440 }, note2, 100, 2);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 500, frequency: 440 }, note2, 100, 2);
 
     expect(playerNotes).toContainEqual(expect.objectContaining({ length: 1, distance: 0, note: note1 }));
     expect(playerNotes).toContainEqual(expect.objectContaining({ length: 1, distance: 0, note: note2 }));
@@ -58,10 +58,10 @@ describe('appendFrequencyToPlayerNotes', () => {
     const playerNotes: PlayerNote[] = [];
     const note: Note = generateNote(0, 3, { pitch: 69, type: 'freestyle' });
 
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 0, frequency: 440 }, note, 1);
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 1, frequency: 320 }, note, 1);
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 2, frequency: 380 }, note, 1);
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 3, frequency: 440 }, note, 1);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 0, frequency: 440 }, note, 1, 2);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 1, frequency: 320 }, note, 1, 2);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 2, frequency: 380 }, note, 1, 2);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 3, frequency: 440 }, note, 1, 2);
 
     expect(playerNotes).toContainEqual(expect.objectContaining({ length: 3, distance: 0, note }));
   });
@@ -70,10 +70,10 @@ describe('appendFrequencyToPlayerNotes', () => {
     const playerNotes: PlayerNote[] = [];
     const note: Note = generateNote(0, 6, { pitch: 69 });
 
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 300, frequency: 440 }, note, 100);
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 400, frequency: 440 }, note, 100);
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 500, frequency: 440 }, note, 100);
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 600, frequency: 440 }, note, 100);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 300, frequency: 440 }, note, 100, 2);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 400, frequency: 440 }, note, 100, 2);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 500, frequency: 440 }, note, 100, 2);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 600, frequency: 440 }, note, 100, 2);
 
     expect(playerNotes).toContainEqual(expect.objectContaining({ length: 3, start: 3, distance: 0 }));
   });
@@ -83,11 +83,11 @@ describe('appendFrequencyToPlayerNotes', () => {
       const playerNotes: PlayerNote[] = [];
       const note: Note = generateNote(0, 5, { pitch: 69 });
 
-      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 0, frequency: 440 }, note, 100);
-      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 100, frequency: 440 }, note, 100);
-      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 150, frequency: 0 }, note, 100);
-      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 200, frequency: 440 }, note, 100);
-      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 300, frequency: 440 }, note, 100);
+      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 0, frequency: 440 }, note, 100, 2);
+      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 100, frequency: 440 }, note, 100, 2);
+      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 150, frequency: 0 }, note, 100, 2);
+      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 200, frequency: 440 }, note, 100, 2);
+      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 300, frequency: 440 }, note, 100, 2);
 
       expect(playerNotes).toContainEqual(expect.objectContaining({ length: 3, start: 0, distance: 0 }));
     });
@@ -95,12 +95,12 @@ describe('appendFrequencyToPlayerNotes', () => {
       const playerNotes: PlayerNote[] = [];
       const note: Note = generateNote(0, 5, { pitch: 69 });
 
-      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 0, frequency: 440 }, note, 100);
-      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 100, frequency: 440 }, note, 100);
-      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 200, frequency: 0 }, note, 100);
-      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 300, frequency: 0 }, note, 100);
-      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 400, frequency: 440 }, note, 100);
-      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 500, frequency: 440 }, note, 100);
+      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 0, frequency: 440 }, note, 100, 2);
+      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 100, frequency: 440 }, note, 100, 2);
+      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 200, frequency: 0 }, note, 100, 2);
+      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 300, frequency: 0 }, note, 100, 2);
+      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 400, frequency: 440 }, note, 100, 2);
+      appendFrequencyToPlayerNotes(playerNotes, { timestamp: 500, frequency: 440 }, note, 100, 2);
 
       expect(playerNotes).toContainEqual(expect.objectContaining({ length: 1, start: 0, distance: 0 }));
       expect(playerNotes).toContainEqual(expect.objectContaining({ length: 1, start: 4, distance: 0 }));
@@ -111,9 +111,9 @@ describe('appendFrequencyToPlayerNotes', () => {
     const playerNotes: PlayerNote[] = [];
     const note: Note = generateNote(1, 1, { pitch: 69 });
 
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 50, frequency: 440 }, note, 100);
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 70, frequency: 440 }, note, 100);
-    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 90, frequency: 440 }, note, 100);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 50, frequency: 440 }, note, 100, 2);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 70, frequency: 440 }, note, 100, 2);
+    appendFrequencyToPlayerNotes(playerNotes, { timestamp: 90, frequency: 440 }, note, 100, 2);
 
     expect(playerNotes).toContainEqual(expect.objectContaining({ length: 0, start: 1, distance: 0 }));
   });
