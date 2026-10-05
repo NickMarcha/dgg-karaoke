@@ -1,4 +1,4 @@
-import { ForwardedRef, useImperativeHandle, useRef, useState } from 'react';
+import { ForwardedRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import YouTube from 'react-youtube';
 import { ValuesType } from 'utility-types';
 
@@ -15,6 +15,9 @@ const stateMap = {
   [YouTube.PlayerState.BUFFERING]: VideoState.BUFFERING,
   [YouTube.PlayerState.CUED]: VideoState.CUED,
 } as const;
+
+/** How long after playback starts the captions module is unloaded again, once a second. */
+const CAPTIONS_WATCH_MS = 10_000;
 
 interface Props {
   video: string;
@@ -65,10 +68,34 @@ export default function YoutubeVideoPlayer({
   ref,
 }: Props) {
   const player = useRef<YouTube | null>(null);
+  // The YouTube player itself, from its events: the wrapper passes on no `unloadModule`
+  const native = useRef<{ unloadModule?: (name: string) => void } | null>(null);
   const [currentStatus, setCurrentStatus] = useState(YouTube.PlayerState.UNSTARTED);
 
   const playerKey = useUnstuckYouTubePlayer(player, currentStatus);
   usePlayerVolume(player, volume);
+
+  // Captions sit where the lyrics are read, and no player setting turns them off: a viewer's own
+  // preference overrides `cc_load_policy`. Unloading the module does (undocumented, as dgg-radio
+  // found), and it can load any time in the first seconds of playback, so it is unloaded repeatedly.
+  useEffect(() => {
+    if (currentStatus !== YouTube.PlayerState.PLAYING) return;
+    const hideCaptions = () => {
+      try {
+        native.current?.unloadModule?.('captions');
+        native.current?.unloadModule?.('cc');
+      } catch {
+        // Not loaded yet; the next call catches it
+      }
+    };
+    hideCaptions();
+    const interval = setInterval(hideCaptions, 1_000);
+    const stop = setTimeout(() => clearInterval(interval), CAPTIONS_WATCH_MS);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(stop);
+    };
+  }, [currentStatus, playerKey]);
 
   useImperativeHandle(ref, () => ({
     getStatus: () => stateMap[currentStatus],
@@ -107,21 +134,20 @@ export default function YoutubeVideoPlayer({
           end: 0,
           disablekb: disablekb ? 1 : 0,
           modestbranding: 1,
-          // Captions and annotations sit where the lyrics are read.
+          // Annotations sit where the lyrics are read; captions are unloaded above
           cc_load_policy: 0,
           iv_load_policy: 3,
         },
       }}
-      onReady={() => onReady?.()}
+      onReady={(e) => {
+        native.current = e.target;
+        onReady?.();
+      }}
       onPlaybackRateChange={(e) => {
         console.log('onPlaybackRateChange', e.data);
       }}
       onStateChange={(e) => {
-        // A viewer's own "always show captions" preference overrides cc_load_policy, and the captions
-        // module only loads once playback starts, so it is switched off again on every play.
-        if (e.data === YouTube.PlayerState.PLAYING) {
-          void player.current?.getInternalPlayer()?.setOption('captions', 'track', {});
-        }
+        native.current = e.target;
         setCurrentStatus(e.data);
         onStateChange?.(stateMap[e.data]);
       }}
