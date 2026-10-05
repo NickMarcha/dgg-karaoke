@@ -7,7 +7,7 @@ import Modal from '~/modules/elements/modal';
 import { submitScore, SubmitScoreInput } from '~/modules/leaderboard/client';
 import { difficultyName } from '~/modules/leaderboard/difficulty';
 import { reachesGlobalBoard } from '~/modules/leaderboard/qualifies';
-import { RunRecording } from '~/modules/leaderboard/run-recorder';
+import { RunRecording } from '~/modules/leaderboard/recording-take';
 import ScoreText from '~/routes/game/singing/game-overlay/components/score-text';
 
 interface Props {

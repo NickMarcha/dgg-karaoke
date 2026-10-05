@@ -1,6 +1,7 @@
 import { SingSetup, Song } from '~/interfaces';
 import { qualifiesForLeaderboard } from '~/modules/leaderboard/qualifies';
 import { buildRun } from '~/modules/leaderboard/run';
+import RunRecorder from '~/modules/leaderboard/run-recorder';
 import PlayersManager from '~/modules/players/players-manager';
 import RemoteMicServer from '~/modules/remote-mic/network/server';
 
@@ -15,7 +16,7 @@ export function sendPhoneRuns(song: Song, singSetup: SingSetup) {
       const micId = player.input.deviceId;
       const run = buildRun(song, singSetup, player.number);
       if (micId && qualifiesForLeaderboard(run.score, singSetup.tolerance)) {
-        RemoteMicServer.callClient(micId, 'leaderboardRun', run);
+        RemoteMicServer.callClient(micId, 'leaderboardRun', run, RunRecorder.phoneOffsetOf(player.number));
       }
     });
 }

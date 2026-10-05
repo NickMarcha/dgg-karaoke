@@ -2,7 +2,7 @@ import { pack } from 'msgpackr';
 
 import { readJson } from '~/modules/api';
 import { computeNotesHash } from '~/modules/leaderboard/notes-hash';
-import { RunRecording } from '~/modules/leaderboard/run-recorder';
+import { RunRecording } from '~/modules/leaderboard/recording-take';
 import { BoardEntry, BoardResponse, LeaderboardSubmission, SongBoardResponse } from '~/modules/leaderboard/types';
 
 /** Through the site's `/api` proxy, so a submission carries the session cookie. */

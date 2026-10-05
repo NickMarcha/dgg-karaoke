@@ -4,6 +4,7 @@ import { v4 } from 'uuid';
 
 import SimplifiedMic from '~/modules/game-engine/input/simplified-mic';
 import events from '~/modules/game-events/game-events';
+import PhoneRecorder from '~/modules/leaderboard/phone-recorder';
 import { PingPongTracker } from '~/modules/network/rpc/ping-pong-tracker';
 import { createRpcProxy } from '~/modules/network/rpc/rpc-client';
 import { ExtractContract } from '~/modules/network/rpc/types';
@@ -72,6 +73,7 @@ export class NetworkClient extends Listener<[NetworkMessages]> {
       SimplifiedMic.stopMonitoring();
       events.remoteMicMonitoringStopped.dispatch();
     });
+    registerClientHandler('runRecording', PhoneRecorder.handle);
     registerClientHandler('reload', () => {
       global.removeEventListener('beforeunload', this.disconnect);
       this.transport?.sendEvent({ t: 'unregister' } as NetworkMessages);

@@ -265,30 +265,30 @@ Built since layer 2, none of it tried on the live site with real accounts:
 
 Built since, the same caveat: the **song of the day** (its own board on the main menu, picked from
 the popular songs or by a moderator on the admin page), **Score / Recorded / Verified runs**
-(recordings from computer and online singers, the run page at `/run/?id=` playing them against the
+(recordings from computer, online and phone singers, the run page at `/run/?id=` playing them against the
 video, vouching and reporting, moderators verifying), online rooms offering each singer their own
 run, a run being the singer's own score rather than co-op's team average, and pausing for buffering
 as a room setting.
 
 Next:
 
-1. **Phones recording their own singer** for Recorded runs: the phone has the microphone, so it
-   records and sends its voice with the run the game hands it.
-2. **Try it on the live site** with real accounts: sign in and out (Safari
+1. **Try it on the live site** with real accounts: sign in and out (Safari
    too), sing without an account, a phone microphone, joining an online room
    from a phone, putting a score up from the computer and from a phone,
-   submitting a song, and reviewing it as a moderator.
-3. **The rest of layer 5** (recomputing scores from the notes, drawing replays) or **layer 6, OBS sources**: the plan
+   submitting a song, and reviewing it as a moderator. Send a recording
+   from a phone and play it back on its run page: whether half the round
+   trip places a real phone's voice in step has only been checked in e2e.
+2. **The rest of layer 5** (recomputing scores from the notes, drawing replays) or **layer 6, OBS sources**: the plan
    lists them in that order; layer 5's design has real choices in it
    (`grill-me` first), including the user's verified entries with a voice
    recording.
-4. **Refresh the visual baselines.** All 291 (`tests/visual-regression`,
+3. **Refresh the visual baselines.** All 291 (`tests/visual-regression`,
    `tests/storybook`) are Linux renders of the old look, and upstream's CI
    that produced them is gone. Regenerating on Windows only adds `-win32`
    copies, so it needs a Linux Playwright container (or `sage-dev`) with the
    API stack reachable. The leaderboard and community-song screens have no
    shots yet.
-5. Left as they were: the toolbar covers the right end of the song list's
+4. Left as they were: the toolbar covers the right end of the song list's
    filter row on wide screens (it did before; the account button adds a
    little), the Beta badge sits under the toolbar on a phone, the menu
    footer's "Get in touch" links and the GitHub ribbon are still upstream's,

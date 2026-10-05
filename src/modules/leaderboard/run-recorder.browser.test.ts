@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GAME_MODE, SingSetup } from '~/interfaces';
 import MultiMicInput from '~/modules/game-engine/input/multi-mic-input';
 import PlayersManager from '~/modules/players/players-manager';
+import RemoteMicServer from '~/modules/remote-mic/network/server';
+import RemoteMicManager from '~/modules/remote-mic/remote-mic-manager';
 import { InputLagSetting } from '~/routes/settings/settings-state';
 
 import RunRecorder from './run-recorder';
@@ -62,14 +64,32 @@ describe('RunRecorder', () => {
     expect(recording?.offsetMs).toBeGreaterThanOrEqual(20_000);
   });
 
-  it('has nothing for a singer on no microphone', async () => {
+  it('tells a phone when to record, and where its recording sits in the video', async () => {
     vi.spyOn(PlayersManager, 'getPlayer').mockReturnValue({
       input: { source: 'Remote Microphone', deviceId: 'phone', channel: 0 },
     } as ReturnType<typeof PlayersManager.getPlayer>);
+    vi.spyOn(RemoteMicManager, 'getRemoteMicById').mockReturnValue({
+      getNetworkDelay: () => 40,
+    } as unknown as ReturnType<typeof RemoteMicManager.getRemoteMicById>);
+    const callClient = vi.spyOn(RemoteMicServer, 'callClient').mockReturnValue();
+
     RunRecorder.begin(singSetup, 0);
-    await play(0, 500);
+    await play(0, 300);
+    // The video stops for a moment
+    RunRecorder.tick(300);
+    RunRecorder.tick(300);
+    await play(350, 500);
     RunRecorder.stop();
 
+    const actions = callClient.mock.calls.map(([micId, method, action]) => `${micId} ${method} ${action}`);
+    expect(actions).toEqual([
+      'phone runRecording start',
+      'phone runRecording pause',
+      'phone runRecording resume',
+      'phone runRecording stop',
+    ]);
+    // Its first frame past the start, plus the calibrated lag, plus the call's trip to the phone
+    expect(RunRecorder.phoneOffsetOf(0)).toBe(50 + 100 + 40);
     expect(await RunRecorder.recordingOf(0)).toBeNull();
   });
 });

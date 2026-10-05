@@ -15,6 +15,7 @@ const game = vi.hoisted(() => ({
 
 vi.mock('~/modules/players/players-manager', () => ({ default: { getPlayers: () => game.players } }));
 vi.mock('~/modules/remote-mic/network/server', () => ({ default: { callClient: game.callClient } }));
+vi.mock('~/modules/leaderboard/run-recorder', () => ({ default: { phoneOffsetOf: () => 4_200 } }));
 vi.mock('~/modules/game-engine/input/input-manager', () => ({ default: { getPlayerInputLag: () => 180 } }));
 vi.mock('~/modules/game-engine/game-state/game-state', () => ({
   default: {
@@ -48,8 +49,13 @@ describe('sendPhoneRuns', () => {
     sendPhoneRuns(song, singSetup);
 
     expect(game.callClient).toHaveBeenCalledOnce();
-    const [phone, method, run] = game.callClient.mock.calls[0]!;
-    expect([phone, method, run.score]).toEqual(['phone', 'leaderboardRun', QUALIFYING_SCORE + 1]);
+    const [phone, method, run, recordingOffsetMs] = game.callClient.mock.calls[0]!;
+    expect([phone, method, run.score, recordingOffsetMs]).toEqual([
+      'phone',
+      'leaderboardRun',
+      QUALIFYING_SCORE + 1,
+      4_200,
+    ]);
     expect(decodeNotesPayload(run.notes)).toHaveLength(1);
   });
 

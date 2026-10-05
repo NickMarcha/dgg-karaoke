@@ -125,7 +125,13 @@ browser: it starts two seconds before the song's gap (after any skipped intro), 
 video does, and starts over if the song seeks. Its offset is the video's time when it began (the
 song's clock plus the calibrated lag), which is where playback starts the video. Nothing leaves the
 browser unless the singer ticks "Send my recording too" on the prompt. Two singers on one stereo
-SingStar device share that device's recording. Phones do not record yet.
+SingStar device share that device's recording.
+
+A phone records its own singer (`phone-recorder.ts`), told by the game when to start, pause, resume,
+start over and stop (the `runRecording` client call). The game places that recording in the video:
+its own offset plus half the phone's measured round trip, the time the start call took to arrive;
+the pause and resume calls take as long, so they cancel out. The offset comes with the run the phone
+is handed, and the phone keeps the take for its prompt even once the next song starts.
 
 **Playing back.** A run's name on any board links to its page (`/run/?id=`, `run-page.tsx`), which
 plays the song's video with the singer's voice kept within 150 ms of where the video says it should
