@@ -39,4 +39,6 @@ spends some of the half second.
 
 Online rooms only; a moderator's local games could follow on the same view later.
 
-Layer 1 is built (`docs/online-mode.md`, Streaming a room; `tests/online-stream.spec.ts`).
+Layers 1 and 2 are built (`docs/online-mode.md`, Streaming a room; `tests/online-stream.spec.ts`).
+An OBS browser source may play sound at once; opened in an ordinary browser, the view's voices wait
+for a click on the page.

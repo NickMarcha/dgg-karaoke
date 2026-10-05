@@ -1,8 +1,11 @@
+import { useEffect, useState } from 'react';
+
 import { Menu } from '~/modules/elements/akui/menu';
 import { RegisterFunc } from '~/modules/hooks/use-keyboard-nav';
 import { useOnlineStreams } from '~/modules/online/client/hooks';
 import OnlineClient from '~/modules/online/client/online-client';
 import { OnlineParticipant } from '~/modules/online/protocol/types';
+import { canSendVoice } from '~/modules/online/streaming/stream-voice';
 import { RoomStream } from '~/modules/online/streaming/types';
 
 interface Props {
@@ -17,6 +20,10 @@ interface Props {
  */
 export default function StreamPanel({ participants, register }: Props) {
   const streams = useOnlineStreams();
+  const [voiceSupported, setVoiceSupported] = useState(true);
+  useEffect(() => {
+    void canSendVoice().then(setVoiceSupported);
+  }, []);
   if (!streams.length) return null;
   const self = OnlineClient.getParticipantId();
   const nameOf = (participantId: string, username?: string | null) =>
@@ -30,6 +37,11 @@ export default function StreamPanel({ participants, register }: Props) {
         ) : (
           <SingerControls key={stream.streamerId} stream={stream} self={self} register={register} />
         ),
+      )}
+      {!voiceSupported && (
+        <Menu.HelpText data-test="online-stream-no-voice">
+          This browser cannot send your voice to a stream: only your singing line would be on it. Chrome and Edge can.
+        </Menu.HelpText>
       )}
     </div>
   );

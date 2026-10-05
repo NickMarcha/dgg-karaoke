@@ -10,6 +10,7 @@ import GameState from '~/modules/game-engine/game-state/game-state';
 import useBackgroundMusic from '~/modules/hooks/use-background-music';
 import useQueryParam from '~/modules/hooks/use-query-param';
 import useViewportSize from '~/modules/hooks/use-viewport-size';
+import { VoicePlayer } from '~/modules/online/streaming/stream-voice';
 import { ReceivedStreamPacket } from '~/modules/online/streaming/types';
 import { PlayerNumber } from '~/modules/players/player-number';
 import useSong from '~/modules/songs/hooks/use-song';
@@ -24,6 +25,8 @@ const FRAME_MS = 1000 / 60;
 const SEEK_THRESHOLD_MS = 1_000;
 const RECONNECT_MS = 3_000;
 const CANVAS_WIDTH = 1920;
+/** The video moving this much further than real time between frames is a seek: queued voice is dropped. */
+const JUMP_MS = 300;
 
 /** Every singer sang the merged track online, so each lane is the merged track. */
 const streamSong = (song: Song): Song => ({ ...song, tracks: song.tracks.map(() => song.mergedTrack) });
@@ -42,6 +45,20 @@ function StreamView() {
   const { width, height } = useViewportSize();
 
   const feed = useMemo(() => new StreamFeed(), []);
+  // Every singer's voice, played on this page's own audio clock. OBS lets a source play sound at
+  // once; an ordinary browser waits for a click on the page.
+  const audio = useMemo(() => (typeof AudioContext === 'undefined' ? null : new AudioContext()), []);
+  const voices = useMemo(() => new Map<string, VoicePlayer>(), []);
+  useEffect(() => {
+    if (!audio) return;
+    const resume = () => void audio.resume();
+    window.addEventListener('pointerdown', resume);
+    return () => {
+      window.removeEventListener('pointerdown', resume);
+      voices.forEach((voice) => voice.close());
+      void audio.close();
+    };
+  }, [audio, voices]);
   const [connection, setConnection] = useState<'connecting' | 'refused' | 'waiting' | 'in-room'>('connecting');
   const [songId, setSongId] = useState<string | null>(null);
   const [, setFrame] = useState(0);
@@ -66,10 +83,20 @@ function StreamView() {
           | ({ t: 'stream-data' } & ReceivedStreamPacket);
         if (message.t === 'stream-room') {
           feed.reset();
+          voices.forEach((voice) => voice.close());
+          voices.clear();
           setSongId(null);
           setConnection(message.code ? 'in-room' : 'waiting');
         } else if (message.t === 'stream-data') {
           feed.receive(message);
+          if (audio && message.payload.voice?.length && typeof AudioDecoder !== 'undefined') {
+            let voice = voices.get(message.participantId);
+            if (!voice) {
+              voice = new VoicePlayer(audio);
+              voices.set(message.participantId, voice);
+            }
+            voice.receive(message.payload.voice);
+          }
           if (feed.songId !== songIdRef.current) setSongId(feed.songId);
         }
       };
@@ -86,7 +113,7 @@ function StreamView() {
       clearTimeout(retry);
       socket?.close();
     };
-  }, [key, feed]);
+  }, [key, feed, audio, voices]);
 
   const { data: loaded } = useSong(songId);
   const song = useMemo(() => (loaded && loaded.id === songId ? streamSong(loaded) : null), [loaded, songId]);
@@ -116,6 +143,7 @@ function StreamView() {
     let version = -1;
     const fed = new Map<string, number>();
     let busy = false;
+    let last: { videoMs: number; at: number } | null = null;
     const interval = setInterval(async () => {
       if (busy || !player.current) return;
       busy = true;
@@ -150,6 +178,16 @@ function StreamView() {
         }
         GameState.setCurrentTime(videoMs);
         const songMs = videoMs - song.gap;
+
+        // The voices follow the video: a pause or a jump drops what was queued for where it was
+        const at = performance.now();
+        const playing = player.current.getStatus() === VideoState.PLAYING;
+        const jumped = last !== null && Math.abs(videoMs - (last.videoMs + (at - last.at))) > JUMP_MS;
+        last = { videoMs, at };
+        voices.forEach((voice) => {
+          if (!playing || jumped) voice.clear();
+          else if (audio) voice.play(videoMs, audio.destination);
+        });
         for (const singer of singers) {
           const state = GameState.getPlayer(singer.playerNumber);
           let index = fed.get(singer.participantId) ?? 0;
@@ -169,7 +207,7 @@ function StreamView() {
       clearInterval(interval);
       GameState.resetSingSetup();
     };
-  }, [song, feed, delayMs]);
+  }, [song, feed, delayMs, audio, voices]);
 
   const videoMs = GameState.getCurrentTime(false);
   const singers = song ? feed.getSingers() : [];
@@ -203,6 +241,7 @@ function StreamView() {
                   key={singer.participantId}
                   className="text-right"
                   style={{ color: styles.colors.players[singer.playerNumber].text }}
+                  data-voice-pieces={singer.voicePieces}
                   data-test="stream-singer">
                   <span className="block text-xl">{singer.name}</span>
                   <ScoreText score={feed.scoreAt(singer, videoMs)} />

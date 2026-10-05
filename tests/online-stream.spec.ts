@@ -66,4 +66,12 @@ test("A moderator's stream shows the room's song with everyone they accepted", a
     await expect(obs.getByTestId('stream-singer').first()).toContainText(moderator);
     await expect(obs.getByTestId('stream-singer').last()).toContainText(friend);
   });
+
+  await test.step("Both singers' voices reach the stream", async () => {
+    for (const singer of await obs.getByTestId('stream-singer').all()) {
+      await expect
+        .poll(async () => Number(await singer.getAttribute('data-voice-pieces')), { timeout: 15_000 })
+        .toBeGreaterThan(10);
+    }
+  });
 });

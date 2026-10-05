@@ -1,3 +1,4 @@
+import { VoicePiece } from '~/modules/online/streaming/stream-voice';
 import { PlayerNumber } from '~/modules/players/player-number';
 
 /**
@@ -27,6 +28,8 @@ export interface StreamPacket {
   score: number;
   /** Pitch readings since the last packet: song time in ms, as the game stamps them, and Hz. */
   readings: [number, number][];
+  /** The singer's voice since the last packet, when their browser can encode it. */
+  voice?: VoicePiece[];
 }
 
 /** A packet as the stream view receives it, with whose it is. */

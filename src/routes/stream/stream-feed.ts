@@ -14,6 +14,8 @@ export interface FeedSinger {
   scores: [number, number][];
   lastVideoTimeMs: number;
   receivedAt: number;
+  /** How many pieces of their voice have arrived, for knowing whether it is on the stream at all. */
+  voicePieces: number;
 }
 
 /**
@@ -45,6 +47,7 @@ export class StreamFeed {
         scores: [],
         lastVideoTimeMs: 0,
         receivedAt: 0,
+        voicePieces: 0,
       };
       this.singers.set(participantId, singer);
       this.version++;
@@ -57,6 +60,7 @@ export class StreamFeed {
     }
     singer.readings.push(...payload.readings);
     singer.scores.push([payload.videoTimeMs, payload.score]);
+    singer.voicePieces += payload.voice?.length ?? 0;
     singer.lastVideoTimeMs = payload.videoTimeMs;
     singer.receivedAt = this.now();
   };

@@ -285,9 +285,10 @@ Next:
    from a phone and play it back on its run page: whether half the round
    trip places a real phone's voice in step has only been checked in e2e.
 2. **Streaming a room** (`docs/plans/stream-view.md`), the user's choice of OBS source: layer 1
-   (the moderator's OBS link, asking and accepting, every accepted singer's lane on the stream) is
-   built. Next is layer 2, every singer's voice on the stream in time, then layer 3, replaying the
-   streamed song with every voice from the results screen. Layer 5 is built: recorded and verified
+   (the moderator's OBS link, asking and accepting, every accepted singer's lane on the stream) and
+   layer 2 (every singer's voice on the stream, placed by their video time) are built. Not yet
+   tried in OBS itself or with real singers across real connections: do that before layer 3,
+   replaying the streamed song with every voice from the results screen. Layer 5 is built: recorded and verified
    runs, scores the API works out, and replays on each run's page.
 3. **Refresh the visual baselines.** All 291 (`tests/visual-regression`,
    `tests/storybook`) are Linux renders of the old look, and upstream's CI

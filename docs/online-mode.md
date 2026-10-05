@@ -124,6 +124,14 @@ room a moderator is in, and the OBS source connects to `/stream` with its key in
 - The view (`routes/stream/`) plays the song a delay behind the freshest packet (600 ms, or
   `&delay=`), feeds every singer's readings into the game's state by its own video time, and draws
   a lane each with the game's renderer.
+- The voice (`streaming/stream-voice.ts`) rides in the same packets: an audio worklet cuts the
+  microphone into 20 ms frames at 48 kHz, WebCodecs encodes each to Opus (32 kbps), and each is
+  stamped with the singer's video time when it was sung, less their calibrated input lag. The view
+  decodes each singer's pieces and hands one to its audio clock only when its own video is about
+  to reach it, so a pause or a seek leaves nothing queued; pieces that line up are joined, so
+  jitter makes no clicks. A browser without an Opus encoder (`canSendVoice`) sends its line alone,
+  and the lobby says so. `stream-voice.browser.test.ts` checks a sound is stamped within 40 ms
+  before to 60 ms after the moment it was made.
 
 Acceptance lives in the relay's memory, per room and streamer: an API restart forgets it.
 
