@@ -115,10 +115,12 @@ class RemoteMicInput {
   };
 }
 
+/** How often the game pings each phone. */
+const PING_INTERVAL_MS = 1000;
+
 export class RemoteMic {
   private input: RemoteMicInput;
-  private pingTime: number = 9999;
-  private pingInterval: ReturnType<typeof setTimeout> | null = null;
+  private pingInterval: ReturnType<typeof setInterval>;
   constructor(
     public id: string,
     public name: string,
@@ -127,7 +129,12 @@ export class RemoteMic {
   ) {
     this.input = new RemoteMicInput(connection, lag, this.getNetworkDelay);
 
-    this.pingClient();
+    // Each ping carries when it left and the phone echoes it, so a ping the direct link drops costs
+    // one measurement rather than stalling the loop.
+    this.pingInterval = setInterval(
+      () => this.connection.send({ t: 'ping', 0: getPingTime() } as NetworkMessages),
+      PING_INTERVAL_MS,
+    );
   }
 
   public getInput = () => this.input;
@@ -137,42 +144,35 @@ export class RemoteMic {
   };
 
   public onDisconnect = () => {
-    if (this.pingInterval !== null) {
-      clearInterval(this.pingInterval);
-    }
+    clearInterval(this.pingInterval);
   };
 
   public setPermission = (level: RemoteMicPermission) => {
     sendRpcCall(this.connection, 'setPermissions', [level]);
   };
 
-  private isPinging = false;
   private latency: number = 9999;
+  private lastPongAt = getPingTime();
 
   /** Round trips averaged over the last few pings, so one slow ping does not shift scoring mid-song. */
   private smoothedRoundTrip: number | null = null;
+  /** The path the smoothed round trip was measured on; switching to or from the direct link starts over. */
+  private measuredDirect = false;
 
-  public onPong = () => {
-    this.latency = getPingTime() - this.pingTime;
-    this.isPinging = false;
+  public onPong = (sentAt: number) => {
+    this.latency = getPingTime() - sentAt;
+    this.lastPongAt = getPingTime();
     const sample = Math.min(this.latency, MAX_COUNTED_ROUND_TRIP_MS);
+    if (this.connection.isDirect() !== this.measuredDirect) {
+      this.measuredDirect = this.connection.isDirect();
+      this.smoothedRoundTrip = null;
+    }
     this.smoothedRoundTrip = this.smoothedRoundTrip === null ? sample : this.smoothedRoundTrip * 0.8 + sample * 0.2;
-
-    this.pingClient();
   };
 
-  private pingClient = () => {
-    this.pingInterval = setTimeout(() => {
-      this.pingTime = getPingTime();
-      this.isPinging = true;
-      this.connection.send({ t: 'ping' } as NetworkMessages);
-    }, 1000);
-  };
-
-  public getLatency = () => (this.isPinging ? getPingTime() - this.pingTime : this.latency);
+  /** The last round trip, or longer once pongs stop coming: one lost ping in two seconds does not count. */
+  public getLatency = () => Math.max(this.latency, getPingTime() - this.lastPongAt - 2 * PING_INTERVAL_MS);
 
   /** One way, phone to game: half the round trip. Nothing until the first pong comes back. */
   public getNetworkDelay = () => Math.round((this.smoothedRoundTrip ?? 0) / 2);
-
-  public getPingTime = () => this.pingTime;
 }

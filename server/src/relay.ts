@@ -1,12 +1,14 @@
 import { pack, unpack } from 'msgpackr';
 
+import { type IceServer, STUN_ONLY } from './ice-servers.js';
+
 /**
  * The remote-microphone relay. A game (the host) opens a room under its game code, phones join it,
  * and the relay passes messages between them without reading what is inside. The protocol is the
  * one the frontend's WebSocket transport already speaks (`src/modules/remote-mic/network`):
  *
- *   host  -> relay  { t: 'register-room', id }
- *   phone -> relay  { t: 'register-player', id, roomId }      relay -> phone { t: 'connected' }
+ *   host  -> relay  { t: 'register-room', id }                 relay -> host  { t: 'registered', iceServers }
+ *   phone -> relay  { t: 'register-player', id, roomId }      relay -> phone { t: 'connected', iceServers }
  *   host  -> relay  { t: 'forward', recipients, payload }      relay -> phone { t: 'forward', sender: roomId, payload }
  *   phone -> relay  { t: 'forward', recipients, payload }      relay -> host  { t: 'forward', sender: phoneId, payload }
  *   host  -> relay  { t: 'ping' }                              relay -> host  { t: 'pong' }
@@ -15,6 +17,9 @@ import { pack, unpack } from 'msgpackr';
  *
  * The last line is the relay speaking for the phone: a phone that reloads or loses signal never sends
  * `unregister` itself, and the game shows that singer as gone the moment it arrives.
+ *
+ * `iceServers` lets a phone and its game open a direct WebRTC link for the pitch readings
+ * (`src/modules/remote-mic/network/direct-link.ts`), set up with messages forwarded through here.
  *
  * A room lives exactly as long as its host's socket. When the host goes, its phones are closed too and
  * retry on their own until the host is back, so a host reload never leaves phones attached to nothing.
@@ -62,6 +67,8 @@ function closeWith(peer: Peer, reason: string) {
 export class Relay {
   private rooms = new Map<string, Room>();
   private roles = new Map<Peer, Role>();
+
+  public constructor(private readonly iceServers: () => IceServer[] = () => STUN_ONLY) {}
 
   public roomCount() {
     return this.rooms.size;
@@ -113,6 +120,7 @@ export class Relay {
     if (this.rooms.has(roomId)) return closeWith(peer, CloseReason.roomTaken);
     this.rooms.set(roomId, { host: peer, players: new Map() });
     this.roles.set(peer, { kind: 'host', roomId });
+    peer.send(pack({ t: 'registered', iceServers: this.iceServers() }));
   }
 
   private registerPlayer(peer: Peer, playerId: unknown, roomId: unknown) {
@@ -129,7 +137,7 @@ export class Relay {
     }
     room.players.set(playerId, peer);
     this.roles.set(peer, { kind: 'player', roomId: roomId.toLowerCase(), playerId });
-    peer.send(pack({ t: 'connected' }));
+    peer.send(pack({ t: 'connected', iceServers: this.iceServers() }));
   }
 
   private fromHost(peer: Peer, roomId: string, message: Incoming) {

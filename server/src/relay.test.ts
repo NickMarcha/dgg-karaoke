@@ -1,7 +1,11 @@
 import { pack, unpack } from 'msgpackr';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import type { IceServer } from './ice-servers.js';
 import { type Peer, Relay } from './relay.js';
+
+const iceServers: IceServer[] = [{ urls: ['turn:turn.example:3478'], username: 'user', credential: 'secret' }];
+const connected = { t: 'connected', iceServers };
 
 class FakePeer implements Peer {
   received: unknown[] = [];
@@ -20,10 +24,17 @@ describe('Relay', () => {
   let phone: FakePeer;
 
   beforeEach(() => {
-    relay = new Relay();
+    relay = new Relay(() => iceServers);
     host = new FakePeer();
     phone = new FakePeer();
     relay.receive(host, pack({ t: 'register-room', id: 'abcde' }));
+    host.received.length = 0;
+  });
+
+  it('hands a new room the servers its phones will find it through', () => {
+    const other = new FakePeer();
+    relay.receive(other, pack({ t: 'register-room', id: 'fghij' }));
+    expect(other.received).toEqual([{ t: 'registered', iceServers }]);
   });
 
   const join = (peer: FakePeer, id = 'phone-1', roomId = 'abcde') =>
@@ -31,7 +42,7 @@ describe('Relay', () => {
 
   it('acknowledges a phone joining an open room', () => {
     join(phone);
-    expect(phone.received).toEqual([{ t: 'connected' }]);
+    expect(phone.received).toEqual([connected]);
   });
 
   it('turns away a phone whose game does not exist', () => {
@@ -41,7 +52,7 @@ describe('Relay', () => {
 
   it('matches the room code without regard to case', () => {
     join(phone, 'phone-1', 'ABCDE');
-    expect(phone.received).toEqual([{ t: 'connected' }]);
+    expect(phone.received).toEqual([connected]);
   });
 
   it('carries a phone message to the host, marked with the phone id', () => {
@@ -55,7 +66,7 @@ describe('Relay', () => {
     join(phone);
     join(other, 'phone-2');
     relay.receive(host, pack({ t: 'forward', recipients: ['phone-2'], payload: { t: 'pong' } }));
-    expect(phone.received).toEqual([{ t: 'connected' }]);
+    expect(phone.received).toEqual([connected]);
     expect(other.received.at(-1)).toEqual({ t: 'forward', sender: 'abcde', payload: { t: 'pong' } });
   });
 

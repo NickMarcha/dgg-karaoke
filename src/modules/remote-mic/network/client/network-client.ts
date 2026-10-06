@@ -205,6 +205,8 @@ export class NetworkClient extends Listener<[NetworkMessages]> {
   private pingPong = new PingPongTracker({
     // 999 until the first pong comes back, so the readout never claims a 0 ms round trip
     initialLatency: 999,
+    // The direct link drops a lost pong rather than resending it
+    maxWaitMs: 2_000,
     onMeasurement: (ping) => this.reportPing(ping),
   });
 
@@ -259,7 +261,7 @@ export class NetworkClient extends Listener<[NetworkMessages]> {
       } else if (type === 'pong') {
         this.pingPong.handlePong();
       } else if (type === 'ping') {
-        this.transport?.sendEvent({ t: 'pong' } as NetworkMessages);
+        this.transport?.sendEvent({ t: 'pong', 0: data[0] });
       }
       // rpc-res messages are handled internally by createRpcProxy listeners — no action needed here
     });

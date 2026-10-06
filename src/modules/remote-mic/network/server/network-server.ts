@@ -44,7 +44,6 @@ export class NetworkServer {
     }
 
     global?.addEventListener?.('beforeunload', () => {
-      RemoteMicManager.getRemoteMics().forEach((remoteMic) => remoteMic.connection.close());
       this.transport?.disconnect();
     });
   }
@@ -87,7 +86,7 @@ export class NetworkServer {
           } else if (type === 'ping') {
             sender.send({ t: 'pong' } as NetworkMessages);
           } else if (type === 'pong') {
-            RemoteMicManager.getRemoteMicById(sender.peer)?.onPong();
+            if (event[0] !== undefined) RemoteMicManager.getRemoteMicById(sender.peer)?.onPong(event[0]);
           } else if (type === 'rpc') {
             this.rpcServer.handleMessage(event, sender);
           }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DGG_ORIGIN, parseEnv } from './env.js';
+import { DGG_ORIGIN, parseEnv, turnKey } from './env.js';
 
 const base = {
   DATABASE_URL: 'postgresql://unused',
@@ -37,5 +37,14 @@ describe('parseEnv', () => {
   it('requires sign-in for the relays unless told otherwise', () => {
     expect(parseEnv(base).SIGN_IN_REQUIRED).toBe(true);
     expect(parseEnv({ ...base, SIGN_IN_REQUIRED: 'false' }).SIGN_IN_REQUIRED).toBe(false);
+  });
+
+  it('reads a TURN key only as a pair', () => {
+    expect(turnKey(parseEnv({ ...base, CLOUDFLARE_TURN_KEY_ID: '', CLOUDFLARE_TURN_API_TOKEN: '' }))).toBeUndefined();
+    expect(turnKey(parseEnv({ ...base, CLOUDFLARE_TURN_KEY_ID: 'id', CLOUDFLARE_TURN_API_TOKEN: 'token' }))).toEqual({
+      keyId: 'id',
+      apiToken: 'token',
+    });
+    expect(() => parseEnv({ ...base, CLOUDFLARE_TURN_KEY_ID: 'id' })).toThrow(/set together/);
   });
 });

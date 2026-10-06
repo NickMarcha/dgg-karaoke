@@ -27,6 +27,29 @@ The relay never reads the game's messages. It knows rooms, which socket is the h
 
 A game whose code is already taken (a duplicated tab copies session storage, code included) is closed with `room-taken` and picks a new code.
 
+### The direct link
+
+The relay is the session, but the pitch readings don't have to cross it. A phone and its game are
+usually in the same room, and a trip to the API and back costs a US singer the Atlantic twice, plus
+whatever the API's own line is doing. So once a phone has joined, it offers a WebRTC data channel to
+the game (`direct-link.ts`), with the offer, the answer and the ICE candidates passed as `rtc`
+messages over the relay. On the same Wi-Fi the channel connects directly; otherwise through
+Cloudflare TURN, at the Cloudflare location nearest the singer.
+
+Only `freq`, `ping` and `pong` use it: the messages whose lateness costs more than their loss. The
+channel is unordered and never retransmits, so a lost batch of readings is skipped rather than
+holding up the next. Everything else, RPC included, stays on the relay. Until the channel opens, or
+if it never does, those three go over the relay too.
+
+The game's pings carry when they left and the phone echoes that, so a dropped ping costs one
+measurement. When a phone's pings move to or from the link, the averaged round trip starts over:
+the game corrects for half of it, and the relay's round trip is the wrong number for the link.
+
+The relay hands both sides their ICE servers when they register (`server/src/ice-servers.ts`):
+Cloudflare's STUN, and with `CLOUDFLARE_TURN_KEY_ID` and `CLOUDFLARE_TURN_API_TOKEN` set, TURN
+credentials that last a day and are renewed every twelve hours. A link that opens logs `Direct link
+open` in both browsers' consoles.
+
 Both sides still implement the transport interfaces (`client/transport/interface.ts`, `server/transport/interface.ts`), so `NetworkClient` and `NetworkServer` don't know about sockets.
 
 ## RPC System
@@ -81,7 +104,8 @@ A handful of message types bypass RPC entirely because they are sent at high fre
 | Message         | Direction     | Purpose                                                              |
 | --------------- | ------------- | -------------------------------------------------------------------- |
 | `freq`          | phone → host  | Batched pitch/frequency data; throttled to ~60 Hz, sent every ~50 ms |
-| `ping` / `pong` | bidirectional | Round-trip latency measurement                                       |
+| `ping` / `pong` | bidirectional | Round-trip latency measurement; the game's carry their send time     |
+| `rtc`           | bidirectional | Sets up the direct link; handled inside the transports               |
 | `register`      | phone → host  | Initial handshake on connect                                         |
 | `unregister`    | phone → host  | Clean disconnect                                                     |
 | `register-room` | host → phone  | Associates the connection with a room                                |

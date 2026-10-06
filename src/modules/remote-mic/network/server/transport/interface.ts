@@ -10,7 +10,8 @@ export interface SenderInterface {
 
   off(event: string, callback: (data: NetworkMessages) => void): void;
 
-  close(): void;
+  /** Whether this phone's readings reach the game over its direct link rather than the relay. */
+  isDirect(): boolean;
 }
 
 export type transportCloseReason = string;

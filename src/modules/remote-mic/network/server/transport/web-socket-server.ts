@@ -1,5 +1,6 @@
 import { apiSocketUrl, SignInRequiredError } from '~/modules/api';
-import { NetworkMessages } from '~/modules/remote-mic/network/messages';
+import { DirectLink, goesDirect } from '~/modules/remote-mic/network/direct-link';
+import { NetworkMessages, NetworkRtcMessage } from '~/modules/remote-mic/network/messages';
 import {
   SenderInterface,
   ServerTransport,
@@ -14,21 +15,36 @@ export interface ForwardedMessage {
   payload: NetworkMessages;
 }
 
-interface WebsocketConnectedMessage {
+/** A phone's welcome; `iceServers` is what it needs to reach its game directly. */
+export interface WebsocketConnectedMessage {
   t: 'connected';
+  iceServers: RTCIceServer[];
+}
+
+/** The game's welcome, with what it needs to answer its phones' direct links. */
+interface WebsocketRegisteredMessage {
+  t: 'registered';
+  iceServers: RTCIceServer[];
 }
 
 interface WebsocketPongMessage {
   t: 'pong';
 }
 
-export type WebsocketMessage = ForwardedMessage | WebsocketConnectedMessage | WebsocketPongMessage;
+export type WebsocketMessage =
+  | ForwardedMessage
+  | WebsocketConnectedMessage
+  | WebsocketRegisteredMessage
+  | WebsocketPongMessage;
 
 /** Closes a connection with when nobody is signed in and the relay needs somebody to be. */
 export const SIGN_IN_REQUIRED_REASON = 'sign-in-required';
 
 export class WebSocketServerTransport extends Listener<[NetworkMessages, SenderInterface]> implements ServerTransport {
   private connection: WebSocket | null = null;
+  private iceServers: RTCIceServer[] = [];
+  /** Each phone's direct link, by phone id. */
+  private links = new Map<string, DirectLink>();
   /** Bumped by every connect and disconnect, so a ticket arriving after either opens nothing. */
   private attempt = 0;
 
@@ -78,11 +94,16 @@ export class WebSocketServerTransport extends Listener<[NetworkMessages, SenderI
         const payload: WebsocketMessage = unpack(message.data);
 
         if (payload.t === 'forward') {
-          if (!['ping', 'pong', 'freq'].includes(payload?.payload?.t)) console.log('received', payload);
           const { sender, payload: data } = payload;
-          const conn = new SenderWrapper(sender, this.connection!);
-
-          this.onUpdate(data, conn);
+          if (data.t === 'rtc') {
+            this.handleSignal(sender, data);
+            return;
+          }
+          if (!goesDirect(data)) console.log('received', payload);
+          if (data.t === 'unregister') this.closeLink(sender);
+          this.receive(sender, data);
+        } else if (payload.t === 'registered') {
+          this.iceServers = payload.iceServers;
         } else if (payload.t === 'pong') {
           this.onPong();
         } else {
@@ -92,8 +113,48 @@ export class WebSocketServerTransport extends Listener<[NetworkMessages, SenderI
     };
 
     this.connection.onclose = (event) => {
+      this.links.forEach((link) => link.close());
+      this.links.clear();
       onClose(event.reason, event);
     };
+  }
+
+  private receive = (sender: string, data: NetworkMessages) => {
+    this.onUpdate(data, new SenderWrapper(sender, this));
+  };
+
+  /** A phone offering a direct link replaces any it had; candidates go to the link it has. */
+  private handleSignal(sender: string, signal: NetworkRtcMessage) {
+    if (signal.description?.type === 'offer') {
+      this.closeLink(sender);
+      const link = DirectLink.answer(
+        this.iceServers,
+        (answer) => this.sendOverRelay(sender, answer),
+        (data) => this.receive(sender, data),
+      );
+      if (link) this.links.set(sender, link);
+    }
+    this.links.get(sender)?.handleSignal(signal);
+  }
+
+  private closeLink(sender: string) {
+    this.links.get(sender)?.close();
+    this.links.delete(sender);
+  }
+
+  /** Over the phone's direct link when the message suits it and the link is open, else the relay. */
+  public sendTo(peer: string, payload: NetworkMessages) {
+    if (goesDirect(payload) && this.links.get(peer)?.send(payload)) return;
+    this.sendOverRelay(peer, payload);
+  }
+
+  public isDirect = (peer: string) => this.links.get(peer)?.isOpen() ?? false;
+
+  private sendOverRelay(peer: string, payload: NetworkMessages) {
+    if (!goesDirect(payload) && payload.t !== 'rtc') console.log('sending', peer, payload);
+    if (this.connection?.readyState === WebSocket.OPEN) {
+      this.connection.send(pack({ t: 'forward', recipients: [peer], payload }));
+    }
   }
 
   public disconnect = () => {
@@ -127,6 +188,7 @@ export class WebSocketServerTransport extends Listener<[NetworkMessages, SenderI
   };
 
   public removePlayer(playerId: string) {
+    this.closeLink(playerId);
     // This sends a transport-level control message to the relay server to disconnect the peer
     this.sendEvent({ t: 'remove-player', id: playerId });
   }
@@ -134,45 +196,32 @@ export class WebSocketServerTransport extends Listener<[NetworkMessages, SenderI
 
 type callback = (data: NetworkMessages) => void;
 
+/** One phone as the game sees it, whichever way its messages arrive. */
 class SenderWrapper implements SenderInterface {
-  private currentPing = 0;
+  private callbacksMap: Map<callback, (data: NetworkMessages, sender: SenderInterface) => void> = new Map();
+
   constructor(
     public peer: string,
-    private socket: WebSocket,
+    private transport: WebSocketServerTransport,
   ) {}
 
-  public send = (payload: NetworkMessages) => {
-    const data = { t: 'forward', recipients: [this.peer], payload };
-    if (!['ping', 'pong', 'freq'].includes(payload?.t)) console.log('sending', this.peer, payload);
-    this.socket.send(pack(data));
+  public send = (payload: NetworkMessages) => this.transport.sendTo(this.peer, payload);
+
+  public isDirect = () => this.transport.isDirect(this.peer);
+
+  public on = (event: string, callback: callback) => {
+    if (event !== 'data') return;
+    const listener = (data: NetworkMessages, sender: SenderInterface) => {
+      if (sender.peer === this.peer) callback(data);
+    };
+    this.callbacksMap.set(callback, listener);
+    this.transport.addListener(listener);
   };
 
-  private callbacksMap: Map<callback, (message: MessageEvent) => void> = new Map();
-
-  public on = (event: string, callback: (data: NetworkMessages) => void) => {
-    if (event === 'data') {
-      this.callbacksMap.set(callback, (message) => {
-        const data: WebsocketMessage = unpack(message.data);
-        if (data.t === 'forward') {
-          const { sender, payload } = data;
-          if (sender === this.peer) {
-            callback(payload);
-          }
-        }
-      });
-      this.socket.addEventListener('message', this.callbacksMap.get(callback)!);
-    }
-  };
-
-  public off = (event: string, callback: (data: NetworkMessages) => void) => {
-    if (event === 'data') {
-      const actualCallback = this.callbacksMap.get(callback);
-      this.socket.removeEventListener('message', actualCallback!);
-      this.callbacksMap.delete(callback);
-    }
-  };
-
-  public close = () => {
-    this.socket.close();
+  public off = (event: string, callback: callback) => {
+    if (event !== 'data') return;
+    const listener = this.callbacksMap.get(callback);
+    if (listener) this.transport.removeListener(listener);
+    this.callbacksMap.delete(callback);
   };
 }

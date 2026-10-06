@@ -27,11 +27,14 @@ export interface NetworkNewFrequencyMessage {
 
 export type keyStrokes = keyof Params;
 
+/** The game's pings carry when they left, and the phone's pong echoes it. */
 export interface NetworkPingMessageEvent {
   t: 'ping';
+  0?: number;
 }
 export interface NetworkPongMessageEvent {
   t: 'pong';
+  0?: number;
 }
 
 export interface NetworkRemovePlayerMessage {
@@ -39,7 +42,15 @@ export interface NetworkRemovePlayerMessage {
   id: string;
 }
 
+/** Sets up the direct link between a phone and its game (`direct-link.ts`). */
+export interface NetworkRtcMessage {
+  t: 'rtc';
+  description?: RTCSessionDescriptionInit;
+  candidate?: RTCIceCandidateInit;
+}
+
 export type NetworkMessages =
+  | NetworkRtcMessage
   | NetworkRegisterMessage
   | NetworkUnregisterMessage
   | NetworkRegisterRoomMessage

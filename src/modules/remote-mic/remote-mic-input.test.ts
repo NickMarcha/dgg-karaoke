@@ -3,13 +3,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SenderInterface } from '~/modules/remote-mic/network/server/transport/interface';
 import { RemoteMic } from '~/modules/remote-mic/remote-mic-input';
 
-const connection = { peer: 'phone-1', send: vi.fn(), on: vi.fn(), off: vi.fn(), close: vi.fn() } as SenderInterface;
+let direct = false;
+const connection = {
+  peer: 'phone-1',
+  send: vi.fn(),
+  on: vi.fn(),
+  off: vi.fn(),
+  isDirect: () => direct,
+} as SenderInterface;
 
 describe('RemoteMic input lag', () => {
   let mic: RemoteMic;
 
   beforeEach(() => {
     vi.useFakeTimers();
+    direct = false;
     mic = new RemoteMic('phone-1', 'Singer', connection, 0);
   });
 
@@ -18,11 +26,12 @@ describe('RemoteMic input lag', () => {
     vi.useRealTimers();
   });
 
-  /** The next ping goes out a second after the last pong; the phone answers `ms` later. */
+  /** A ping goes out every second; the phone echoes this one's stamp `ms` later. */
   const pingRoundTrip = (ms: number) => {
     vi.advanceTimersByTime(1000);
+    const sentAt = Date.now();
     vi.advanceTimersByTime(ms);
-    mic.onPong();
+    mic.onPong(sentAt);
   };
 
   it('allows for the phone processing its audio before any ping has come back', () => {
@@ -44,6 +53,21 @@ describe('RemoteMic input lag', () => {
   it('caps a stall so it cannot shift scoring by seconds', () => {
     pingRoundTrip(5000);
     expect(mic.getInput().getInputLag()).toBe(205 + 250);
+  });
+
+  it('starts measuring over when the readings move to the direct link', () => {
+    pingRoundTrip(300);
+    direct = true;
+    pingRoundTrip(10);
+    expect(mic.getInput().getInputLag()).toBe(205 + 5);
+  });
+
+  it('reports a phone whose pongs stopped as ever later, once one lost ping is ruled out', () => {
+    pingRoundTrip(40);
+    vi.advanceTimersByTime(2000);
+    expect(mic.getLatency()).toBe(40);
+    vi.advanceTimersByTime(1500);
+    expect(mic.getLatency()).toBe(1500);
   });
 
   it('keeps the correction the singer set on the phone', () => {

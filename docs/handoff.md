@@ -5,7 +5,7 @@ Session narrative belongs in git history; what belongs here is the state of the
 project, what is waiting on a person, and the things that are true but not
 visible in the code.
 
-Last updated 2026-10-03.
+Last updated 2026-10-06.
 
 ## Continue from this repository
 
@@ -80,8 +80,19 @@ pre-commit hook runs both when `server/` changes.
   open the remote-mic join and answer "room not found"; fixed in `ffb3183a`.
 - **The visual baselines**, all 291, still show the old look (see Next).
 
+**Phones send their pitch readings over a direct WebRTC link** (`docs/network.md`, The direct
+link), falling back to Cloudflare TURN and then to the relay. Built because the API sits on a home
+line that is sometimes unreliable and singers in the US would otherwise cross the Atlantic twice
+per reading. Measured from `sage` on 2026-10-06: 9 ms to 1.1.1.1, 29–63 ms (median ~38, once 181)
+to the API through the tunnel, Cloudflare edge Oslo. In e2e the link opens on both sides and again
+after the game reloads, and pings and pongs leave the relay. Not yet tried on a real phone, on
+mobile data (which needs TURN), or in Safari.
+
 ## Waiting on a person
 
+0. **The TURN key in Komodo.** `CLOUDFLARE_TURN_KEY_ID` and `CLOUDFLARE_TURN_API_TOKEN` are in
+   `server/.env` locally; the stack needs them too (`server/compose.yaml` reads `.env`, so the
+   compose file itself has not changed). Then a real phone: its console says `Direct link open`.
 1. **The phone's microphone prompt** (one per game now) on Firefox and iOS
    Safari, which the user will test.
 2. **Phone lag with a real song.** Listen for whether the automatic

@@ -7,7 +7,8 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { createApp } from './app.js';
 import { Auth } from './auth.js';
 import { getDatabase } from './db.js';
-import { getEnv, isDeployed } from './env.js';
+import { getEnv, isDeployed, turnKey } from './env.js';
+import { IceServers } from './ice-servers.js';
 import { OnlineDirectory } from './online/directory.js';
 import { type OnlinePeer, OnlineRelay, type StreamWatcher } from './online/relay.js';
 import { PostgresRoomStore } from './online/room-store.js';
@@ -38,7 +39,10 @@ const server = serve({ fetch: app.fetch, port: env.PORT }, ({ port }) =>
   console.log(`DGG Karaoke API listening on http://localhost:${port}`),
 );
 
-const remoteMics = new Relay();
+const iceServers = new IceServers(turnKey(env));
+console.log(turnKey(env) ? 'Phones fall back to Cloudflare TURN' : 'No TURN key: phones find their game by STUN alone');
+void iceServers.start();
+const remoteMics = new Relay(iceServers.get);
 const online = new OnlineRelay(directory);
 // The song list a game sends a phone is the largest message, a few MB for the full library.
 const sockets = new WebSocketServer({ noServer: true, maxPayload: 16 * 1024 * 1024 });
@@ -142,6 +146,7 @@ function shutdown() {
   shuttingDown = true;
   clearInterval(heartbeat);
   clearInterval(roomExpiry);
+  iceServers.stop();
   for (const client of sockets.clients) client.close(1001, 'Server shutting down');
   server.close(() => process.exit(0));
 }

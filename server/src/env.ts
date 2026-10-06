@@ -9,6 +9,8 @@ export const DGG_ORIGIN = 'https://www.destiny.gg';
  */
 const providerOrigin = z.preprocess((value) => (value === '' || value === undefined ? DGG_ORIGIN : value), z.url());
 
+const optionalString = z.preprocess((value) => (value === '' ? undefined : value), z.string().optional());
+
 const envSchema = z
   .object({
     DATABASE_URL: z.string().min(1),
@@ -36,6 +38,9 @@ const envSchema = z
      * their destiny.gg names. Off, anyone may connect and types a nickname.
      */
     SIGN_IN_REQUIRED: z.stringbool().default(true),
+    /** A Cloudflare TURN key, which lets a phone reach its game when no direct route exists. Both or neither. */
+    CLOUDFLARE_TURN_KEY_ID: optionalString,
+    CLOUDFLARE_TURN_API_TOKEN: optionalString,
     /** Usernames that are always admins, comma-separated. Everyone else's role is in the database. */
     ADMIN_DGG_USERNAMES: z
       .string()
@@ -51,6 +56,13 @@ const envSchema = z
       ),
   })
   .superRefine((env, context) => {
+    if (!env.CLOUDFLARE_TURN_KEY_ID !== !env.CLOUDFLARE_TURN_API_TOKEN) {
+      context.addIssue({
+        code: 'custom',
+        path: ['CLOUDFLARE_TURN_API_TOKEN'],
+        message: 'CLOUDFLARE_TURN_KEY_ID and CLOUDFLARE_TURN_API_TOKEN are set together or not at all.',
+      });
+    }
     // The stand-in signs anyone in as anyone. A deployed site is the only one served over https.
     if (!isDeployed(env)) return;
     for (const key of ['DGG_ORIGIN', 'DGG_AUTHORIZE_ORIGIN'] as const) {
@@ -67,6 +79,11 @@ export type Env = z.infer<typeof envSchema>;
 
 export function isDeployed(env: Pick<Env, 'APP_ORIGIN'>): boolean {
   return env.APP_ORIGIN.some((origin) => origin.startsWith('https://'));
+}
+
+export function turnKey(env: Pick<Env, 'CLOUDFLARE_TURN_KEY_ID' | 'CLOUDFLARE_TURN_API_TOKEN'>) {
+  const { CLOUDFLARE_TURN_KEY_ID: keyId, CLOUDFLARE_TURN_API_TOKEN: apiToken } = env;
+  return keyId && apiToken ? { keyId, apiToken } : undefined;
 }
 
 export function parseEnv(source: Record<string, unknown>): Env {
